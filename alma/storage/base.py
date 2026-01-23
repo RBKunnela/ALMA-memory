@@ -209,7 +209,95 @@ class StorageBackend(ABC):
         """
         pass
 
+    @abstractmethod
+    def update_heuristic_confidence(
+        self,
+        heuristic_id: str,
+        new_confidence: float,
+    ) -> bool:
+        """
+        Update a heuristic's confidence value.
+
+        Args:
+            heuristic_id: ID of heuristic to update
+            new_confidence: New confidence value (0.0 - 1.0)
+
+        Returns:
+            True if updated, False if not found
+        """
+        pass
+
+    @abstractmethod
+    def update_knowledge_confidence(
+        self,
+        knowledge_id: str,
+        new_confidence: float,
+    ) -> bool:
+        """
+        Update domain knowledge confidence value.
+
+        Args:
+            knowledge_id: ID of knowledge to update
+            new_confidence: New confidence value (0.0 - 1.0)
+
+        Returns:
+            True if updated, False if not found
+        """
+        pass
+
     # ==================== DELETE OPERATIONS ====================
+
+    @abstractmethod
+    def delete_heuristic(self, heuristic_id: str) -> bool:
+        """
+        Delete a heuristic by ID.
+
+        Args:
+            heuristic_id: ID of heuristic to delete
+
+        Returns:
+            True if deleted, False if not found
+        """
+        pass
+
+    @abstractmethod
+    def delete_outcome(self, outcome_id: str) -> bool:
+        """
+        Delete an outcome by ID.
+
+        Args:
+            outcome_id: ID of outcome to delete
+
+        Returns:
+            True if deleted, False if not found
+        """
+        pass
+
+    @abstractmethod
+    def delete_domain_knowledge(self, knowledge_id: str) -> bool:
+        """
+        Delete domain knowledge by ID.
+
+        Args:
+            knowledge_id: ID of knowledge to delete
+
+        Returns:
+            True if deleted, False if not found
+        """
+        pass
+
+    @abstractmethod
+    def delete_anti_pattern(self, anti_pattern_id: str) -> bool:
+        """
+        Delete an anti-pattern by ID.
+
+        Args:
+            anti_pattern_id: ID of anti-pattern to delete
+
+        Returns:
+            True if deleted, False if not found
+        """
+        pass
 
     @abstractmethod
     def delete_outcomes_older_than(
