@@ -1,0 +1,84 @@
+# ALMA Configuration Template
+# Copy this to your project as .alma/config.yaml
+
+alma:
+  # Unique project identifier
+  project_id: "your-project-name"
+
+  # Storage backend: "azure" | "sqlite" | "file"
+  storage: "sqlite"  # Use "azure" for production
+
+  # Embedding provider: "local" | "azure"
+  embedding_provider: "local"
+
+  # Azure configuration (only needed if storage: azure)
+  azure:
+    cosmos_endpoint: ${AZURE_COSMOS_ENDPOINT}
+    cosmos_key: ${KEYVAULT:alma-cosmos-key}  # Fetched from Azure Key Vault
+    cosmos_database: "alma"
+    openai_endpoint: ${AZURE_OPENAI_ENDPOINT}
+    openai_key: ${KEYVAULT:alma-openai-key}
+    openai_deployment: "text-embedding-3-small"
+
+  # Agent scopes - define what each agent can learn
+  agents:
+    helena:
+      can_learn:
+        - testing_strategies
+        - selector_patterns
+        - ui_component_patterns
+        - form_testing
+        - accessibility_testing
+      cannot_learn:
+        - backend_logic
+        - database_operations
+        - api_implementation
+      min_occurrences_for_heuristic: 3
+
+    victor:
+      can_learn:
+        - api_testing_patterns
+        - database_validation
+        - error_handling_patterns
+        - performance_testing
+        - security_testing
+      cannot_learn:
+        - frontend_logic
+        - ui_testing
+        - css_styling
+      min_occurrences_for_heuristic: 3
+
+    clara:
+      can_learn:
+        - design_patterns
+        - color_schemes
+        - typography_rules
+        - component_layouts
+        - branding_guidelines
+      cannot_learn:
+        - testing
+        - backend_logic
+        - database
+      min_occurrences_for_heuristic: 3
+
+  # Memory management settings
+  memory:
+    # Maximum items per memory type before pruning
+    max_heuristics_per_agent: 100
+    max_outcomes_per_agent: 500
+    max_anti_patterns_per_agent: 50
+
+    # Automatic pruning settings
+    prune_outcomes_older_than_days: 90
+    prune_heuristics_below_confidence: 0.3
+
+  # Retrieval settings
+  retrieval:
+    # Maximum tokens for context injection
+    max_context_tokens: 2000
+
+    # Cache TTL in seconds
+    cache_ttl_seconds: 300
+
+    # Default top_k for each memory type
+    default_top_k: 5
