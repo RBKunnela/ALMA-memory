@@ -1,0 +1,34 @@
+# ALMA - Agent Learning Memory Architecture
+# Core dependencies
+
+# Configuration
+pyyaml>=6.0
+
+# Embeddings (local)
+sentence-transformers>=2.2.0
+torch>=2.0.0
+
+# Vector search (local)
+faiss-cpu>=1.7.4
+
+# Azure (production)
+azure-cosmos>=4.5.0
+azure-identity>=1.15.0
+azure-keyvault-secrets>=4.7.0
+
+# OpenAI embeddings (optional, for Azure OpenAI)
+openai>=1.0.0
+
+# Database (local development)
+# sqlite3 is built into Python
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+
+# Type checking
+mypy>=1.0.0
+
+# Utilities
+python-dotenv>=1.0.0

@@ -1,0 +1,216 @@
+"""
+ALMA Memory Types
+
+Defines the core data structures for all memory types.
+"""
+
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Optional, List, Dict, Any
+from enum import Enum
+
+
+class MemoryType(Enum):
+    """Categories of memory that agents can store and retrieve."""
+    HEURISTIC = "heuristic"
+    OUTCOME = "outcome"
+    USER_PREFERENCE = "user_preference"
+    DOMAIN_KNOWLEDGE = "domain_knowledge"
+    ANTI_PATTERN = "anti_pattern"
+
+
+@dataclass
+class MemoryScope:
+    """
+    Defines what an agent is allowed to learn.
+
+    Prevents scope creep by explicitly listing allowed and forbidden domains.
+    """
+    agent_name: str
+    can_learn: List[str]
+    cannot_learn: List[str]
+    min_occurrences_for_heuristic: int = 3
+
+    def is_allowed(self, domain: str) -> bool:
+        """Check if learning in this domain is permitted."""
+        if domain in self.cannot_learn:
+            return False
+        if not self.can_learn:  # Empty means all allowed (except cannot_learn)
+            return True
+        return domain in self.can_learn
+
+
+@dataclass
+class Heuristic:
+    """
+    A learned rule: "When condition X, strategy Y works N% of the time."
+
+    Heuristics are only created after min_occurrences validations.
+    """
+    id: str
+    agent: str
+    project_id: str
+    condition: str  # "form with multiple required fields"
+    strategy: str   # "test happy path first, then individual validation"
+    confidence: float  # 0.0 to 1.0
+    occurrence_count: int
+    success_count: int
+    last_validated: datetime
+    created_at: datetime
+    embedding: Optional[List[float]] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def success_rate(self) -> float:
+        """Calculate success rate from occurrences."""
+        if self.occurrence_count == 0:
+            return 0.0
+        return self.success_count / self.occurrence_count
+
+
+@dataclass
+class Outcome:
+    """
+    Record of a task execution - success or failure with context.
+
+    Outcomes are raw data that can be consolidated into heuristics.
+    """
+    id: str
+    agent: str
+    project_id: str
+    task_type: str  # "api_validation", "form_testing", etc.
+    task_description: str
+    success: bool
+    strategy_used: str
+    duration_ms: Optional[int] = None
+    error_message: Optional[str] = None
+    user_feedback: Optional[str] = None
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    embedding: Optional[List[float]] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class UserPreference:
+    """
+    A remembered user constraint or communication preference.
+
+    Persists across sessions so users don't repeat themselves.
+    """
+    id: str
+    user_id: str
+    category: str  # "communication", "code_style", "workflow"
+    preference: str  # "No emojis in documentation"
+    source: str  # "explicit_instruction", "inferred_from_correction"
+    confidence: float = 1.0  # Lower for inferred preferences
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class DomainKnowledge:
+    """
+    Accumulated domain-specific facts within agent's scope.
+
+    Different from heuristics - these are facts, not strategies.
+    """
+    id: str
+    agent: str
+    project_id: str
+    domain: str  # "authentication", "database_schema", etc.
+    fact: str  # "Login endpoint uses JWT with 24h expiry"
+    source: str  # "code_analysis", "documentation", "user_stated"
+    confidence: float = 1.0
+    last_verified: datetime = field(default_factory=datetime.utcnow)
+    embedding: Optional[List[float]] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class AntiPattern:
+    """
+    What NOT to do - learned from validated failures.
+
+    Helps agents avoid repeating mistakes.
+    """
+    id: str
+    agent: str
+    project_id: str
+    pattern: str  # "Using fixed sleep() for async waits"
+    why_bad: str  # "Causes flaky tests, doesn't adapt to load"
+    better_alternative: str  # "Use explicit waits with conditions"
+    occurrence_count: int
+    last_seen: datetime
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    embedding: Optional[List[float]] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class MemorySlice:
+    """
+    A compact, relevant subset of memories for injection into context.
+
+    This is what gets injected per-call - must stay under token budget.
+    """
+    heuristics: List[Heuristic] = field(default_factory=list)
+    outcomes: List[Outcome] = field(default_factory=list)
+    preferences: List[UserPreference] = field(default_factory=list)
+    domain_knowledge: List[DomainKnowledge] = field(default_factory=list)
+    anti_patterns: List[AntiPattern] = field(default_factory=list)
+
+    # Retrieval metadata
+    query: Optional[str] = None
+    agent: Optional[str] = None
+    retrieval_time_ms: Optional[int] = None
+
+    def to_prompt(self, max_tokens: int = 2000) -> str:
+        """
+        Format memories for injection into agent context.
+
+        Respects token budget by prioritizing high-confidence items.
+        """
+        sections = []
+
+        if self.heuristics:
+            h_text = "## Relevant Strategies\n"
+            for h in sorted(self.heuristics, key=lambda x: -x.confidence)[:5]:
+                h_text += f"- When: {h.condition}\n  Do: {h.strategy} (confidence: {h.confidence:.0%})\n"
+            sections.append(h_text)
+
+        if self.anti_patterns:
+            ap_text = "## Avoid These Patterns\n"
+            for ap in self.anti_patterns[:3]:
+                ap_text += f"- Don't: {ap.pattern}\n  Why: {ap.why_bad}\n  Instead: {ap.better_alternative}\n"
+            sections.append(ap_text)
+
+        if self.preferences:
+            p_text = "## User Preferences\n"
+            for p in self.preferences[:5]:
+                p_text += f"- {p.preference}\n"
+            sections.append(p_text)
+
+        if self.domain_knowledge:
+            dk_text = "## Domain Context\n"
+            for dk in self.domain_knowledge[:5]:
+                dk_text += f"- {dk.fact}\n"
+            sections.append(dk_text)
+
+        result = "\n".join(sections)
+
+        # Basic token estimation (rough: 1 token ~ 4 chars)
+        if len(result) > max_tokens * 4:
+            result = result[:max_tokens * 4] + "\n[truncated]"
+
+        return result
+
+    @property
+    def total_items(self) -> int:
+        """Total number of memory items in this slice."""
+        return (
+            len(self.heuristics) +
+            len(self.outcomes) +
+            len(self.preferences) +
+            len(self.domain_knowledge) +
+            len(self.anti_patterns)
+        )
