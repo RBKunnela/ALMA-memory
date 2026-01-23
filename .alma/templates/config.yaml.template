@@ -20,9 +20,61 @@ alma:
     openai_key: ${KEYVAULT:alma-openai-key}
     openai_deployment: "text-embedding-3-small"
 
-  # Agent scopes - define what each agent can learn
+  # ==========================================================================
+  # DOMAINS - Define what types of workflows this project supports
+  # ==========================================================================
+  # Each domain has its own memory schema and learning scope.
+  # This is the core of the "harness pattern" - agents learn within domains.
+
+  domains:
+    # Coding domain - for development and testing agents
+    coding:
+      enabled: true
+      schemas:
+        - testing
+        - api_development
+      agents:
+        - helena
+        - victor
+
+    # Research domain - for analysis and intelligence agents
+    research:
+      enabled: false  # Enable if using research workflows
+      schemas:
+        - market_research
+        - competitive_intelligence
+      agents:
+        - researcher
+
+    # Content domain - for creation and documentation agents
+    content:
+      enabled: false  # Enable if using content workflows
+      schemas:
+        - marketing_content
+        - documentation
+      agents:
+        - copywriter
+        - documenter
+
+    # Operations domain - for support and automation agents
+    operations:
+      enabled: false  # Enable if using ops workflows
+      schemas:
+        - customer_support
+        - automation
+      agents:
+        - support
+
+  # ==========================================================================
+  # AGENTS - Define learning scopes for each agent
+  # ==========================================================================
+  # Each agent can only learn within its defined categories.
+  # This prevents over-scoping and knowledge bleed.
+
   agents:
+    # Frontend testing specialist
     helena:
+      domain: coding
       can_learn:
         - testing_strategies
         - selector_patterns
@@ -35,7 +87,9 @@ alma:
         - api_implementation
       min_occurrences_for_heuristic: 3
 
+    # Backend testing specialist
     victor:
+      domain: coding
       can_learn:
         - api_testing_patterns
         - database_validation
@@ -48,7 +102,9 @@ alma:
         - css_styling
       min_occurrences_for_heuristic: 3
 
+    # UI/UX designer
     clara:
+      domain: content
       can_learn:
         - design_patterns
         - color_schemes
@@ -61,7 +117,52 @@ alma:
         - database
       min_occurrences_for_heuristic: 3
 
-  # Memory management settings
+    # Market researcher
+    researcher:
+      domain: research
+      can_learn:
+        - trend_patterns
+        - source_reliability
+        - query_refinements
+        - data_synthesis_patterns
+      cannot_learn:
+        - code_implementation
+        - ui_design
+      min_occurrences_for_heuristic: 5  # Higher for research patterns
+
+    # Marketing copywriter
+    copywriter:
+      domain: content
+      can_learn:
+        - headline_patterns
+        - call_to_action_patterns
+        - audience_preferences
+        - engagement_metrics
+        - tone_effectiveness
+      cannot_learn:
+        - technical_implementation
+        - pricing_decisions
+        - legal_claims
+      min_occurrences_for_heuristic: 5
+
+    # Customer support
+    support:
+      domain: operations
+      can_learn:
+        - issue_patterns
+        - resolution_steps
+        - customer_preferences
+        - escalation_triggers
+      cannot_learn:
+        - billing_modifications
+        - security_overrides
+        - contract_changes
+      min_occurrences_for_heuristic: 5
+
+  # ==========================================================================
+  # MEMORY MANAGEMENT
+  # ==========================================================================
+
   memory:
     # Maximum items per memory type before pruning
     max_heuristics_per_agent: 100
@@ -72,7 +173,16 @@ alma:
     prune_outcomes_older_than_days: 90
     prune_heuristics_below_confidence: 0.3
 
-  # Retrieval settings
+    # Global memory (shared across agents)
+    global_categories:
+      - error_handling
+      - logging_patterns
+      - security_practices
+
+  # ==========================================================================
+  # RETRIEVAL SETTINGS
+  # ==========================================================================
+
   retrieval:
     # Maximum tokens for context injection
     max_context_tokens: 2000
@@ -82,3 +192,26 @@ alma:
 
     # Default top_k for each memory type
     default_top_k: 5
+
+    # Weighting for retrieval scoring
+    weights:
+      recency: 0.3
+      success_rate: 0.4
+      similarity: 0.3
+
+  # ==========================================================================
+  # HARNESS SETTINGS
+  # ==========================================================================
+
+  harness:
+    # Default setting constraints (applied to all agents)
+    global_constraints:
+      - "Log all actions for learning"
+      - "Stay within defined scope"
+      - "Respect rate limits"
+
+    # Enable reflection logging (agents log what they learned)
+    enable_reflections: true
+
+    # Auto-create heuristics from successful patterns
+    auto_heuristic_creation: true
