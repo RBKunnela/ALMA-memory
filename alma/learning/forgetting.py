@@ -2,13 +2,23 @@
 ALMA Forgetting Mechanism.
 
 Implements intelligent memory pruning to prevent bloat and maintain relevance.
+
+Features:
+- Confidence decay over time (exponential, linear, step functions)
+- Staleness detection based on last_validated timestamps
+- Automated cleanup job scheduling
+- Memory growth monitoring and alerting
 """
 
 import logging
+import time
+import threading
+import math
 from datetime import datetime, timezone, timedelta
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Callable
 from dataclasses import dataclass, field
 from enum import Enum
+from abc import ABC, abstractmethod
 
 from alma.types import Heuristic, Outcome, DomainKnowledge, AntiPattern
 from alma.storage.base import StorageBackend
@@ -524,3 +534,863 @@ class ForgettingEngine:
         candidates.sort(key=lambda x: x["score"])
 
         return candidates[:max_candidates]
+
+
+# ==================== DECAY FUNCTIONS ====================
+
+
+class DecayFunction(ABC):
+    """Abstract base class for confidence decay functions."""
+
+    @abstractmethod
+    def compute_decay(self, days_since_validation: float) -> float:
+        """
+        Compute decay multiplier for a given time since validation.
+
+        Args:
+            days_since_validation: Days since last validation
+
+        Returns:
+            Multiplier between 0 and 1 to apply to confidence
+        """
+        pass
+
+    @abstractmethod
+    def get_name(self) -> str:
+        """Return the name of this decay function."""
+        pass
+
+
+class ExponentialDecay(DecayFunction):
+    """
+    Exponential decay with configurable half-life.
+
+    Confidence = original * 0.5^(days/half_life)
+    """
+
+    def __init__(self, half_life_days: float = 30.0):
+        """
+        Initialize exponential decay.
+
+        Args:
+            half_life_days: Days until confidence halves
+        """
+        self.half_life_days = half_life_days
+
+    def compute_decay(self, days_since_validation: float) -> float:
+        """Compute exponential decay multiplier."""
+        return 0.5 ** (days_since_validation / self.half_life_days)
+
+    def get_name(self) -> str:
+        return f"exponential(half_life={self.half_life_days}d)"
+
+
+class LinearDecay(DecayFunction):
+    """
+    Linear decay to zero over a specified period.
+
+    Confidence decreases linearly from 1 to min_value over decay_period.
+    """
+
+    def __init__(
+        self,
+        decay_period_days: float = 90.0,
+        min_value: float = 0.1,
+    ):
+        """
+        Initialize linear decay.
+
+        Args:
+            decay_period_days: Days until confidence reaches min_value
+            min_value: Minimum confidence value (floor)
+        """
+        self.decay_period_days = decay_period_days
+        self.min_value = min_value
+
+    def compute_decay(self, days_since_validation: float) -> float:
+        """Compute linear decay multiplier."""
+        decay = 1.0 - (days_since_validation / self.decay_period_days) * (1.0 - self.min_value)
+        return max(self.min_value, decay)
+
+    def get_name(self) -> str:
+        return f"linear(period={self.decay_period_days}d, min={self.min_value})"
+
+
+class StepDecay(DecayFunction):
+    """
+    Step-wise decay with configurable thresholds.
+
+    Confidence drops at specific day thresholds.
+    """
+
+    def __init__(
+        self,
+        steps: Optional[List[tuple]] = None,
+    ):
+        """
+        Initialize step decay.
+
+        Args:
+            steps: List of (days, multiplier) tuples, sorted by days ascending
+                   Default: [(30, 0.9), (60, 0.7), (90, 0.5), (180, 0.3)]
+        """
+        self.steps = steps or [
+            (30, 0.9),
+            (60, 0.7),
+            (90, 0.5),
+            (180, 0.3),
+        ]
+        # Ensure sorted
+        self.steps = sorted(self.steps, key=lambda x: x[0])
+
+    def compute_decay(self, days_since_validation: float) -> float:
+        """Compute step decay multiplier."""
+        multiplier = 1.0
+        for threshold_days, step_multiplier in self.steps:
+            if days_since_validation >= threshold_days:
+                multiplier = step_multiplier
+            else:
+                break
+        return multiplier
+
+    def get_name(self) -> str:
+        return f"step({len(self.steps)} steps)"
+
+
+class NoDecay(DecayFunction):
+    """No decay - confidence remains constant."""
+
+    def compute_decay(self, days_since_validation: float) -> float:
+        return 1.0
+
+    def get_name(self) -> str:
+        return "none"
+
+
+# ==================== CONFIDENCE DECAYER ====================
+
+
+@dataclass
+class DecayResult:
+    """Result of applying confidence decay."""
+    items_processed: int = 0
+    items_updated: int = 0
+    items_pruned: int = 0
+    avg_decay_applied: float = 0.0
+    execution_time_ms: int = 0
+
+
+class ConfidenceDecayer:
+    """
+    Applies confidence decay to memories based on time since validation.
+
+    Unlike pruning (which removes items), decay reduces confidence over time,
+    making items less likely to be retrieved while preserving them for potential
+    revalidation.
+    """
+
+    def __init__(
+        self,
+        storage: StorageBackend,
+        decay_function: Optional[DecayFunction] = None,
+        prune_below_confidence: float = 0.1,
+    ):
+        """
+        Initialize confidence decayer.
+
+        Args:
+            storage: Storage backend to update
+            decay_function: Function to compute decay (default: ExponentialDecay)
+            prune_below_confidence: Auto-prune items that decay below this threshold
+        """
+        self.storage = storage
+        self.decay_function = decay_function or ExponentialDecay(half_life_days=30.0)
+        self.prune_below_confidence = prune_below_confidence
+
+    def apply_decay(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+        dry_run: bool = False,
+    ) -> DecayResult:
+        """
+        Apply confidence decay to all eligible memories.
+
+        Args:
+            project_id: Project to process
+            agent: Specific agent or None for all
+            dry_run: If True, calculate but don't update
+
+        Returns:
+            DecayResult with statistics
+        """
+        start_time = time.time()
+        result = DecayResult()
+        now = datetime.now(timezone.utc)
+        total_decay = 0.0
+
+        # Process heuristics
+        heuristics = self.storage.get_heuristics(
+            project_id=project_id,
+            agent=agent,
+            top_k=10000,
+            min_confidence=0.0,
+        )
+
+        for h in heuristics:
+            result.items_processed += 1
+            days_since = (now - h.last_validated).total_seconds() / (24 * 60 * 60)
+            decay_multiplier = self.decay_function.compute_decay(days_since)
+
+            new_confidence = h.confidence * decay_multiplier
+            total_decay += (1.0 - decay_multiplier)
+
+            if new_confidence != h.confidence:
+                if new_confidence < self.prune_below_confidence:
+                    # Below threshold - prune
+                    if not dry_run:
+                        self.storage.delete_heuristic(h.id)
+                    result.items_pruned += 1
+                else:
+                    # Update confidence
+                    if not dry_run:
+                        self.storage.update_heuristic_confidence(h.id, new_confidence)
+                    result.items_updated += 1
+
+        # Process domain knowledge
+        knowledge = self.storage.get_domain_knowledge(
+            project_id=project_id,
+            agent=agent,
+            top_k=10000,
+        )
+
+        for dk in knowledge:
+            result.items_processed += 1
+            days_since = (now - dk.last_verified).total_seconds() / (24 * 60 * 60)
+            decay_multiplier = self.decay_function.compute_decay(days_since)
+
+            new_confidence = dk.confidence * decay_multiplier
+            total_decay += (1.0 - decay_multiplier)
+
+            if new_confidence != dk.confidence:
+                if new_confidence < self.prune_below_confidence:
+                    if not dry_run:
+                        self.storage.delete_domain_knowledge(dk.id)
+                    result.items_pruned += 1
+                else:
+                    if not dry_run:
+                        self.storage.update_knowledge_confidence(dk.id, new_confidence)
+                    result.items_updated += 1
+
+        result.execution_time_ms = int((time.time() - start_time) * 1000)
+        if result.items_processed > 0:
+            result.avg_decay_applied = total_decay / result.items_processed
+
+        action = "Would apply" if dry_run else "Applied"
+        logger.info(
+            f"{action} decay to {result.items_processed} items: "
+            f"{result.items_updated} updated, {result.items_pruned} pruned "
+            f"(avg decay: {result.avg_decay_applied:.2%})"
+        )
+
+        return result
+
+
+# ==================== MEMORY HEALTH MONITOR ====================
+
+
+@dataclass
+class MemoryHealthMetrics:
+    """Metrics about memory health and growth."""
+    total_items: int = 0
+    heuristic_count: int = 0
+    outcome_count: int = 0
+    knowledge_count: int = 0
+    anti_pattern_count: int = 0
+    avg_heuristic_confidence: float = 0.0
+    avg_heuristic_age_days: float = 0.0
+    stale_heuristic_count: int = 0
+    low_confidence_count: int = 0
+    storage_bytes: int = 0
+    agents_count: int = 0
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "total_items": self.total_items,
+            "heuristic_count": self.heuristic_count,
+            "outcome_count": self.outcome_count,
+            "knowledge_count": self.knowledge_count,
+            "anti_pattern_count": self.anti_pattern_count,
+            "avg_heuristic_confidence": round(self.avg_heuristic_confidence, 3),
+            "avg_heuristic_age_days": round(self.avg_heuristic_age_days, 1),
+            "stale_heuristic_count": self.stale_heuristic_count,
+            "low_confidence_count": self.low_confidence_count,
+            "storage_bytes": self.storage_bytes,
+            "agents_count": self.agents_count,
+            "timestamp": self.timestamp.isoformat(),
+        }
+
+
+@dataclass
+class HealthAlert:
+    """An alert about memory health issues."""
+    level: str  # "warning", "critical"
+    category: str
+    message: str
+    current_value: Any
+    threshold: Any
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass
+class HealthThresholds:
+    """Thresholds for health monitoring alerts."""
+    # Warning thresholds
+    max_total_items_warning: int = 5000
+    max_stale_percentage_warning: float = 0.3
+    min_avg_confidence_warning: float = 0.5
+    max_agent_items_warning: int = 500
+
+    # Critical thresholds
+    max_total_items_critical: int = 10000
+    max_stale_percentage_critical: float = 0.5
+    min_avg_confidence_critical: float = 0.3
+    max_storage_bytes_critical: int = 100 * 1024 * 1024  # 100MB
+
+
+class MemoryHealthMonitor:
+    """
+    Monitors memory health and growth, generating alerts when thresholds exceeded.
+
+    Tracks:
+    - Total memory item counts
+    - Average confidence levels
+    - Staleness ratios
+    - Storage size
+    - Per-agent statistics
+    """
+
+    def __init__(
+        self,
+        storage: StorageBackend,
+        thresholds: Optional[HealthThresholds] = None,
+        stale_days: int = 60,
+        low_confidence_threshold: float = 0.3,
+    ):
+        """
+        Initialize health monitor.
+
+        Args:
+            storage: Storage backend to monitor
+            thresholds: Alert thresholds
+            stale_days: Days since validation to consider stale
+            low_confidence_threshold: Confidence below which to count as low
+        """
+        self.storage = storage
+        self.thresholds = thresholds or HealthThresholds()
+        self.stale_days = stale_days
+        self.low_confidence_threshold = low_confidence_threshold
+
+        # History for trend analysis
+        self._metrics_history: List[MemoryHealthMetrics] = []
+        self._max_history = 100
+
+        # Alert callbacks
+        self._alert_handlers: List[Callable[[HealthAlert], None]] = []
+
+    def add_alert_handler(self, handler: Callable[[HealthAlert], None]) -> None:
+        """Add a callback to be called when alerts are generated."""
+        self._alert_handlers.append(handler)
+
+    def collect_metrics(self, project_id: str) -> MemoryHealthMetrics:
+        """
+        Collect current memory health metrics.
+
+        Args:
+            project_id: Project to analyze
+
+        Returns:
+            MemoryHealthMetrics snapshot
+        """
+        now = datetime.now(timezone.utc)
+        stale_cutoff = now - timedelta(days=self.stale_days)
+
+        metrics = MemoryHealthMetrics()
+
+        # Get all heuristics
+        heuristics = self.storage.get_heuristics(
+            project_id=project_id,
+            top_k=10000,
+            min_confidence=0.0,
+        )
+        metrics.heuristic_count = len(heuristics)
+
+        if heuristics:
+            total_confidence = 0.0
+            total_age = 0.0
+            for h in heuristics:
+                total_confidence += h.confidence
+                age_days = (now - h.created_at).total_seconds() / (24 * 60 * 60)
+                total_age += age_days
+                if h.last_validated < stale_cutoff:
+                    metrics.stale_heuristic_count += 1
+                if h.confidence < self.low_confidence_threshold:
+                    metrics.low_confidence_count += 1
+
+            metrics.avg_heuristic_confidence = total_confidence / len(heuristics)
+            metrics.avg_heuristic_age_days = total_age / len(heuristics)
+
+        # Get other counts
+        outcomes = self.storage.get_outcomes(
+            project_id=project_id,
+            top_k=10000,
+            success_only=False,
+        )
+        metrics.outcome_count = len(outcomes)
+
+        knowledge = self.storage.get_domain_knowledge(
+            project_id=project_id,
+            top_k=10000,
+        )
+        metrics.knowledge_count = len(knowledge)
+
+        anti_patterns = self.storage.get_anti_patterns(
+            project_id=project_id,
+            top_k=10000,
+        )
+        metrics.anti_pattern_count = len(anti_patterns)
+
+        metrics.total_items = (
+            metrics.heuristic_count +
+            metrics.outcome_count +
+            metrics.knowledge_count +
+            metrics.anti_pattern_count
+        )
+
+        # Get agent count
+        stats = self.storage.get_stats(project_id=project_id)
+        metrics.agents_count = len(stats.get("agents", []))
+
+        # Estimate storage size (rough approximation)
+        # Average ~500 bytes per item
+        metrics.storage_bytes = metrics.total_items * 500
+
+        # Store in history
+        self._metrics_history.append(metrics)
+        if len(self._metrics_history) > self._max_history:
+            self._metrics_history = self._metrics_history[-self._max_history:]
+
+        return metrics
+
+    def check_health(self, project_id: str) -> List[HealthAlert]:
+        """
+        Check memory health and generate alerts if thresholds exceeded.
+
+        Args:
+            project_id: Project to check
+
+        Returns:
+            List of health alerts (empty if healthy)
+        """
+        metrics = self.collect_metrics(project_id)
+        alerts: List[HealthAlert] = []
+        t = self.thresholds
+
+        # Check total items
+        if metrics.total_items >= t.max_total_items_critical:
+            alerts.append(HealthAlert(
+                level="critical",
+                category="total_items",
+                message="Memory item count critically high",
+                current_value=metrics.total_items,
+                threshold=t.max_total_items_critical,
+            ))
+        elif metrics.total_items >= t.max_total_items_warning:
+            alerts.append(HealthAlert(
+                level="warning",
+                category="total_items",
+                message="Memory item count approaching limit",
+                current_value=metrics.total_items,
+                threshold=t.max_total_items_warning,
+            ))
+
+        # Check staleness
+        if metrics.heuristic_count > 0:
+            stale_percentage = metrics.stale_heuristic_count / metrics.heuristic_count
+            if stale_percentage >= t.max_stale_percentage_critical:
+                alerts.append(HealthAlert(
+                    level="critical",
+                    category="staleness",
+                    message="Too many stale heuristics",
+                    current_value=f"{stale_percentage:.0%}",
+                    threshold=f"{t.max_stale_percentage_critical:.0%}",
+                ))
+            elif stale_percentage >= t.max_stale_percentage_warning:
+                alerts.append(HealthAlert(
+                    level="warning",
+                    category="staleness",
+                    message="Many heuristics are stale",
+                    current_value=f"{stale_percentage:.0%}",
+                    threshold=f"{t.max_stale_percentage_warning:.0%}",
+                ))
+
+        # Check average confidence
+        if metrics.heuristic_count > 0:
+            if metrics.avg_heuristic_confidence < t.min_avg_confidence_critical:
+                alerts.append(HealthAlert(
+                    level="critical",
+                    category="confidence",
+                    message="Average heuristic confidence critically low",
+                    current_value=f"{metrics.avg_heuristic_confidence:.2f}",
+                    threshold=f"{t.min_avg_confidence_critical:.2f}",
+                ))
+            elif metrics.avg_heuristic_confidence < t.min_avg_confidence_warning:
+                alerts.append(HealthAlert(
+                    level="warning",
+                    category="confidence",
+                    message="Average heuristic confidence is low",
+                    current_value=f"{metrics.avg_heuristic_confidence:.2f}",
+                    threshold=f"{t.min_avg_confidence_warning:.2f}",
+                ))
+
+        # Check storage size
+        if metrics.storage_bytes >= t.max_storage_bytes_critical:
+            alerts.append(HealthAlert(
+                level="critical",
+                category="storage",
+                message="Memory storage size critically high",
+                current_value=f"{metrics.storage_bytes / (1024*1024):.1f}MB",
+                threshold=f"{t.max_storage_bytes_critical / (1024*1024):.1f}MB",
+            ))
+
+        # Notify handlers
+        for alert in alerts:
+            for handler in self._alert_handlers:
+                try:
+                    handler(alert)
+                except Exception as e:
+                    logger.error(f"Alert handler error: {e}")
+
+        return alerts
+
+    def get_growth_trend(self, project_id: str) -> Dict[str, Any]:
+        """
+        Analyze memory growth trend from history.
+
+        Args:
+            project_id: Project to analyze
+
+        Returns:
+            Trend analysis
+        """
+        if len(self._metrics_history) < 2:
+            return {
+                "status": "insufficient_data",
+                "samples": len(self._metrics_history),
+            }
+
+        first = self._metrics_history[0]
+        last = self._metrics_history[-1]
+
+        time_span = (last.timestamp - first.timestamp).total_seconds()
+        if time_span <= 0:
+            return {"status": "insufficient_time_span"}
+
+        days_span = time_span / (24 * 60 * 60)
+        item_growth = last.total_items - first.total_items
+        growth_per_day = item_growth / days_span if days_span > 0 else 0
+
+        return {
+            "status": "ok",
+            "samples": len(self._metrics_history),
+            "time_span_days": round(days_span, 1),
+            "total_growth": item_growth,
+            "growth_per_day": round(growth_per_day, 2),
+            "first_total": first.total_items,
+            "last_total": last.total_items,
+            "confidence_trend": round(
+                last.avg_heuristic_confidence - first.avg_heuristic_confidence, 3
+            ),
+        }
+
+
+# ==================== CLEANUP SCHEDULER ====================
+
+
+@dataclass
+class CleanupJob:
+    """Configuration for a scheduled cleanup job."""
+    name: str
+    project_id: str
+    interval_hours: float
+    agent: Optional[str] = None
+    policy: Optional[PrunePolicy] = None
+    apply_decay: bool = True
+    last_run: Optional[datetime] = None
+    next_run: Optional[datetime] = None
+    enabled: bool = True
+
+
+@dataclass
+class CleanupResult:
+    """Result of a cleanup job execution."""
+    job_name: str
+    project_id: str
+    started_at: datetime
+    completed_at: datetime
+    prune_summary: Optional[PruneSummary] = None
+    decay_result: Optional[DecayResult] = None
+    alerts: List[HealthAlert] = field(default_factory=list)
+    success: bool = True
+    error: Optional[str] = None
+
+
+class CleanupScheduler:
+    """
+    Schedules and executes automated memory cleanup jobs.
+
+    Features:
+    - Configurable job intervals
+    - Prune + decay in single operation
+    - Health check integration
+    - Job execution history
+    - Thread-safe operation
+    """
+
+    def __init__(
+        self,
+        storage: StorageBackend,
+        forgetting_engine: Optional[ForgettingEngine] = None,
+        decayer: Optional[ConfidenceDecayer] = None,
+        health_monitor: Optional[MemoryHealthMonitor] = None,
+    ):
+        """
+        Initialize cleanup scheduler.
+
+        Args:
+            storage: Storage backend
+            forgetting_engine: Engine for pruning (created if not provided)
+            decayer: Engine for decay (created if not provided)
+            health_monitor: Health monitor (created if not provided)
+        """
+        self.storage = storage
+        self.forgetting_engine = forgetting_engine or ForgettingEngine(storage)
+        self.decayer = decayer or ConfidenceDecayer(storage)
+        self.health_monitor = health_monitor or MemoryHealthMonitor(storage)
+
+        self._jobs: Dict[str, CleanupJob] = {}
+        self._history: List[CleanupResult] = []
+        self._max_history = 50
+        self._lock = threading.RLock()
+        self._running = False
+        self._thread: Optional[threading.Thread] = None
+
+    def register_job(self, job: CleanupJob) -> None:
+        """
+        Register a cleanup job.
+
+        Args:
+            job: Job configuration
+        """
+        with self._lock:
+            now = datetime.now(timezone.utc)
+            job.next_run = now + timedelta(hours=job.interval_hours)
+            self._jobs[job.name] = job
+            logger.info(f"Registered cleanup job '{job.name}' for project {job.project_id}")
+
+    def unregister_job(self, name: str) -> bool:
+        """
+        Unregister a cleanup job.
+
+        Args:
+            name: Job name
+
+        Returns:
+            True if job was found and removed
+        """
+        with self._lock:
+            if name in self._jobs:
+                del self._jobs[name]
+                logger.info(f"Unregistered cleanup job '{name}'")
+                return True
+            return False
+
+    def run_job(self, name: str, dry_run: bool = False) -> CleanupResult:
+        """
+        Manually run a specific job.
+
+        Args:
+            name: Job name
+            dry_run: If True, don't actually modify data
+
+        Returns:
+            CleanupResult with execution details
+        """
+        with self._lock:
+            if name not in self._jobs:
+                raise ValueError(f"Job '{name}' not found")
+            job = self._jobs[name]
+
+        return self._execute_job(job, dry_run)
+
+    def run_all_due(self) -> List[CleanupResult]:
+        """
+        Run all jobs that are due.
+
+        Returns:
+            List of results for executed jobs
+        """
+        results = []
+        now = datetime.now(timezone.utc)
+
+        with self._lock:
+            due_jobs = [
+                job for job in self._jobs.values()
+                if job.enabled and job.next_run and job.next_run <= now
+            ]
+
+        for job in due_jobs:
+            try:
+                result = self._execute_job(job)
+                results.append(result)
+            except Exception as e:
+                logger.error(f"Error running job '{job.name}': {e}")
+                results.append(CleanupResult(
+                    job_name=job.name,
+                    project_id=job.project_id,
+                    started_at=now,
+                    completed_at=datetime.now(timezone.utc),
+                    success=False,
+                    error=str(e),
+                ))
+
+        return results
+
+    def _execute_job(self, job: CleanupJob, dry_run: bool = False) -> CleanupResult:
+        """Execute a cleanup job."""
+        started_at = datetime.now(timezone.utc)
+        result = CleanupResult(
+            job_name=job.name,
+            project_id=job.project_id,
+            started_at=started_at,
+            completed_at=started_at,
+        )
+
+        try:
+            # Run prune
+            engine = ForgettingEngine(
+                self.storage,
+                job.policy or self.forgetting_engine.policy,
+            )
+            result.prune_summary = engine.prune(
+                project_id=job.project_id,
+                agent=job.agent,
+                dry_run=dry_run,
+            )
+
+            # Run decay if enabled
+            if job.apply_decay:
+                result.decay_result = self.decayer.apply_decay(
+                    project_id=job.project_id,
+                    agent=job.agent,
+                    dry_run=dry_run,
+                )
+
+            # Check health
+            result.alerts = self.health_monitor.check_health(job.project_id)
+
+            # Update job timing
+            with self._lock:
+                now = datetime.now(timezone.utc)
+                job.last_run = now
+                job.next_run = now + timedelta(hours=job.interval_hours)
+
+            result.success = True
+
+        except Exception as e:
+            result.success = False
+            result.error = str(e)
+            logger.error(f"Cleanup job '{job.name}' failed: {e}")
+
+        result.completed_at = datetime.now(timezone.utc)
+
+        # Store in history
+        with self._lock:
+            self._history.append(result)
+            if len(self._history) > self._max_history:
+                self._history = self._history[-self._max_history:]
+
+        return result
+
+    def start_background(self, check_interval_seconds: int = 60) -> None:
+        """
+        Start background job execution thread.
+
+        Args:
+            check_interval_seconds: How often to check for due jobs
+        """
+        if self._running:
+            logger.warning("Scheduler already running")
+            return
+
+        self._running = True
+
+        def run():
+            while self._running:
+                try:
+                    self.run_all_due()
+                except Exception as e:
+                    logger.error(f"Scheduler error: {e}")
+                time.sleep(check_interval_seconds)
+
+        self._thread = threading.Thread(target=run, daemon=True)
+        self._thread.start()
+        logger.info(f"Cleanup scheduler started (interval: {check_interval_seconds}s)")
+
+    def stop_background(self) -> None:
+        """Stop the background execution thread."""
+        self._running = False
+        if self._thread:
+            self._thread.join(timeout=5)
+            self._thread = None
+        logger.info("Cleanup scheduler stopped")
+
+    def get_jobs(self) -> List[Dict[str, Any]]:
+        """Get all registered jobs."""
+        with self._lock:
+            return [
+                {
+                    "name": job.name,
+                    "project_id": job.project_id,
+                    "interval_hours": job.interval_hours,
+                    "agent": job.agent,
+                    "enabled": job.enabled,
+                    "last_run": job.last_run.isoformat() if job.last_run else None,
+                    "next_run": job.next_run.isoformat() if job.next_run else None,
+                }
+                for job in self._jobs.values()
+            ]
+
+    def get_history(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get recent job execution history."""
+        with self._lock:
+            recent = self._history[-limit:]
+            return [
+                {
+                    "job_name": r.job_name,
+                    "project_id": r.project_id,
+                    "started_at": r.started_at.isoformat(),
+                    "completed_at": r.completed_at.isoformat(),
+                    "duration_ms": int(
+                        (r.completed_at - r.started_at).total_seconds() * 1000
+                    ),
+                    "success": r.success,
+                    "items_pruned": r.prune_summary.total_pruned if r.prune_summary else 0,
+                    "items_decayed": r.decay_result.items_updated if r.decay_result else 0,
+                    "alerts": len(r.alerts),
+                    "error": r.error,
+                }
+                for r in reversed(recent)
+            ]

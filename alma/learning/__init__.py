@@ -13,11 +13,30 @@ from alma.learning.validation import (
     validate_learning_request,
 )
 from alma.learning.forgetting import (
+    # Forgetting Engine
     ForgettingEngine,
     PrunePolicy,
     PruneResult,
     PruneSummary,
     PruneReason,
+    # Decay Functions
+    DecayFunction,
+    ExponentialDecay,
+    LinearDecay,
+    StepDecay,
+    NoDecay,
+    # Confidence Decay
+    ConfidenceDecayer,
+    DecayResult,
+    # Memory Health Monitoring
+    MemoryHealthMonitor,
+    MemoryHealthMetrics,
+    HealthAlert,
+    HealthThresholds,
+    # Cleanup Scheduling
+    CleanupScheduler,
+    CleanupJob,
+    CleanupResult,
 )
 from alma.learning.heuristic_extractor import (
     HeuristicExtractor,
@@ -35,12 +54,30 @@ __all__ = [
     "ValidationReport",
     "TaskTypeValidator",
     "validate_learning_request",
-    # Forgetting
+    # Forgetting Engine
     "ForgettingEngine",
     "PrunePolicy",
     "PruneResult",
     "PruneSummary",
     "PruneReason",
+    # Decay Functions
+    "DecayFunction",
+    "ExponentialDecay",
+    "LinearDecay",
+    "StepDecay",
+    "NoDecay",
+    # Confidence Decay
+    "ConfidenceDecayer",
+    "DecayResult",
+    # Memory Health Monitoring
+    "MemoryHealthMonitor",
+    "MemoryHealthMetrics",
+    "HealthAlert",
+    "HealthThresholds",
+    # Cleanup Scheduling
+    "CleanupScheduler",
+    "CleanupJob",
+    "CleanupResult",
     # Heuristic Extraction
     "HeuristicExtractor",
     "PatternCandidate",
