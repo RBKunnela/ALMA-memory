@@ -12,10 +12,14 @@ from alma.retrieval.scoring import (
     compute_composite_score,
 )
 from alma.retrieval.cache import (
+    CacheBackend,
     RetrievalCache,
+    RedisCache,
     NullCache,
     CacheEntry,
     CacheStats,
+    PerformanceMetrics,
+    create_cache,
 )
 from alma.retrieval.embeddings import (
     EmbeddingProvider,
@@ -33,10 +37,14 @@ __all__ = [
     "ScoredItem",
     "compute_composite_score",
     # Cache
+    "CacheBackend",
     "RetrievalCache",
+    "RedisCache",
     "NullCache",
     "CacheEntry",
     "CacheStats",
+    "PerformanceMetrics",
+    "create_cache",
     # Embeddings
     "EmbeddingProvider",
     "LocalEmbedder",

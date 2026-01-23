@@ -169,6 +169,7 @@ class ALMA:
         Learn from a task outcome.
 
         Validates that learning is within agent's scope before committing.
+        Invalidates cache after learning to ensure fresh retrieval results.
 
         Args:
             agent: Name of the agent that executed the task
@@ -183,7 +184,7 @@ class ALMA:
         Returns:
             True if learning was accepted, False if rejected (scope violation)
         """
-        return self.learning.learn(
+        result = self.learning.learn(
             agent=agent,
             project_id=self.project_id,
             task=task,
@@ -194,6 +195,12 @@ class ALMA:
             error_message=error_message,
             feedback=feedback,
         )
+
+        # Invalidate cache for this agent/project after learning
+        if result:
+            self.retrieval.invalidate_cache(agent=agent, project_id=self.project_id)
+
+        return result
 
     def add_user_preference(
         self,
@@ -214,12 +221,17 @@ class ALMA:
         Returns:
             The created UserPreference
         """
-        return self.learning.add_preference(
+        result = self.learning.add_preference(
             user_id=user_id,
             category=category,
             preference=preference,
             source=source,
         )
+
+        # Invalidate cache for project (user preferences affect all agents)
+        self.retrieval.invalidate_cache(project_id=self.project_id)
+
+        return result
 
     def add_domain_knowledge(
         self,
@@ -248,13 +260,19 @@ class ALMA:
             )
             return None
 
-        return self.learning.add_domain_knowledge(
+        result = self.learning.add_domain_knowledge(
             agent=agent,
             project_id=self.project_id,
             domain=domain,
             fact=fact,
             source=source,
         )
+
+        # Invalidate cache for this agent/project after adding knowledge
+        if result:
+            self.retrieval.invalidate_cache(agent=agent, project_id=self.project_id)
+
+        return result
 
     def forget(
         self,
@@ -265,6 +283,8 @@ class ALMA:
         """
         Prune stale or low-confidence memories.
 
+        Invalidates cache after pruning to ensure fresh retrieval results.
+
         Args:
             agent: Specific agent to prune, or None for all
             older_than_days: Remove outcomes older than this
@@ -273,12 +293,18 @@ class ALMA:
         Returns:
             Number of items pruned
         """
-        return self.learning.forget(
+        count = self.learning.forget(
             project_id=self.project_id,
             agent=agent,
             older_than_days=older_than_days,
             below_confidence=below_confidence,
         )
+
+        # Invalidate cache after forgetting (memories were removed)
+        if count > 0:
+            self.retrieval.invalidate_cache(agent=agent, project_id=self.project_id)
+
+        return count
 
     def get_stats(self, agent: Optional[str] = None) -> Dict[str, Any]:
         """
