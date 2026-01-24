@@ -76,6 +76,22 @@ from alma.domains import (
     get_general_schema,
 )
 
+# Session Initializer (Phase 11)
+from alma.initializer import (
+    CodebaseOrientation,
+    InitializationResult,
+    RulesOfEngagement,
+    SessionInitializer,
+)
+
+# Confidence Engine (Phase 12)
+from alma.confidence import (
+    ConfidenceEngine,
+    ConfidenceSignal,
+    OpportunitySignal,
+    RiskSignal,
+)
+
 __all__ = [
     # Core
     "ALMA",
@@ -121,4 +137,14 @@ __all__ = [
     "get_research_schema",
     "get_sales_schema",
     "get_general_schema",
+    # Session Initializer
+    "CodebaseOrientation",
+    "InitializationResult",
+    "RulesOfEngagement",
+    "SessionInitializer",
+    # Confidence Engine
+    "ConfidenceEngine",
+    "ConfidenceSignal",
+    "OpportunitySignal",
+    "RiskSignal",
 ]
