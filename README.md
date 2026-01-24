@@ -252,6 +252,7 @@ Create `.alma/config.yaml`:
 alma:
   project_id: "my-project"
   storage: sqlite  # or "azure" for production
+  embedding_provider: local  # or "azure" for production
 
   agents:
     helena:
@@ -271,6 +272,92 @@ alma:
       cannot_learn:
         - frontend_selectors
       min_occurrences_for_heuristic: 3
+```
+
+### Embedding Model Configuration
+
+ALMA uses embeddings for semantic memory retrieval. You can choose between local (free, offline) or cloud-based providers.
+
+#### Provider Comparison
+
+| Provider | Model | Dimensions | Cost | Latency | Best For |
+|----------|-------|------------|------|---------|----------|
+| **local** | all-MiniLM-L6-v2 | 384 | Free | ~10ms | Development, offline use, cost-sensitive |
+| **local** | all-mpnet-base-v2 | 768 | Free | ~25ms | Better quality, still offline |
+| **azure** | text-embedding-3-small | 1536 | ~$0.02/1M tokens | ~50ms | Production, high accuracy |
+| **azure** | text-embedding-3-large | 3072 | ~$0.13/1M tokens | ~80ms | Maximum quality, enterprise |
+| **mock** | (hash-based) | 384 | Free | <1ms | Testing only |
+
+#### Local Embeddings (Default)
+
+No API keys required. Uses [sentence-transformers](https://www.sbert.net/).
+
+```yaml
+# .alma/config.yaml
+alma:
+  embedding_provider: local
+  # Default model: all-MiniLM-L6-v2
+  # To use a different model, set in code:
+  # LocalEmbedder(model_name="all-mpnet-base-v2")
+```
+
+Install dependencies:
+```bash
+pip install sentence-transformers
+```
+
+#### Azure OpenAI Embeddings (Production)
+
+For production deployments with higher accuracy.
+
+```yaml
+# .alma/config.yaml
+alma:
+  embedding_provider: azure
+  azure:
+    openai_endpoint: ${AZURE_OPENAI_ENDPOINT}
+    openai_key: ${AZURE_OPENAI_KEY}
+    openai_deployment: text-embedding-3-small
+```
+
+Set environment variables:
+```bash
+# .env
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_KEY=your-api-key
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
+```
+
+Or use Azure Key Vault for secrets:
+```yaml
+alma:
+  azure:
+    openai_key: ${KEYVAULT:alma-openai-key}
+```
+
+#### Mock Embeddings (Testing)
+
+Deterministic hash-based embeddings for unit tests.
+
+```yaml
+alma:
+  embedding_provider: mock
+```
+
+### Storage Backend Configuration
+
+| Backend | Config Value | Vector Search | Use Case |
+|---------|--------------|---------------|----------|
+| SQLite + FAISS | `sqlite` | Yes (FAISS) | Local development |
+| Azure Cosmos DB | `azure` | Yes (native) | Production |
+| File-based | `file` | No | Simple testing |
+
+```yaml
+alma:
+  storage: sqlite  # Options: sqlite, azure, file
+  storage_dir: .alma  # Where to store local databases
+  db_name: alma.db  # Database filename
+  embedding_dim: 384  # Must match your embedding model
 ```
 
 ## Architecture
