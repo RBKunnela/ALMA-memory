@@ -276,7 +276,95 @@ class FileBasedStorage(StorageBackend):
 
         return False
 
+    # ==================== UPDATE CONFIDENCE OPERATIONS ====================
+
+    def update_heuristic_confidence(
+        self,
+        heuristic_id: str,
+        new_confidence: float,
+    ) -> bool:
+        """Update a heuristic's confidence score."""
+        data = self._read_json(self._files["heuristics"])
+
+        for i, record in enumerate(data):
+            if record.get("id") == heuristic_id:
+                data[i]["confidence"] = new_confidence
+                data[i]["last_validated"] = datetime.now(timezone.utc).isoformat()
+                self._write_json(self._files["heuristics"], data)
+                return True
+
+        return False
+
+    def update_knowledge_confidence(
+        self,
+        knowledge_id: str,
+        new_confidence: float,
+    ) -> bool:
+        """Update domain knowledge confidence score."""
+        data = self._read_json(self._files["domain_knowledge"])
+
+        for i, record in enumerate(data):
+            if record.get("id") == knowledge_id:
+                data[i]["confidence"] = new_confidence
+                data[i]["last_verified"] = datetime.now(timezone.utc).isoformat()
+                self._write_json(self._files["domain_knowledge"], data)
+                return True
+
+        return False
+
     # ==================== DELETE OPERATIONS ====================
+
+    def delete_heuristic(self, heuristic_id: str) -> bool:
+        """Delete a single heuristic by ID."""
+        data = self._read_json(self._files["heuristics"])
+        original_count = len(data)
+
+        filtered = [r for r in data if r.get("id") != heuristic_id]
+        self._write_json(self._files["heuristics"], filtered)
+
+        deleted = original_count != len(filtered)
+        if deleted:
+            logger.debug(f"Deleted heuristic: {heuristic_id}")
+        return deleted
+
+    def delete_outcome(self, outcome_id: str) -> bool:
+        """Delete a single outcome by ID."""
+        data = self._read_json(self._files["outcomes"])
+        original_count = len(data)
+
+        filtered = [r for r in data if r.get("id") != outcome_id]
+        self._write_json(self._files["outcomes"], filtered)
+
+        deleted = original_count != len(filtered)
+        if deleted:
+            logger.debug(f"Deleted outcome: {outcome_id}")
+        return deleted
+
+    def delete_domain_knowledge(self, knowledge_id: str) -> bool:
+        """Delete a single domain knowledge entry by ID."""
+        data = self._read_json(self._files["domain_knowledge"])
+        original_count = len(data)
+
+        filtered = [r for r in data if r.get("id") != knowledge_id]
+        self._write_json(self._files["domain_knowledge"], filtered)
+
+        deleted = original_count != len(filtered)
+        if deleted:
+            logger.debug(f"Deleted domain knowledge: {knowledge_id}")
+        return deleted
+
+    def delete_anti_pattern(self, anti_pattern_id: str) -> bool:
+        """Delete a single anti-pattern by ID."""
+        data = self._read_json(self._files["anti_patterns"])
+        original_count = len(data)
+
+        filtered = [r for r in data if r.get("id") != anti_pattern_id]
+        self._write_json(self._files["anti_patterns"], filtered)
+
+        deleted = original_count != len(filtered)
+        if deleted:
+            logger.debug(f"Deleted anti-pattern: {anti_pattern_id}")
+        return deleted
 
     def delete_outcomes_older_than(
         self,

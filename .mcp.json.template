@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/mcp-schema.json",
+  "mcpServers": {
+    "alma-memory": {
+      "command": "python",
+      "args": ["-m", "alma.mcp", "--config", ".alma/config.yaml"],
+      "cwd": "${projectRoot}",
+      "env": {
+        "PYTHONPATH": "${projectRoot}"
+      }
+    }
+  }
+}
