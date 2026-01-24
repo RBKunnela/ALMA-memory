@@ -78,6 +78,8 @@ alma.learn(
 | **5 Memory Types** | Heuristics, Outcomes, Preferences, Domain Knowledge, Anti-patterns |
 | **Semantic Search** | Vector similarity for relevant memory retrieval |
 | **Scoped Learning** | Agents only learn from their domain (Helena can't learn backend) |
+| **LLM Fact Extraction** | Automatic learning from conversations (NEW) |
+| **Graph Memory** | Entity relationships via Neo4j (NEW) |
 | **Confidence Decay** | Old memories fade, recent ones stay strong |
 | **Forgetting** | Automatic cleanup of low-value memories |
 
@@ -174,6 +176,65 @@ manager.create_handoff("Helena", context.session_id,
     next_steps=["Test refresh tokens", "Add error cases"],
 )
 ```
+
+### LLM-Powered Fact Extraction (NEW in v0.5.0)
+
+Automatically extract and learn from conversations - no manual `learn()` calls needed:
+
+```python
+from alma.extraction import AutoLearner
+
+alma = ALMA.from_config(".alma/config.yaml")
+auto_learner = AutoLearner(alma)
+
+# After a conversation, automatically extract learnings
+results = auto_learner.learn_from_conversation(
+    messages=[
+        {"role": "user", "content": "Test the login form"},
+        {"role": "assistant", "content": "I used incremental validation which worked well..."},
+    ],
+    agent="helena",
+)
+
+print(f"Extracted {results['extracted_count']} facts")
+print(f"Committed {results['committed_count']} to memory")
+```
+
+Supports OpenAI, Anthropic, or rule-based extraction (free, offline).
+
+### Graph Memory (NEW in v0.5.0)
+
+Capture entity relationships for complex reasoning:
+
+```python
+from alma.graph import create_graph_store, EntityExtractor
+
+# Connect to Neo4j
+graph = create_graph_store(
+    "neo4j",
+    uri="neo4j+s://xxx.databases.neo4j.io",
+    username="neo4j",
+    password="your-password",
+)
+
+# Extract entities and relationships from text
+extractor = EntityExtractor()
+entities, relationships = extractor.extract(
+    "Alice from Acme Corp reviewed the PR that Bob submitted."
+)
+
+# Store in graph
+for entity in entities:
+    graph.add_entity(entity)
+for rel in relationships:
+    graph.add_relationship(rel)
+
+# Query relationships
+result = graph.traverse("alice-id", max_hops=2)
+print(f"Found {len(result.entities)} related entities")
+```
+
+Supports Neo4j, in-memory (testing), with Amazon Neptune coming soon.
 
 ### MCP Server Integration
 
