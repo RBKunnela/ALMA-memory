@@ -1,10 +1,223 @@
 # ALMA - Agent Learning Memory Architecture
 
-> A reusable harness pattern for creating AI agents that learn and improve over time through structured memory - without model weight updates.
+[![PyPI version](https://badge.fury.io/py/alma-memory.svg)](https://pypi.org/project/alma-memory/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> Persistent memory for AI agents that learn and improve over time - without model weight updates.
+
+## What is ALMA?
+
+ALMA is a **memory framework** that makes AI agents appear to "learn" by:
+1. **Storing** outcomes, strategies, and knowledge from past tasks
+2. **Retrieving** relevant memories before each new task
+3. **Injecting** that knowledge into prompts
+4. **Learning** from new outcomes to improve future performance
+
+**No fine-tuning. No model changes. Just smarter prompts.**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  BEFORE TASK: Retrieve relevant memories                        │
+│  ├── "Last time you tested forms, incremental validation worked"│
+│  ├── "User prefers verbose output"                              │
+│  └── "Don't use sleep() - causes flaky tests"                   │
+├─────────────────────────────────────────────────────────────────┤
+│  DURING TASK: Agent executes with injected knowledge            │
+├─────────────────────────────────────────────────────────────────┤
+│  AFTER TASK: Learn from outcome                                 │
+│  └── Success? → New heuristic. Failure? → Anti-pattern.         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Installation
+
+```bash
+pip install alma-memory
+```
+
+## Quick Start
+
+```python
+from alma import ALMA
+
+# Initialize
+alma = ALMA.from_config(".alma/config.yaml")
+
+# Before task: Get relevant memories
+memories = alma.retrieve(
+    task="Test the login form validation",
+    agent="helena",
+    top_k=5
+)
+
+# Inject into your prompt
+prompt = f"""
+## Your Task
+Test the login form validation
+
+## Knowledge from Past Runs
+{memories.to_prompt()}
+"""
+
+# After task: Learn from outcome
+alma.learn(
+    agent="helena",
+    task="Test login form",
+    outcome="success",
+    strategy_used="Tested empty fields, invalid email, valid submission",
+)
+```
+
+## Features
+
+### Core Memory System
+
+| Feature | Description |
+|---------|-------------|
+| **5 Memory Types** | Heuristics, Outcomes, Preferences, Domain Knowledge, Anti-patterns |
+| **Semantic Search** | Vector similarity for relevant memory retrieval |
+| **Scoped Learning** | Agents only learn from their domain (Helena can't learn backend) |
+| **Confidence Decay** | Old memories fade, recent ones stay strong |
+| **Forgetting** | Automatic cleanup of low-value memories |
+
+### Storage Backends
+
+| Backend | Use Case | Vector Search |
+|---------|----------|---------------|
+| **SQLite + FAISS** | Local development | Yes |
+| **Azure Cosmos DB** | Production | Yes (native) |
+| **File-based** | Testing/Simple use | No |
+
+### Domain Memory Factory (NEW in v0.3.0)
+
+Create ALMA instances for any domain - not just coding:
+
+```python
+from alma.domains import DomainMemoryFactory, get_research_schema
+
+# Pre-built schemas
+factory = DomainMemoryFactory()
+alma = factory.create_alma(get_research_schema(), "my-research-project")
+
+# Or create custom domains
+schema = factory.create_schema("sales", {
+    "entity_types": [
+        {"name": "lead", "attributes": ["stage", "value"]},
+        {"name": "objection", "attributes": ["type", "response"]},
+    ],
+    "learning_categories": [
+        "objection_handling",
+        "closing_techniques",
+        "qualification_patterns",
+    ],
+})
+```
+
+**Pre-built schemas:** `coding`, `research`, `sales`, `general`, `customer_support`, `content_creation`
+
+### Progress Tracking (NEW in v0.3.0)
+
+Track work items and get intelligent next-task suggestions:
+
+```python
+from alma.progress import ProgressTracker
+
+tracker = ProgressTracker("my-project")
+
+# Create work items
+item = tracker.create_work_item(
+    title="Fix authentication bug",
+    description="Login fails on mobile devices",
+    priority=80,
+    agent="Victor",
+)
+
+# Update status
+tracker.update_status(item.id, "in_progress")
+
+# Get next task (by priority, quick wins, or unblock others)
+next_task = tracker.get_next_item(strategy="priority")
+
+# Get progress summary
+summary = tracker.get_progress_summary()
+print(f"Done: {summary.done}/{summary.total} ({summary.completion_percentage}%)")
+```
+
+### Session Handoff (NEW in v0.3.0)
+
+Maintain context across sessions - no more "starting fresh":
+
+```python
+from alma.session import SessionManager
+
+manager = SessionManager("my-project")
+
+# Start session (loads previous context)
+context = manager.start_session(agent="Helena", goal="Complete auth testing")
+
+# Previous session info is available
+if context.previous_handoff:
+    print(f"Last action: {context.previous_handoff.last_action}")
+    print(f"Blockers: {context.previous_handoff.blockers}")
+
+# Track decisions and blockers during work
+manager.update_session("Helena", context.session_id,
+    decision="Using OAuth mock for testing",
+    blocker="Staging API is down",
+)
+
+# End session with handoff for next time
+manager.create_handoff("Helena", context.session_id,
+    last_action="completed_oauth_tests",
+    last_outcome="success",
+    next_steps=["Test refresh tokens", "Add error cases"],
+)
+```
+
+### MCP Server Integration
+
+Expose ALMA to Claude Code or any MCP-compatible client:
+
+```bash
+# Start MCP server
+python -m alma.mcp --config .alma/config.yaml
+```
+
+```json
+// .mcp.json
+{
+  "mcpServers": {
+    "alma-memory": {
+      "command": "python",
+      "args": ["-m", "alma.mcp", "--config", ".alma/config.yaml"]
+    }
+  }
+}
+```
+
+**Available MCP Tools:**
+- `alma_retrieve` - Get memories for a task
+- `alma_learn` - Record task outcome
+- `alma_add_preference` - Add user preference
+- `alma_add_knowledge` - Add domain knowledge
+- `alma_forget` - Prune stale memories
+- `alma_stats` - Get memory statistics
+- `alma_health` - Health check
+
+## Memory Types
+
+| Type | What It Stores | Example |
+|------|----------------|---------|
+| **Heuristic** | Learned strategies | "For forms with >5 fields, test validation incrementally" |
+| **Outcome** | Task results | "Login test succeeded using JWT token strategy" |
+| **Preference** | User constraints | "User prefers verbose test output" |
+| **Domain Knowledge** | Accumulated facts | "Login uses OAuth 2.0 with 24h token expiry" |
+| **Anti-pattern** | What NOT to do | "Don't use sleep() for async waits - causes flaky tests" |
 
 ## The Harness Pattern
 
-ALMA isn't just agent memory - it's a **generalized framework** for any tool-using workflow:
+ALMA implements a generalized harness pattern for any tool-using agent:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -18,170 +231,18 @@ ALMA isn't just agent memory - it's a **generalized framework** for any tool-usi
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**The Flow:**
-1. **Pre-run**: Inject relevant memory slices ("Past successes in similar tasks")
-2. **Run**: Agent acts using tools, logs reflections
-3. **Post-run**: Update memory schema
-4. **Repeat**: Agent appears to "learn" without weight changes
-
-## Why This Matters
-
-```
-Code exists       ≠ Knowledge retained
-Knowledge retained ≠ Knowledge scoped
-Knowledge scoped   ≠ Knowledge retrieved efficiently
-```
-
-ALMA solves all three through **scoped memory injection**. Agents get smarter via better-informed prompts, not model changes.
-
-## Supported Domains
-
-ALMA works for ANY tool-using workflow:
-
-| Domain | Agents | Use Case |
-|--------|--------|----------|
-| **Coding** | Helena, Victor | Testing, API development |
-| **Research** | Researcher | Market analysis, competitive intelligence |
-| **Content** | Copywriter, Documenter | Marketing, documentation |
-| **Operations** | Support | Customer service, automation |
-
-## Quick Start
-
-### Installation
-
-```bash
-pip install alma-memory
-# or from source
-pip install git+https://github.com/RBKunnela/ALMA-memory.git
-```
-
-### Using the Harness Pattern
-
 ```python
-from alma import ALMA, create_harness, Context
+from alma import create_harness, Context
 
-# Initialize ALMA
-alma = ALMA.from_config(".alma/config.yaml")
-
-# Create a domain-specific harness
+# Create domain-specific harness
 harness = create_harness("coding", "helena", alma)
 
-# Define task context
-context = Context(
+# Run with automatic memory injection
+result = harness.run(Context(
     task="Test the login form validation",
     project_id="my-app",
-    user_id="developer-1",
-    inputs={"component": "LoginForm", "priority": "high"}
-)
-
-# Run with memory injection
-result = harness.run(context)
-
-# The harness automatically:
-# 1. Retrieved relevant memories (testing strategies, past outcomes)
-# 2. Built the prompt with injected knowledge
-# 3. Will log the outcome for future learning
+))
 ```
-
-### Creating Custom Agents
-
-```python
-from alma import (
-    ALMA, Harness, Setting, Agent, MemorySchema, Tool, ToolType
-)
-
-# Define the environment
-setting = Setting(
-    name="Bio Research Environment",
-    description="Tools for biological data analysis",
-    tools=[
-        Tool(
-            name="sequence_search",
-            description="Search genomic databases",
-            tool_type=ToolType.SEARCH,
-        ),
-        Tool(
-            name="structure_analysis",
-            description="Analyze protein structures",
-            tool_type=ToolType.ANALYSIS,
-        ),
-    ],
-    global_constraints=[
-        "Cite all data sources",
-        "Note confidence levels",
-    ],
-)
-
-# Define what this agent can learn
-schema = MemorySchema(
-    domain="bioinformatics",
-    description="Patterns for biological data analysis",
-    learnable_categories=[
-        "search_refinements",
-        "analysis_patterns",
-        "data_interpretation",
-    ],
-    forbidden_categories=[
-        "medical_diagnosis",  # Out of scope
-    ],
-    min_occurrences=5,
-)
-
-# Create the agent
-agent = Agent(
-    name="bio_researcher",
-    role="Bioinformatics Analyst",
-    description="Expert in genomic analysis and protein structure prediction",
-    memory_schema=schema,
-)
-
-# Assemble the harness
-alma = ALMA.from_config(".alma/config.yaml")
-harness = Harness(setting=setting, agent=agent, alma=alma)
-```
-
-### Basic Memory Operations
-
-```python
-from alma import ALMA
-
-alma = ALMA.from_config(".alma/config.yaml")
-
-# Retrieve relevant memories
-memories = alma.retrieve(
-    task="Test the login form validation",
-    agent="helena",
-    top_k=5
-)
-
-# Inject into prompt
-prompt = f"""
-## Your Task
-Test the login form validation
-
-## Relevant Knowledge (from past runs)
-{memories.to_prompt()}
-"""
-
-# After task completion, learn from the outcome
-alma.learn(
-    agent="helena",
-    task="Test login form",
-    outcome="success",
-    strategy_used="Tested empty fields, invalid email, valid submission",
-    feedback="User confirmed tests were thorough"
-)
-```
-
-## Memory Types
-
-| Type | What It Stores | Example |
-|------|----------------|---------|
-| **Heuristic** | Learned strategies | "For forms with >5 fields, test validation incrementally" |
-| **Outcome** | Task results | "Login test succeeded using JWT token strategy" |
-| **Preference** | User constraints | "User prefers verbose test output" |
-| **Domain Knowledge** | Accumulated facts | "Login uses OAuth 2.0 with 24h token expiry" |
-| **Anti-pattern** | What NOT to do | "Don't use sleep() for async waits - causes flaky tests" |
 
 ## Configuration
 
@@ -191,14 +252,6 @@ Create `.alma/config.yaml`:
 alma:
   project_id: "my-project"
   storage: sqlite  # or "azure" for production
-
-  domains:
-    coding:
-      enabled: true
-      agents: [helena, victor]
-    research:
-      enabled: true
-      agents: [researcher]
 
   agents:
     helena:
@@ -210,69 +263,123 @@ alma:
         - backend_logic
       min_occurrences_for_heuristic: 3
 
-    researcher:
-      domain: research
+    victor:
+      domain: coding
       can_learn:
-        - trend_patterns
-        - source_reliability
+        - api_patterns
+        - database_queries
       cannot_learn:
-        - code_implementation
-      min_occurrences_for_heuristic: 5
+        - frontend_selectors
+      min_occurrences_for_heuristic: 3
 ```
-
-## Storage Backends
-
-| Backend | Use Case | Vector Search |
-|---------|----------|---------------|
-| `azure` | Production | Cosmos DB with vector search |
-| `sqlite` | Local dev | SQLite + FAISS |
-| `file` | Testing | JSON files (no vector search) |
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      HARNESS PATTERN                            │
+│                        ALMA v0.3.0                              │
+├─────────────────────────────────────────────────────────────────┤
+│  HARNESS LAYER                                                  │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐    │
 │  │ Setting  │  │ Context  │  │  Agent   │  │MemorySchema  │    │
-│  │ (tools)  │  │ (task)   │  │(executor)│  │  (learning)  │    │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                        ALMA CORE                                │
-│  ┌────────────┐  ┌────────────┐  ┌────────────────────────┐    │
-│  │ Retrieval  │  │  Learning  │  │      Storage           │    │
-│  │  Engine    │  │  Protocol  │  │ (Azure/SQLite/File)    │    │
-│  └────────────┘  └────────────┘  └────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                     MEMORY TYPES                                │
+├─────────────────────────────────────────────────────────────────┤
+│  NEW IN v0.3.0                                                  │
+│  ┌──────────────┐  ┌────────────────┐  ┌───────────────────┐   │
+│  │ Progress     │  │ Session        │  │ Domain Memory     │   │
+│  │ Tracking     │  │ Handoff        │  │ Factory           │   │
+│  └──────────────┘  └────────────────┘  └───────────────────┘   │
+├─────────────────────────────────────────────────────────────────┤
+│  CORE LAYER                                                     │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  │
-│  │ Heuristics │  │  Outcomes  │  │Preferences │  │Anti-patt.│  │
+│  │ Retrieval  │  │  Learning  │  │  Caching   │  │Forgetting│  │
+│  │  Engine    │  │  Protocol  │  │   Layer    │  │Mechanism │  │
 │  └────────────┘  └────────────┘  └────────────┘  └──────────┘  │
+├─────────────────────────────────────────────────────────────────┤
+│  STORAGE LAYER                                                  │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐    │
+│  │ SQLite + FAISS │  │  Azure Cosmos  │  │   File-based   │    │
+│  └────────────────┘  └────────────────┘  └────────────────┘    │
+├─────────────────────────────────────────────────────────────────┤
+│  INTEGRATION LAYER                                              │
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │                    MCP Server                           │    │
+│  └────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Documentation
-
-- [PRD](docs/architecture/PRD.md) - Full product requirements
-- [Harness Pattern](docs/guides/harness-pattern.md) - Deep dive on the pattern
-- [API Reference](docs/api/) - Coming soon
-
-## Status
+## Development Status
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Core Abstractions | Done |
-| 2 | Local Storage (SQLite + FAISS) | Done |
-| 3 | Retrieval Engine | In Progress |
-| 4 | Learning Protocols | Todo |
-| 5 | Agent Integration (Helena + Victor) | Todo |
-| 6 | Azure Cosmos DB | Todo |
-| 7 | Cache Layer | Todo |
-| 8 | Forgetting Mechanism | Todo |
+| 1 | Core Abstractions | ✅ Done |
+| 2 | Local Storage (SQLite + FAISS) | ✅ Done |
+| 3 | Retrieval Engine | ✅ Done |
+| 4 | Learning Protocols | ✅ Done |
+| 5 | Agent Integration | ✅ Done |
+| 6 | Azure Cosmos DB | ✅ Done |
+| 7 | Cache Layer | ✅ Done |
+| 8 | Forgetting Mechanism | ✅ Done |
+| 9 | MCP Server + Testing Suite | ✅ Done |
+| 10 | Progress, Sessions, Domains | ✅ Done |
+| 11 | Initializer Agent Pattern | Planned |
+| 12 | Forward-Looking Confidence | Planned |
+
+## API Reference
+
+### Core
+
+```python
+# Initialize
+alma = ALMA.from_config(".alma/config.yaml")
+
+# Retrieve memories
+memories = alma.retrieve(task, agent, top_k=5)
+
+# Learn from outcome
+alma.learn(agent, task, outcome, strategy_used, feedback=None)
+
+# Add knowledge directly
+alma.add_preference(user_id, category, preference)
+alma.add_domain_knowledge(agent, domain, fact)
+
+# Memory hygiene
+alma.forget(agent, older_than_days=90, min_confidence=0.3)
+```
+
+### Progress Tracking
+
+```python
+from alma.progress import ProgressTracker, WorkItem
+
+tracker = ProgressTracker("project-id")
+item = tracker.create_work_item(title, description, priority=50)
+tracker.update_status(item.id, "in_progress")  # or "done", "blocked"
+next_item = tracker.get_next_item(strategy="priority")
+summary = tracker.get_progress_summary(agent="helena")
+```
+
+### Session Management
+
+```python
+from alma.session import SessionManager
+
+manager = SessionManager("project-id")
+context = manager.start_session(agent, goal)
+manager.update_session(agent, session_id, decision=..., blocker=...)
+manager.create_handoff(agent, session_id, last_action, outcome, next_steps)
+reload_str = manager.get_quick_reload(agent)
+```
+
+### Domain Factory
+
+```python
+from alma.domains import DomainMemoryFactory, get_coding_schema
+
+factory = DomainMemoryFactory()
+schema = get_coding_schema()  # or research, sales, general
+alma = factory.create_alma(schema, "project-id")
+```
 
 ## License
 
@@ -281,3 +388,7 @@ MIT
 ## Contributing
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+**Built for AI agents that get better with every task.**
