@@ -14,7 +14,7 @@ This makes any tool-using agent appear to "learn" by injecting relevant
 memory slices before each run and updating memory after.
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 # Core
 from alma.core import ALMA
