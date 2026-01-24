@@ -1,6 +1,9 @@
 name: Publish to PyPI
 
 on:
+  push:
+    tags:
+      - 'v*'  # Triggers on any tag starting with 'v' (v0.3.0, v1.0.0, etc.)
   release:
     types: [published]
   workflow_dispatch:  # Allow manual trigger

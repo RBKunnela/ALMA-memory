@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alma-memory"
-version = "0.2.0"
+version = "0.3.0"
 description = "Agent Learning Memory Architecture - Persistent memory for AI agents"
 readme = "README.md"
 license = {text = "MIT"}
