@@ -14,7 +14,7 @@ This makes any tool-using agent appear to "learn" by injecting relevant
 memory slices before each run and updating memory after.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 # Core
 from alma.core import ALMA
@@ -47,6 +47,35 @@ from alma.harness.domains import (
     create_harness,
 )
 
+# Progress Tracking (Phase 10)
+from alma.progress import (
+    WorkItem,
+    WorkItemStatus,
+    ProgressLog,
+    ProgressSummary,
+    ProgressTracker,
+)
+
+# Session Management (Phase 10)
+from alma.session import (
+    SessionHandoff,
+    SessionContext,
+    SessionOutcome,
+    SessionManager,
+)
+
+# Domain Memory Factory (Phase 10)
+from alma.domains import (
+    DomainSchema,
+    EntityType,
+    RelationshipType,
+    DomainMemoryFactory,
+    get_coding_schema,
+    get_research_schema,
+    get_sales_schema,
+    get_general_schema,
+)
+
 __all__ = [
     # Core
     "ALMA",
@@ -72,4 +101,24 @@ __all__ = [
     "ContentDomain",
     "OperationsDomain",
     "create_harness",
+    # Progress Tracking
+    "WorkItem",
+    "WorkItemStatus",
+    "ProgressLog",
+    "ProgressSummary",
+    "ProgressTracker",
+    # Session Management
+    "SessionHandoff",
+    "SessionContext",
+    "SessionOutcome",
+    "SessionManager",
+    # Domain Memory Factory
+    "DomainSchema",
+    "EntityType",
+    "RelationshipType",
+    "DomainMemoryFactory",
+    "get_coding_schema",
+    "get_research_schema",
+    "get_sales_schema",
+    "get_general_schema",
 ]

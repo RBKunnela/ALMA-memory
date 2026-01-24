@@ -910,3 +910,104 @@ class SQLiteStorage(StorageBackend):
             or datetime.now(timezone.utc),
             metadata=json.loads(row["metadata"]) if row["metadata"] else {},
         )
+
+    # ===== Additional abstract method implementations =====
+
+    def update_heuristic_confidence(
+        self,
+        heuristic_id: str,
+        new_confidence: float,
+    ) -> bool:
+        """Update confidence score for a heuristic."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "UPDATE heuristics SET confidence = ? WHERE id = ?",
+                (new_confidence, heuristic_id),
+            )
+            return cursor.rowcount > 0
+
+    def update_knowledge_confidence(
+        self,
+        knowledge_id: str,
+        new_confidence: float,
+    ) -> bool:
+        """Update confidence score for domain knowledge."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "UPDATE domain_knowledge SET confidence = ? WHERE id = ?",
+                (new_confidence, knowledge_id),
+            )
+            return cursor.rowcount > 0
+
+    def delete_heuristic(self, heuristic_id: str) -> bool:
+        """Delete a heuristic by ID."""
+        with self._get_connection() as conn:
+            # Also remove from embedding index
+            conn.execute(
+                "DELETE FROM embeddings WHERE memory_type = 'heuristic' AND memory_id = ?",
+                (heuristic_id,),
+            )
+            cursor = conn.execute(
+                "DELETE FROM heuristics WHERE id = ?",
+                (heuristic_id,),
+            )
+            if cursor.rowcount > 0:
+                # Rebuild index if we had one
+                if "heuristic" in self._indices:
+                    self._load_faiss_indices()
+                return True
+            return False
+
+    def delete_outcome(self, outcome_id: str) -> bool:
+        """Delete an outcome by ID."""
+        with self._get_connection() as conn:
+            # Also remove from embedding index
+            conn.execute(
+                "DELETE FROM embeddings WHERE memory_type = 'outcome' AND memory_id = ?",
+                (outcome_id,),
+            )
+            cursor = conn.execute(
+                "DELETE FROM outcomes WHERE id = ?",
+                (outcome_id,),
+            )
+            if cursor.rowcount > 0:
+                if "outcome" in self._indices:
+                    self._load_faiss_indices()
+                return True
+            return False
+
+    def delete_domain_knowledge(self, knowledge_id: str) -> bool:
+        """Delete domain knowledge by ID."""
+        with self._get_connection() as conn:
+            # Also remove from embedding index
+            conn.execute(
+                "DELETE FROM embeddings WHERE memory_type = 'domain_knowledge' AND memory_id = ?",
+                (knowledge_id,),
+            )
+            cursor = conn.execute(
+                "DELETE FROM domain_knowledge WHERE id = ?",
+                (knowledge_id,),
+            )
+            if cursor.rowcount > 0:
+                if "domain_knowledge" in self._indices:
+                    self._load_faiss_indices()
+                return True
+            return False
+
+    def delete_anti_pattern(self, anti_pattern_id: str) -> bool:
+        """Delete an anti-pattern by ID."""
+        with self._get_connection() as conn:
+            # Also remove from embedding index
+            conn.execute(
+                "DELETE FROM embeddings WHERE memory_type = 'anti_pattern' AND memory_id = ?",
+                (anti_pattern_id,),
+            )
+            cursor = conn.execute(
+                "DELETE FROM anti_patterns WHERE id = ?",
+                (anti_pattern_id,),
+            )
+            if cursor.rowcount > 0:
+                if "anti_pattern" in self._indices:
+                    self._load_faiss_indices()
+                return True
+            return False
