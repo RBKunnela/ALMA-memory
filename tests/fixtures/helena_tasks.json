@@ -1,0 +1,327 @@
+[
+  {
+    "task_id": "helena-001",
+    "task_type": "form_testing",
+    "description": "Test login form validation",
+    "component_type": "form",
+    "page_url": "/login",
+    "expected_selectors": [
+      "[data-testid='email']",
+      "[data-testid='password']",
+      "[data-testid='submit']"
+    ],
+    "test_scenarios": [
+      {
+        "name": "empty_form_submit",
+        "action": "submit empty form",
+        "expected_result": "validation errors displayed"
+      },
+      {
+        "name": "invalid_email",
+        "action": "enter invalid email format",
+        "expected_result": "email validation error"
+      },
+      {
+        "name": "valid_submission",
+        "action": "enter valid credentials and submit",
+        "expected_result": "successful login redirect"
+      }
+    ],
+    "accessibility_checks": [
+      "all inputs have labels",
+      "error messages announced to screen readers",
+      "keyboard navigation works"
+    ]
+  },
+  {
+    "task_id": "helena-002",
+    "task_type": "accessibility_testing",
+    "description": "Validate navigation menu accessibility",
+    "component_type": "navigation",
+    "page_url": "/",
+    "expected_selectors": [
+      "[role='navigation']",
+      "[data-testid='nav-menu']",
+      "[data-testid='nav-toggle']"
+    ],
+    "test_scenarios": [
+      {
+        "name": "keyboard_navigation",
+        "action": "navigate menu with Tab and Arrow keys",
+        "expected_result": "all items reachable"
+      },
+      {
+        "name": "screen_reader_announce",
+        "action": "verify ARIA labels",
+        "expected_result": "all items have proper labels"
+      }
+    ],
+    "accessibility_checks": [
+      "proper heading hierarchy",
+      "skip-to-content link exists",
+      "focus visible on all interactive elements"
+    ]
+  },
+  {
+    "task_id": "helena-003",
+    "task_type": "visual_testing",
+    "description": "Test responsive layout on dashboard",
+    "component_type": "dashboard",
+    "page_url": "/dashboard",
+    "viewports": [
+      {"width": 1920, "height": 1080, "name": "desktop"},
+      {"width": 768, "height": 1024, "name": "tablet"},
+      {"width": 375, "height": 812, "name": "mobile"}
+    ],
+    "expected_selectors": [
+      "[data-testid='sidebar']",
+      "[data-testid='main-content']",
+      "[data-testid='header']"
+    ],
+    "test_scenarios": [
+      {
+        "name": "desktop_layout",
+        "action": "verify sidebar visible",
+        "expected_result": "sidebar shows full menu"
+      },
+      {
+        "name": "mobile_layout",
+        "action": "verify hamburger menu",
+        "expected_result": "sidebar hidden, toggle visible"
+      }
+    ]
+  },
+  {
+    "task_id": "helena-004",
+    "task_type": "ui_component_patterns",
+    "description": "Test modal dialog interactions",
+    "component_type": "modal",
+    "page_url": "/settings",
+    "expected_selectors": [
+      "[data-testid='modal-trigger']",
+      "[role='dialog']",
+      "[data-testid='modal-close']",
+      "[data-testid='modal-confirm']"
+    ],
+    "test_scenarios": [
+      {
+        "name": "open_close",
+        "action": "open modal and close with X button",
+        "expected_result": "modal opens and closes"
+      },
+      {
+        "name": "escape_key_close",
+        "action": "open modal and press Escape",
+        "expected_result": "modal closes"
+      },
+      {
+        "name": "focus_trap",
+        "action": "tab through modal elements",
+        "expected_result": "focus stays within modal"
+      },
+      {
+        "name": "backdrop_click",
+        "action": "click outside modal",
+        "expected_result": "modal closes (if dismissible)"
+      }
+    ]
+  },
+  {
+    "task_id": "helena-005",
+    "task_type": "form_testing",
+    "description": "Test multi-step form wizard",
+    "component_type": "wizard",
+    "page_url": "/onboarding",
+    "expected_selectors": [
+      "[data-testid='step-indicator']",
+      "[data-testid='wizard-next']",
+      "[data-testid='wizard-back']",
+      "[data-testid='wizard-submit']"
+    ],
+    "test_scenarios": [
+      {
+        "name": "step_progression",
+        "action": "complete each step",
+        "expected_result": "progress indicator updates"
+      },
+      {
+        "name": "step_validation",
+        "action": "try to proceed with invalid data",
+        "expected_result": "prevented from advancing"
+      },
+      {
+        "name": "back_navigation",
+        "action": "go back to previous step",
+        "expected_result": "data preserved"
+      },
+      {
+        "name": "final_submission",
+        "action": "complete all steps and submit",
+        "expected_result": "success confirmation"
+      }
+    ]
+  },
+  {
+    "task_id": "helena-006",
+    "task_type": "testing_strategies",
+    "description": "Test data table with sorting and filtering",
+    "component_type": "table",
+    "page_url": "/users",
+    "expected_selectors": [
+      "[data-testid='data-table']",
+      "[data-testid='sort-header']",
+      "[data-testid='filter-input']",
+      "[data-testid='pagination']"
+    ],
+    "test_scenarios": [
+      {
+        "name": "column_sorting",
+        "action": "click column header",
+        "expected_result": "data sorted accordingly"
+      },
+      {
+        "name": "text_filter",
+        "action": "type in filter input",
+        "expected_result": "rows filtered"
+      },
+      {
+        "name": "pagination",
+        "action": "navigate pages",
+        "expected_result": "correct data shown per page"
+      },
+      {
+        "name": "empty_state",
+        "action": "filter with no matches",
+        "expected_result": "empty state message"
+      }
+    ]
+  },
+  {
+    "task_id": "helena-007",
+    "task_type": "selector_patterns",
+    "description": "Test dropdown and combobox interactions",
+    "component_type": "dropdown",
+    "page_url": "/filters",
+    "expected_selectors": [
+      "[data-testid='dropdown-trigger']",
+      "[role='listbox']",
+      "[role='option']",
+      "[data-testid='combobox-input']"
+    ],
+    "test_scenarios": [
+      {
+        "name": "keyboard_select",
+        "action": "use arrow keys to select",
+        "expected_result": "option selected"
+      },
+      {
+        "name": "type_to_filter",
+        "action": "type to filter options",
+        "expected_result": "matching options shown"
+      },
+      {
+        "name": "multi_select",
+        "action": "select multiple items",
+        "expected_result": "all selections tracked"
+      }
+    ]
+  },
+  {
+    "task_id": "helena-008",
+    "task_type": "form_testing",
+    "description": "Test file upload component",
+    "component_type": "file_upload",
+    "page_url": "/upload",
+    "expected_selectors": [
+      "[data-testid='file-input']",
+      "[data-testid='dropzone']",
+      "[data-testid='file-preview']",
+      "[data-testid='upload-progress']"
+    ],
+    "test_scenarios": [
+      {
+        "name": "file_select",
+        "action": "select file via input",
+        "expected_result": "file preview shown"
+      },
+      {
+        "name": "drag_drop",
+        "action": "drag file to dropzone",
+        "expected_result": "file accepted"
+      },
+      {
+        "name": "invalid_type",
+        "action": "upload unsupported file type",
+        "expected_result": "error message"
+      },
+      {
+        "name": "size_limit",
+        "action": "upload file exceeding size limit",
+        "expected_result": "size error message"
+      }
+    ]
+  },
+  {
+    "task_id": "helena-009",
+    "task_type": "accessibility_testing",
+    "description": "Test toast notification accessibility",
+    "component_type": "toast",
+    "page_url": "/notifications",
+    "expected_selectors": [
+      "[role='alert']",
+      "[role='status']",
+      "[data-testid='toast-close']"
+    ],
+    "test_scenarios": [
+      {
+        "name": "screen_reader_announce",
+        "action": "trigger notification",
+        "expected_result": "announced to screen reader"
+      },
+      {
+        "name": "auto_dismiss",
+        "action": "wait for timeout",
+        "expected_result": "toast disappears"
+      },
+      {
+        "name": "manual_dismiss",
+        "action": "click close button",
+        "expected_result": "toast removed immediately"
+      }
+    ]
+  },
+  {
+    "task_id": "helena-010",
+    "task_type": "testing_strategies",
+    "description": "Test infinite scroll behavior",
+    "component_type": "infinite_scroll",
+    "page_url": "/feed",
+    "expected_selectors": [
+      "[data-testid='feed-container']",
+      "[data-testid='feed-item']",
+      "[data-testid='loading-indicator']"
+    ],
+    "test_scenarios": [
+      {
+        "name": "initial_load",
+        "action": "page load",
+        "expected_result": "first batch of items"
+      },
+      {
+        "name": "scroll_load",
+        "action": "scroll to bottom",
+        "expected_result": "new items loaded"
+      },
+      {
+        "name": "loading_state",
+        "action": "scroll during load",
+        "expected_result": "loading indicator visible"
+      },
+      {
+        "name": "end_of_list",
+        "action": "reach end of data",
+        "expected_result": "end message shown"
+      }
+    ]
+  }
+]
