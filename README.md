@@ -322,8 +322,8 @@ alma:
 | 8 | Forgetting Mechanism | ✅ Done |
 | 9 | MCP Server + Testing Suite | ✅ Done |
 | 10 | Progress, Sessions, Domains | ✅ Done |
-| 11 | Initializer Agent Pattern | Planned |
-| 12 | Forward-Looking Confidence | Planned |
+| 11 | Initializer Agent Pattern | ✅ Done |
+| 12 | Forward-Looking Confidence | ✅ Done |
 
 ## API Reference
 
@@ -379,6 +379,56 @@ from alma.domains import DomainMemoryFactory, get_coding_schema
 factory = DomainMemoryFactory()
 schema = get_coding_schema()  # or research, sales, general
 alma = factory.create_alma(schema, "project-id")
+```
+
+### Session Initializer (NEW in v0.4.0)
+
+```python
+from alma.initializer import SessionInitializer
+
+initializer = SessionInitializer(alma)
+
+# Full initialization before starting work
+result = initializer.initialize(
+    project_id="my-project",
+    agent="Helena",
+    user_prompt="Test the login form validation",
+    project_path="/path/to/project",
+)
+
+# Inject into agent prompt
+prompt = f"""
+{result.to_prompt()}
+
+Now proceed with the first work item.
+"""
+```
+
+### Confidence Engine (NEW in v0.4.0)
+
+```python
+from alma.confidence import ConfidenceEngine
+
+engine = ConfidenceEngine(alma)
+
+# Assess a strategy before trying it
+signal = engine.assess_strategy(
+    strategy="Use incremental validation",
+    context="Testing a 5-field registration form",
+    agent="Helena",
+)
+
+print(f"Confidence: {signal.confidence_score:.0%}")
+print(f"Recommendation: {signal.recommendation}")
+# → Confidence: 78%
+# → Recommendation: yes
+
+# Rank multiple strategies
+rankings = engine.rank_strategies(
+    strategies=["Strategy A", "Strategy B", "Strategy C"],
+    context="Current task",
+    agent="Helena",
+)
 ```
 
 ## License

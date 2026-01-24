@@ -42,6 +42,12 @@ try:
     AZURE_COSMOS_AVAILABLE = True
 except ImportError:
     AZURE_COSMOS_AVAILABLE = False
+    # Define placeholders for type hints when SDK not available
+    CosmosClient = None  # type: ignore
+    PartitionKey = None  # type: ignore
+    exceptions = None  # type: ignore
+    ContainerProxy = Any  # type: ignore
+    DatabaseProxy = Any  # type: ignore
     logger.warning(
         "azure-cosmos package not installed. "
         "Install with: pip install azure-cosmos"
