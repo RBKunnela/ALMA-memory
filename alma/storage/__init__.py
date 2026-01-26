@@ -12,9 +12,18 @@ except ImportError:
     AzureCosmosStorage = None  # type: ignore
     _HAS_AZURE = False
 
+# PostgreSQL is optional - requires psycopg package
+try:
+    from alma.storage.postgresql import PostgreSQLStorage
+    _HAS_POSTGRES = True
+except ImportError:
+    PostgreSQLStorage = None  # type: ignore
+    _HAS_POSTGRES = False
+
 __all__ = [
     "StorageBackend",
     "FileBasedStorage",
     "SQLiteStorage",
     "AzureCosmosStorage",
+    "PostgreSQLStorage",
 ]

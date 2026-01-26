@@ -115,6 +115,9 @@ class ALMA:
         if storage_type == "azure":
             from alma.storage.azure_cosmos import AzureCosmosStorage
             return AzureCosmosStorage.from_config(config)
+        elif storage_type == "postgres":
+            from alma.storage.postgresql import PostgreSQLStorage
+            return PostgreSQLStorage.from_config(config)
         elif storage_type == "sqlite":
             from alma.storage.sqlite_local import SQLiteStorage
             return SQLiteStorage.from_config(config)

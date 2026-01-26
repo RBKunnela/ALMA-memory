@@ -5,8 +5,8 @@ alma:
   # Unique project identifier
   project_id: "your-project-name"
 
-  # Storage backend: "azure" | "sqlite" | "file"
-  storage: "sqlite"  # Use "azure" for production
+  # Storage backend: "azure" | "postgres" | "sqlite" | "file"
+  storage: "sqlite"  # Use "postgres" or "azure" for production
 
   # ==========================================================================
   # EMBEDDING CONFIGURATION
@@ -37,6 +37,26 @@ alma:
     openai_endpoint: ${AZURE_OPENAI_ENDPOINT}
     openai_key: ${KEYVAULT:alma-openai-key}
     openai_deployment: "text-embedding-3-small"
+
+  # ==========================================================================
+  # POSTGRESQL CONFIGURATION (only needed if storage: postgres)
+  # ==========================================================================
+  # PostgreSQL with pgvector extension for production deployments.
+  # Works with: Azure PostgreSQL, AWS RDS, self-hosted, etc.
+  #
+  # Prerequisites:
+  #   1. Install pgvector extension: CREATE EXTENSION vector;
+  #   2. Install ALMA with postgres support: pip install 'alma-memory[postgres]'
+  #
+  postgres:
+    host: ${POSTGRES_HOST}          # e.g., localhost or psql-xxx.postgres.database.azure.com
+    port: 5432
+    database: "alma_memory"
+    user: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}  # Or use: ${KEYVAULT:alma-postgres-password}
+    pool_size: 10                   # Connection pool size
+    schema: "public"                # Database schema
+    ssl_mode: "prefer"              # disable, allow, prefer, require, verify-ca, verify-full
 
   # ==========================================================================
   # DOMAINS - Define what types of workflows this project supports
