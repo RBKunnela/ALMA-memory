@@ -90,8 +90,8 @@ class TestALMAMCPServer:
         assert "result" in response
         tools = response["result"]["tools"]
 
-        # Should have 7 tools
-        assert len(tools) == 7
+        # Should have 8 tools (including alma_consolidate added in Phase 1)
+        assert len(tools) == 8
 
         tool_names = [t["name"] for t in tools]
         assert "alma_retrieve" in tool_names
@@ -101,6 +101,7 @@ class TestALMAMCPServer:
         assert "alma_forget" in tool_names
         assert "alma_stats" in tool_names
         assert "alma_health" in tool_names
+        assert "alma_consolidate" in tool_names  # Added in Phase 1
 
     @pytest.mark.asyncio
     async def test_tool_call_retrieve(self, mcp_server: ALMAMCPServer):
