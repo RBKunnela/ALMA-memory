@@ -462,14 +462,14 @@ class TestTimezoneAwareTimestamps:
         assert outcome.timestamp is not None
 
         # Verify timestamp is timezone-aware (tzinfo is not None)
-        assert (
-            outcome.timestamp.tzinfo is not None
-        ), "Outcome timestamp should be timezone-aware"
+        assert outcome.timestamp.tzinfo is not None, (
+            "Outcome timestamp should be timezone-aware"
+        )
 
         # Verify it's UTC
-        assert (
-            outcome.timestamp.tzinfo == timezone.utc
-        ), "Outcome timestamp should be in UTC"
+        assert outcome.timestamp.tzinfo == timezone.utc, (
+            "Outcome timestamp should be in UTC"
+        )
 
     def test_user_preference_default_timestamp_is_timezone_aware(self):
         """Test that UserPreference's default timestamp is timezone-aware."""
@@ -482,9 +482,9 @@ class TestTimezoneAwareTimestamps:
         )
 
         assert preference.timestamp is not None
-        assert (
-            preference.timestamp.tzinfo is not None
-        ), "UserPreference timestamp should be timezone-aware"
+        assert preference.timestamp.tzinfo is not None, (
+            "UserPreference timestamp should be timezone-aware"
+        )
         assert preference.timestamp.tzinfo == timezone.utc
 
     def test_domain_knowledge_default_timestamp_is_timezone_aware(self):
@@ -499,9 +499,9 @@ class TestTimezoneAwareTimestamps:
         )
 
         assert knowledge.last_verified is not None
-        assert (
-            knowledge.last_verified.tzinfo is not None
-        ), "DomainKnowledge last_verified should be timezone-aware"
+        assert knowledge.last_verified.tzinfo is not None, (
+            "DomainKnowledge last_verified should be timezone-aware"
+        )
         assert knowledge.last_verified.tzinfo == timezone.utc
 
     def test_anti_pattern_default_timestamp_is_timezone_aware(self):
@@ -519,9 +519,9 @@ class TestTimezoneAwareTimestamps:
 
         # Check created_at default
         assert anti_pattern.created_at is not None
-        assert (
-            anti_pattern.created_at.tzinfo is not None
-        ), "AntiPattern created_at should be timezone-aware"
+        assert anti_pattern.created_at.tzinfo is not None, (
+            "AntiPattern created_at should be timezone-aware"
+        )
         assert anti_pattern.created_at.tzinfo == timezone.utc
 
     def test_entity_default_timestamp_is_timezone_aware(self):
@@ -533,9 +533,9 @@ class TestTimezoneAwareTimestamps:
         )
 
         assert entity.created_at is not None
-        assert (
-            entity.created_at.tzinfo is not None
-        ), "Entity created_at should be timezone-aware"
+        assert entity.created_at.tzinfo is not None, (
+            "Entity created_at should be timezone-aware"
+        )
         assert entity.created_at.tzinfo == timezone.utc
 
     def test_relationship_default_timestamp_is_timezone_aware(self):
@@ -548,9 +548,9 @@ class TestTimezoneAwareTimestamps:
         )
 
         assert relationship.created_at is not None
-        assert (
-            relationship.created_at.tzinfo is not None
-        ), "Relationship created_at should be timezone-aware"
+        assert relationship.created_at.tzinfo is not None, (
+            "Relationship created_at should be timezone-aware"
+        )
         assert relationship.created_at.tzinfo == timezone.utc
 
     def test_all_memory_types_have_consistent_utc_timestamps(self):

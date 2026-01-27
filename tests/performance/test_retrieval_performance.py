@@ -219,9 +219,9 @@ class TestCachePerformance:
 
         # Cache hit should be at least as fast
         # (For file-based storage, difference may be minimal)
-        assert (
-            second_time <= first_time * 2
-        ), f"Second call ({second_time:.1f}ms) slower than twice first ({first_time:.1f}ms)"
+        assert second_time <= first_time * 2, (
+            f"Second call ({second_time:.1f}ms) slower than twice first ({first_time:.1f}ms)"
+        )
 
     def test_cache_invalidation_on_learn(self, cache_alma: ALMA):
         """Learning should invalidate cache."""

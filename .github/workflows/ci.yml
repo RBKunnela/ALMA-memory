@@ -59,13 +59,11 @@ jobs:
         run: |
           ruff check alma/ tests/ --output-format=github
 
+      # Note: Using ruff format only (not black) to avoid formatter conflicts
+      # ruff format is faster and compatible with black style
       - name: Run ruff formatter check
         run: |
           ruff format --check alma/ tests/
-
-      - name: Run black formatter check
-        run: |
-          black --check --diff alma/ tests/
 
   # ===========================================================================
   # Type Checking

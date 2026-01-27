@@ -229,15 +229,15 @@ class TestMemoryCachePerformance:
         results = run_benchmark(cache, n_iterations=100, result_size="small")
 
         # Check p95 targets
-        assert (
-            results["set"]["p95"] < 200
-        ), f"SET p95 ({results['set']['p95']:.2f}ms) exceeds 200ms target"
-        assert (
-            results["get_hit"]["p95"] < 200
-        ), f"GET HIT p95 ({results['get_hit']['p95']:.2f}ms) exceeds 200ms target"
-        assert (
-            results["get_miss"]["p95"] < 200
-        ), f"GET MISS p95 ({results['get_miss']['p95']:.2f}ms) exceeds 200ms target"
+        assert results["set"]["p95"] < 200, (
+            f"SET p95 ({results['set']['p95']:.2f}ms) exceeds 200ms target"
+        )
+        assert results["get_hit"]["p95"] < 200, (
+            f"GET HIT p95 ({results['get_hit']['p95']:.2f}ms) exceeds 200ms target"
+        )
+        assert results["get_miss"]["p95"] < 200, (
+            f"GET MISS p95 ({results['get_miss']['p95']:.2f}ms) exceeds 200ms target"
+        )
 
         print("\nSmall payload benchmark results:")
         print(f"  SET p95: {results['set']['p95']:.3f}ms")
@@ -249,12 +249,12 @@ class TestMemoryCachePerformance:
         cache = RetrievalCache(ttl_seconds=60, max_entries=1000)
         results = run_benchmark(cache, n_iterations=100, result_size="medium")
 
-        assert (
-            results["set"]["p95"] < 200
-        ), f"SET p95 ({results['set']['p95']:.2f}ms) exceeds 200ms target"
-        assert (
-            results["get_hit"]["p95"] < 200
-        ), f"GET HIT p95 ({results['get_hit']['p95']:.2f}ms) exceeds 200ms target"
+        assert results["set"]["p95"] < 200, (
+            f"SET p95 ({results['set']['p95']:.2f}ms) exceeds 200ms target"
+        )
+        assert results["get_hit"]["p95"] < 200, (
+            f"GET HIT p95 ({results['get_hit']['p95']:.2f}ms) exceeds 200ms target"
+        )
 
         print("\nMedium payload benchmark results:")
         print(f"  SET p95: {results['set']['p95']:.3f}ms")
@@ -265,12 +265,12 @@ class TestMemoryCachePerformance:
         cache = RetrievalCache(ttl_seconds=60, max_entries=1000)
         results = run_benchmark(cache, n_iterations=50, result_size="large")
 
-        assert (
-            results["set"]["p95"] < 200
-        ), f"SET p95 ({results['set']['p95']:.2f}ms) exceeds 200ms target"
-        assert (
-            results["get_hit"]["p95"] < 200
-        ), f"GET HIT p95 ({results['get_hit']['p95']:.2f}ms) exceeds 200ms target"
+        assert results["set"]["p95"] < 200, (
+            f"SET p95 ({results['set']['p95']:.2f}ms) exceeds 200ms target"
+        )
+        assert results["get_hit"]["p95"] < 200, (
+            f"GET HIT p95 ({results['get_hit']['p95']:.2f}ms) exceeds 200ms target"
+        )
 
         print("\nLarge payload benchmark results:")
         print(f"  SET p95: {results['set']['p95']:.3f}ms")
@@ -282,12 +282,12 @@ class TestMemoryCachePerformance:
         results = run_benchmark(cache, n_iterations=500, result_size="small")
 
         # More lenient target for high volume
-        assert (
-            results["set"]["p95"] < 200
-        ), f"High volume SET p95 ({results['set']['p95']:.2f}ms) exceeds target"
-        assert (
-            results["get_hit"]["p95"] < 200
-        ), f"High volume GET p95 ({results['get_hit']['p95']:.2f}ms) exceeds target"
+        assert results["set"]["p95"] < 200, (
+            f"High volume SET p95 ({results['set']['p95']:.2f}ms) exceeds target"
+        )
+        assert results["get_hit"]["p95"] < 200, (
+            f"High volume GET p95 ({results['get_hit']['p95']:.2f}ms) exceeds target"
+        )
 
         print("\nHigh volume (500 iterations) benchmark results:")
         print(f"  SET p95: {results['set']['p95']:.3f}ms")
@@ -437,9 +437,9 @@ class TestPerformanceMetrics:
 
         assert stats.hits == 10
         assert stats.misses == 10
-        assert (
-            abs(stats.hit_rate - 0.5) < 0.01
-        ), f"Hit rate should be 50%, got {stats.hit_rate}"
+        assert abs(stats.hit_rate - 0.5) < 0.01, (
+            f"Hit rate should be 50%, got {stats.hit_rate}"
+        )
 
         print("\nHit rate tracking:")
         print(f"  Hits: {stats.hits}")

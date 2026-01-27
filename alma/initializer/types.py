@@ -241,7 +241,9 @@ class InitializationResult:
             "recommended_start": (
                 self.recommended_start.to_dict()
                 if self.recommended_start and hasattr(self.recommended_start, "to_dict")
-                else str(self.recommended_start) if self.recommended_start else None
+                else str(self.recommended_start)
+                if self.recommended_start
+                else None
             ),
             "initialized_at": self.initialized_at.isoformat(),
             "metadata": self.metadata,
