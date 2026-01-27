@@ -837,31 +837,35 @@ class TestMCPConsolidateTool:
         """Test that the tool returns proper results."""
         from alma.mcp.tools import alma_consolidate
 
-        # Patch the ConsolidationEngine at the module where it's imported
-        with patch("alma.consolidation.engine.ConsolidationEngine") as MockEngineClass:
-            # Create a mock engine instance
-            mock_engine_instance = MagicMock()
-            mock_result = ConsolidationResult(
-                merged_count=1,
-                groups_found=1,
-                memories_processed=2,
-                errors=[],
-                merge_details=[
-                    {"merged_from": ["h1", "h2"], "merged_into": "h3", "count": 2}
-                ],
-            )
-            mock_engine_instance.consolidate = AsyncMock(return_value=mock_result)
-            MockEngineClass.return_value = mock_engine_instance
+        mock_result = ConsolidationResult(
+            merged_count=1,
+            groups_found=1,
+            memories_processed=2,
+            errors=[],
+            merge_details=[
+                {"merged_from": ["h1", "h2"], "merged_into": "h3", "count": 2}
+            ],
+        )
 
-            # Also patch in the consolidation module since it's imported dynamically
-            with patch.dict("sys.modules", {"alma.consolidation": MagicMock()}):
-                with patch("alma.consolidation.ConsolidationEngine", MockEngineClass):
-                    result = await alma_consolidate(
-                        alma=mock_alma,
-                        agent="test-agent",
-                        memory_type="heuristics",
-                        dry_run=True,
-                    )
+        # Create a mock engine class that returns our mock instance
+        mock_engine_instance = MagicMock()
+        mock_engine_instance.consolidate = AsyncMock(return_value=mock_result)
+
+        # Patch in alma.mcp.tools where the import happens dynamically
+        with patch.dict(
+            "sys.modules",
+            {
+                "alma.consolidation": MagicMock(
+                    ConsolidationEngine=MagicMock(return_value=mock_engine_instance)
+                )
+            },
+        ):
+            result = await alma_consolidate(
+                alma=mock_alma,
+                agent="test-agent",
+                memory_type="heuristics",
+                dry_run=True,
+            )
 
         assert result["success"] is True
         assert result["dry_run"] is True
@@ -875,28 +879,33 @@ class TestMCPConsolidateTool:
         """Test that cache is invalidated after consolidation."""
         from alma.mcp.tools import alma_consolidate
 
-        # Patch the ConsolidationEngine at the module where it's imported
-        with patch("alma.consolidation.engine.ConsolidationEngine") as MockEngineClass:
-            mock_engine_instance = MagicMock()
-            mock_result = ConsolidationResult(
-                merged_count=1,
-                groups_found=1,
-                memories_processed=2,
-                errors=[],
-            )
-            mock_engine_instance.consolidate = AsyncMock(return_value=mock_result)
-            MockEngineClass.return_value = mock_engine_instance
+        mock_result = ConsolidationResult(
+            merged_count=1,
+            groups_found=1,
+            memories_processed=2,
+            errors=[],
+        )
 
-            with patch.dict("sys.modules", {"alma.consolidation": MagicMock()}):
-                with patch("alma.consolidation.ConsolidationEngine", MockEngineClass):
-                    result = await alma_consolidate(
-                        alma=mock_alma,
-                        agent="test-agent",
-                        memory_type="heuristics",
-                        dry_run=False,
-                    )
+        mock_engine_instance = MagicMock()
+        mock_engine_instance.consolidate = AsyncMock(return_value=mock_result)
+
+        with patch.dict(
+            "sys.modules",
+            {
+                "alma.consolidation": MagicMock(
+                    ConsolidationEngine=MagicMock(return_value=mock_engine_instance)
+                )
+            },
+        ):
+            result = await alma_consolidate(
+                alma=mock_alma,
+                agent="test-agent",
+                memory_type="heuristics",
+                dry_run=False,
+            )
 
         # Cache should be invalidated after actual consolidation
+        assert result["success"] is True
         if result["merged_count"] > 0:
             mock_alma.retrieval.invalidate_cache.assert_called()
 
