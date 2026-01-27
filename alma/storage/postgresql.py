@@ -216,6 +216,10 @@ class PostgreSQLStorage(StorageBackend):
                 CREATE INDEX IF NOT EXISTS idx_outcomes_task_type
                 ON {self.schema}.alma_outcomes(project_id, agent, task_type)
             """)
+            conn.execute(f"""
+                CREATE INDEX IF NOT EXISTS idx_outcomes_timestamp
+                ON {self.schema}.alma_outcomes(project_id, timestamp DESC)
+            """)
 
             # User preferences table
             conn.execute(f"""
@@ -277,18 +281,19 @@ class PostgreSQLStorage(StorageBackend):
             """)
 
             # Create vector indexes if pgvector available
+            # Using HNSW instead of IVFFlat because HNSW can be built on empty tables
+            # IVFFlat requires existing data to build, which causes silent failures on fresh databases
             if self._pgvector_available:
                 for table in ["alma_heuristics", "alma_outcomes", "alma_domain_knowledge", "alma_anti_patterns"]:
                     try:
                         conn.execute(f"""
                             CREATE INDEX IF NOT EXISTS idx_{table}_embedding
                             ON {self.schema}.{table}
-                            USING ivfflat (embedding vector_cosine_ops)
-                            WITH (lists = 100)
+                            USING hnsw (embedding vector_cosine_ops)
+                            WITH (m = 16, ef_construction = 64)
                         """)
-                    except Exception:
-                        # IVFFlat requires data to build, skip if empty
-                        pass
+                    except Exception as e:
+                        logger.warning(f"Failed to create HNSW index for {table}: {e}")
 
             conn.commit()
 
@@ -514,6 +519,139 @@ class PostgreSQLStorage(StorageBackend):
 
         logger.debug(f"Saved anti-pattern: {anti_pattern.id}")
         return anti_pattern.id
+
+    # ==================== BATCH WRITE OPERATIONS ====================
+
+    def save_heuristics(self, heuristics: List[Heuristic]) -> List[str]:
+        """Save multiple heuristics in a batch using executemany."""
+        if not heuristics:
+            return []
+
+        with self._get_connection() as conn:
+            conn.executemany(
+                f"""
+                INSERT INTO {self.schema}.alma_heuristics
+                (id, agent, project_id, condition, strategy, confidence,
+                 occurrence_count, success_count, last_validated, created_at, metadata, embedding)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    condition = EXCLUDED.condition,
+                    strategy = EXCLUDED.strategy,
+                    confidence = EXCLUDED.confidence,
+                    occurrence_count = EXCLUDED.occurrence_count,
+                    success_count = EXCLUDED.success_count,
+                    last_validated = EXCLUDED.last_validated,
+                    metadata = EXCLUDED.metadata,
+                    embedding = EXCLUDED.embedding
+                """,
+                [
+                    (
+                        h.id,
+                        h.agent,
+                        h.project_id,
+                        h.condition,
+                        h.strategy,
+                        h.confidence,
+                        h.occurrence_count,
+                        h.success_count,
+                        h.last_validated,
+                        h.created_at,
+                        json.dumps(h.metadata) if h.metadata else None,
+                        self._embedding_to_db(h.embedding),
+                    )
+                    for h in heuristics
+                ],
+            )
+            conn.commit()
+
+        logger.debug(f"Batch saved {len(heuristics)} heuristics")
+        return [h.id for h in heuristics]
+
+    def save_outcomes(self, outcomes: List[Outcome]) -> List[str]:
+        """Save multiple outcomes in a batch using executemany."""
+        if not outcomes:
+            return []
+
+        with self._get_connection() as conn:
+            conn.executemany(
+                f"""
+                INSERT INTO {self.schema}.alma_outcomes
+                (id, agent, project_id, task_type, task_description, success,
+                 strategy_used, duration_ms, error_message, user_feedback, timestamp, metadata, embedding)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    task_description = EXCLUDED.task_description,
+                    success = EXCLUDED.success,
+                    strategy_used = EXCLUDED.strategy_used,
+                    duration_ms = EXCLUDED.duration_ms,
+                    error_message = EXCLUDED.error_message,
+                    user_feedback = EXCLUDED.user_feedback,
+                    metadata = EXCLUDED.metadata,
+                    embedding = EXCLUDED.embedding
+                """,
+                [
+                    (
+                        o.id,
+                        o.agent,
+                        o.project_id,
+                        o.task_type,
+                        o.task_description,
+                        o.success,
+                        o.strategy_used,
+                        o.duration_ms,
+                        o.error_message,
+                        o.user_feedback,
+                        o.timestamp,
+                        json.dumps(o.metadata) if o.metadata else None,
+                        self._embedding_to_db(o.embedding),
+                    )
+                    for o in outcomes
+                ],
+            )
+            conn.commit()
+
+        logger.debug(f"Batch saved {len(outcomes)} outcomes")
+        return [o.id for o in outcomes]
+
+    def save_domain_knowledge_batch(self, knowledge_items: List[DomainKnowledge]) -> List[str]:
+        """Save multiple domain knowledge items in a batch using executemany."""
+        if not knowledge_items:
+            return []
+
+        with self._get_connection() as conn:
+            conn.executemany(
+                f"""
+                INSERT INTO {self.schema}.alma_domain_knowledge
+                (id, agent, project_id, domain, fact, source, confidence, last_verified, metadata, embedding)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    fact = EXCLUDED.fact,
+                    source = EXCLUDED.source,
+                    confidence = EXCLUDED.confidence,
+                    last_verified = EXCLUDED.last_verified,
+                    metadata = EXCLUDED.metadata,
+                    embedding = EXCLUDED.embedding
+                """,
+                [
+                    (
+                        k.id,
+                        k.agent,
+                        k.project_id,
+                        k.domain,
+                        k.fact,
+                        k.source,
+                        k.confidence,
+                        k.last_verified,
+                        json.dumps(k.metadata) if k.metadata else None,
+                        self._embedding_to_db(k.embedding),
+                    )
+                    for k in knowledge_items
+                ],
+            )
+            conn.commit()
+
+        logger.debug(f"Batch saved {len(knowledge_items)} domain knowledge items")
+        return [k.id for k in knowledge_items]
 
     # ==================== READ OPERATIONS ====================
 

@@ -557,7 +557,7 @@ class TestConfidenceDecayer:
 
         # Should only query helena's data
         mock_storage_for_decayer.get_heuristics.assert_called_with(
-            "test", agent="helena", top_k=1000, min_confidence=0.0
+            project_id="test", agent="helena", top_k=10000, min_confidence=0.0
         )
 
 
@@ -751,12 +751,15 @@ class TestCleanupResult:
 
     def test_creation(self):
         """Test creating a cleanup result."""
+        now = datetime.now(timezone.utc)
         result = CleanupResult(
             job_name="test_job",
-            success=True,
+            project_id="test",
+            started_at=now,
+            completed_at=now,
             prune_summary=PruneSummary(total_pruned=5),
             decay_result=DecayResult(items_processed=10),
-            execution_time_ms=150,
+            success=True,
         )
 
         assert result.success is True

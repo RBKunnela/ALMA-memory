@@ -272,17 +272,17 @@ class ClaudeAgentHooks:
                 sections.append(f"- [{dk.domain}] {dk.fact}")
 
         # User preferences
-        if memories.user_preferences:
+        if memories.preferences:
             if include_section_headers:
                 sections.append("\n### User Preferences:")
-            for up in memories.user_preferences:
+            for up in memories.preferences:
                 sections.append(f"- [{up.category}] {up.preference}")
 
         # Recent outcomes
-        if memories.recent_outcomes:
+        if memories.outcomes:
             if include_section_headers:
                 sections.append("\n### Recent Outcomes:")
-            for o in memories.recent_outcomes[:3]:  # Limit to 3 most recent
+            for o in memories.outcomes[:3]:  # Limit to 3 most recent
                 status = "✓" if o.success else "✗"
                 sections.append(
                     f"- {status} {o.task_type}: {o.task_description[:50]}..."

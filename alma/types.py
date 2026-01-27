@@ -5,7 +5,7 @@ Defines the core data structures for all memory types.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
@@ -85,7 +85,7 @@ class Outcome:
     duration_ms: Optional[int] = None
     error_message: Optional[str] = None
     user_feedback: Optional[str] = None
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     embedding: Optional[List[float]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -103,7 +103,7 @@ class UserPreference:
     preference: str  # "No emojis in documentation"
     source: str  # "explicit_instruction", "inferred_from_correction"
     confidence: float = 1.0  # Lower for inferred preferences
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -121,7 +121,7 @@ class DomainKnowledge:
     fact: str  # "Login endpoint uses JWT with 24h expiry"
     source: str  # "code_analysis", "documentation", "user_stated"
     confidence: float = 1.0
-    last_verified: datetime = field(default_factory=datetime.utcnow)
+    last_verified: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     embedding: Optional[List[float]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -141,7 +141,7 @@ class AntiPattern:
     better_alternative: str  # "Use explicit waits with conditions"
     occurrence_count: int
     last_seen: datetime
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     embedding: Optional[List[float]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 

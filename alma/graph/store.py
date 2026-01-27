@@ -2,9 +2,10 @@
 ALMA Graph Memory Module.
 
 Graph-based memory storage for capturing relationships between entities.
-Supports Neo4j, Amazon Neptune, and in-memory graph for testing.
+Supports Neo4j and in-memory graph for testing.
 """
 
+import json
 import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any, Tuple
@@ -221,7 +222,7 @@ class Neo4jGraphStore(GraphStore):
             id=r["id"],
             name=r["name"],
             entity_type=r["entity_type"],
-            properties=eval(r["properties"]) if r["properties"] else {},
+            properties=json.loads(r["properties"]) if r["properties"] else {},
             created_at=datetime.fromisoformat(r["created_at"]) if r["created_at"] else datetime.now(timezone.utc),
         )
     
@@ -258,7 +259,7 @@ class Neo4jGraphStore(GraphStore):
                 id=r["id"],
                 name=r["name"],
                 entity_type=r["entity_type"],
-                properties=eval(r["properties"]) if r["properties"] else {},
+                properties=json.loads(r["properties"]) if r["properties"] else {},
             )
             for r in results
         ]
@@ -293,7 +294,7 @@ class Neo4jGraphStore(GraphStore):
                 source_id=r["source_id"],
                 target_id=r["target_id"],
                 relation_type=r["relation_type"],
-                properties=eval(r["properties"]) if r["properties"] else {},
+                properties=json.loads(r["properties"]) if r["properties"] else {},
                 confidence=r["confidence"] or 1.0,
             )
             for r in results
@@ -575,18 +576,24 @@ def create_graph_store(
 ) -> GraphStore:
     """
     Factory function to create a graph store.
-    
+
     Args:
-        provider: "neo4j", "neptune", or "memory"
+        provider: "neo4j" or "memory"
         **kwargs: Provider-specific arguments
-        
+
     Returns:
         Configured GraphStore instance
+
+    Note:
+        Amazon Neptune support is planned for a future release.
     """
     if provider == "neo4j":
         return Neo4jGraphStore(**kwargs)
     elif provider == "neptune":
-        # TODO: Implement Neptune support
-        raise NotImplementedError("Neptune support coming soon")
+        # Neptune support is planned for a future release
+        raise NotImplementedError(
+            "Neptune support is not yet implemented. "
+            "Use 'neo4j' or 'memory' providers instead."
+        )
     else:
         return InMemoryGraphStore()

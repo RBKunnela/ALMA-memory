@@ -38,6 +38,22 @@ pip install alma-memory
 
 ## Quick Start
 
+### 1. Set Up Configuration
+
+Copy the example config to your project:
+
+```bash
+# Copy from project root
+cp config.yaml.example .alma/config.yaml
+
+# Or copy from templates directory
+cp .alma/templates/config.yaml.template .alma/config.yaml
+```
+
+Edit `.alma/config.yaml` to configure your project ID, storage backend, and agents.
+
+### 2. Use ALMA in Your Code
+
 ```python
 from alma import ALMA
 
@@ -91,7 +107,7 @@ alma.learn(
 | **Azure Cosmos DB** | Production | Yes (native) |
 | **File-based** | Testing/Simple use | No |
 
-### Domain Memory Factory (NEW in v0.3.0)
+### Domain Memory Factory (NEW in v0.4.0)
 
 Create ALMA instances for any domain - not just coding:
 
@@ -118,7 +134,7 @@ schema = factory.create_schema("sales", {
 
 **Pre-built schemas:** `coding`, `research`, `sales`, `general`, `customer_support`, `content_creation`
 
-### Progress Tracking (NEW in v0.3.0)
+### Progress Tracking (NEW in v0.4.0)
 
 Track work items and get intelligent next-task suggestions:
 
@@ -146,7 +162,7 @@ summary = tracker.get_progress_summary()
 print(f"Done: {summary.done}/{summary.total} ({summary.completion_percentage}%)")
 ```
 
-### Session Handoff (NEW in v0.3.0)
+### Session Handoff (NEW in v0.4.0)
 
 Maintain context across sessions - no more "starting fresh":
 
@@ -234,7 +250,7 @@ result = graph.traverse("alice-id", max_hops=2)
 print(f"Found {len(result.entities)} related entities")
 ```
 
-Supports Neo4j, in-memory (testing), with Amazon Neptune coming soon.
+Supports Neo4j and in-memory (for testing).
 
 ### MCP Server Integration
 
@@ -425,14 +441,14 @@ alma:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        ALMA v0.3.0                              │
+│                        ALMA v0.4.0                              │
 ├─────────────────────────────────────────────────────────────────┤
 │  HARNESS LAYER                                                  │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐    │
 │  │ Setting  │  │ Context  │  │  Agent   │  │MemorySchema  │    │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────────┘    │
 ├─────────────────────────────────────────────────────────────────┤
-│  NEW IN v0.3.0                                                  │
+│  NEW IN v0.4.0                                                  │
 │  ┌──────────────┐  ┌────────────────┐  ┌───────────────────┐   │
 │  │ Progress     │  │ Session        │  │ Domain Memory     │   │
 │  │ Tracking     │  │ Handoff        │  │ Factory           │   │
@@ -577,6 +593,43 @@ rankings = engine.rank_strategies(
     context="Current task",
     agent="Helena",
 )
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**ImportError: sentence-transformers is required**
+```bash
+pip install alma-memory[local]
+# or
+pip install sentence-transformers
+```
+
+**pgvector extension not found**
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+**Azure Cosmos DB connection failed**
+- Verify `AZURE_COSMOS_ENDPOINT` and `AZURE_COSMOS_KEY` are set
+- Check that vector search is enabled on your Cosmos DB account
+
+**Embeddings dimension mismatch**
+- Ensure `embedding_dim` in config matches your embedding provider
+- Local embeddings: 384 dimensions
+- Azure OpenAI text-embedding-3-small: 1536 dimensions
+
+**Cache not invalidating**
+- Call `alma.forget()` to clear stale memories
+- Check that cache TTL hasn't been set too high
+
+### Debug Logging
+
+Enable debug logging to troubleshoot issues:
+```python
+import logging
+logging.getLogger("alma").setLevel(logging.DEBUG)
 ```
 
 ## License

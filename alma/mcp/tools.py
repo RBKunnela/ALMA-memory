@@ -97,6 +97,12 @@ def alma_retrieve(
     Returns:
         Dict containing the memory slice with relevant memories
     """
+    # Input validation
+    if not task or not task.strip():
+        return {"success": False, "error": "task cannot be empty"}
+    if not agent or not agent.strip():
+        return {"success": False, "error": "agent cannot be empty"}
+
     try:
         memories = alma.retrieve(
             task=task,
@@ -147,6 +153,16 @@ def alma_learn(
     Returns:
         Dict with learning result
     """
+    # Input validation
+    if not agent or not agent.strip():
+        return {"success": False, "error": "agent cannot be empty"}
+    if not task or not task.strip():
+        return {"success": False, "error": "task cannot be empty"}
+    if not outcome or not outcome.strip():
+        return {"success": False, "error": "outcome cannot be empty"}
+    if not strategy_used or not strategy_used.strip():
+        return {"success": False, "error": "strategy_used cannot be empty"}
+
     try:
         result = alma.learn(
             agent=agent,
@@ -193,6 +209,14 @@ def alma_add_preference(
     Returns:
         Dict with the created preference
     """
+    # Input validation
+    if not user_id or not user_id.strip():
+        return {"success": False, "error": "user_id cannot be empty"}
+    if not category or not category.strip():
+        return {"success": False, "error": "category cannot be empty"}
+    if not preference or not preference.strip():
+        return {"success": False, "error": "preference cannot be empty"}
+
     try:
         pref = alma.add_user_preference(
             user_id=user_id,
@@ -240,6 +264,14 @@ def alma_add_knowledge(
     Returns:
         Dict with the created knowledge or rejection reason
     """
+    # Input validation
+    if not agent or not agent.strip():
+        return {"success": False, "error": "agent cannot be empty"}
+    if not domain or not domain.strip():
+        return {"success": False, "error": "domain cannot be empty"}
+    if not fact or not fact.strip():
+        return {"success": False, "error": "fact cannot be empty"}
+
     try:
         knowledge = alma.add_domain_knowledge(
             agent=agent,

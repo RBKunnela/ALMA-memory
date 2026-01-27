@@ -9,6 +9,8 @@ import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
 
+from typing import TYPE_CHECKING
+
 from alma.types import (
     Heuristic,
     Outcome,
@@ -18,6 +20,9 @@ from alma.types import (
     MemoryScope,
 )
 from alma.storage.base import StorageBackend
+
+if TYPE_CHECKING:
+    from alma.retrieval.embeddings import EmbeddingProvider
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +41,8 @@ class LearningProtocol:
         self,
         storage: StorageBackend,
         scopes: Dict[str, MemoryScope],
+        embedder: Optional["EmbeddingProvider"] = None,
+        similarity_threshold: float = 0.75,
     ):
         """
         Initialize learning protocol.
@@ -43,9 +50,13 @@ class LearningProtocol:
         Args:
             storage: Storage backend for persistence
             scopes: Dict of agent_name -> MemoryScope
+            embedder: Optional embedding provider for semantic similarity
+            similarity_threshold: Cosine similarity threshold for strategy matching (default 0.75)
         """
         self.storage = storage
         self.scopes = scopes
+        self.embedder = embedder
+        self.similarity_threshold = similarity_threshold
 
     def learn(
         self,
@@ -311,12 +322,44 @@ class LearningProtocol:
         return "general"
 
     def _strategies_similar(self, s1: str, s2: str) -> bool:
-        """Check if two strategies are similar enough to count together."""
-        # Simple word overlap check - could be improved with embeddings
+        """
+        Check if two strategies are similar enough to count together.
+
+        Uses embedding-based cosine similarity when an embedder is available,
+        otherwise falls back to simple word overlap.
+        """
+        if self.embedder is not None:
+            return self._strategies_similar_embedding(s1, s2)
+        return self._strategies_similar_word_overlap(s1, s2)
+
+    def _strategies_similar_embedding(self, s1: str, s2: str) -> bool:
+        """Check strategy similarity using embedding cosine similarity."""
+        try:
+            emb1 = self.embedder.encode(s1)
+            emb2 = self.embedder.encode(s2)
+            similarity = self._cosine_similarity(emb1, emb2)
+            return similarity >= self.similarity_threshold
+        except Exception as e:
+            logger.warning(f"Embedding similarity failed, falling back to word overlap: {e}")
+            return self._strategies_similar_word_overlap(s1, s2)
+
+    def _strategies_similar_word_overlap(self, s1: str, s2: str) -> bool:
+        """Check strategy similarity using simple word overlap."""
         words1 = set(s1.lower().split())
         words2 = set(s2.lower().split())
         overlap = len(words1 & words2)
         return overlap >= min(3, len(words1) // 2)
+
+    def _cosine_similarity(self, v1: list, v2: list) -> float:
+        """Compute cosine similarity between two vectors."""
+        import math
+
+        dot_product = sum(a * b for a, b in zip(v1, v2))
+        norm1 = math.sqrt(sum(a * a for a in v1))
+        norm2 = math.sqrt(sum(b * b for b in v2))
+        if norm1 == 0 or norm2 == 0:
+            return 0.0
+        return dot_product / (norm1 * norm2)
 
     def _errors_similar(self, e1: str, e2: str) -> bool:
         """Check if two errors are similar."""

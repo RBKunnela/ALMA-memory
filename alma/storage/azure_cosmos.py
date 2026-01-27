@@ -710,6 +710,74 @@ class AzureCosmosStorage(StorageBackend):
         container.replace_item(item=heuristic_id, body=doc)
         return True
 
+    def update_heuristic_confidence(
+        self,
+        heuristic_id: str,
+        new_confidence: float,
+    ) -> bool:
+        """
+        Update confidence score for a heuristic.
+
+        Note: This requires a cross-partition query since we only have the ID.
+        For better performance, consider using update_heuristic() with the
+        project_id if available, which enables point reads.
+        """
+        container = self._get_container("heuristics")
+
+        # Find the heuristic (cross-partition query required without project_id)
+        query = "SELECT * FROM c WHERE c.id = @id"
+        items = list(
+            container.query_items(
+                query=query,
+                parameters=[{"name": "@id", "value": heuristic_id}],
+                enable_cross_partition_query=True,
+            )
+        )
+
+        if not items:
+            return False
+
+        doc = items[0]
+        doc["confidence"] = new_confidence
+
+        container.replace_item(item=heuristic_id, body=doc)
+        logger.debug(f"Updated heuristic confidence: {heuristic_id} -> {new_confidence}")
+        return True
+
+    def update_knowledge_confidence(
+        self,
+        knowledge_id: str,
+        new_confidence: float,
+    ) -> bool:
+        """
+        Update confidence score for domain knowledge.
+
+        Note: This requires a cross-partition query since we only have the ID.
+        For better performance when project_id is known, fetch the document
+        directly using point read and update via save_domain_knowledge().
+        """
+        container = self._get_container("knowledge")
+
+        # Find the knowledge item (cross-partition query required without project_id)
+        query = "SELECT * FROM c WHERE c.id = @id"
+        items = list(
+            container.query_items(
+                query=query,
+                parameters=[{"name": "@id", "value": knowledge_id}],
+                enable_cross_partition_query=True,
+            )
+        )
+
+        if not items:
+            return False
+
+        doc = items[0]
+        doc["confidence"] = new_confidence
+
+        container.replace_item(item=knowledge_id, body=doc)
+        logger.debug(f"Updated knowledge confidence: {knowledge_id} -> {new_confidence}")
+        return True
+
     # ==================== DELETE OPERATIONS ====================
 
     def delete_outcomes_older_than(

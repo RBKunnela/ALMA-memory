@@ -55,6 +55,20 @@ class StorageBackend(ABC):
         """Save an anti-pattern, return its ID."""
         pass
 
+    # ==================== BATCH WRITE OPERATIONS ====================
+
+    def save_heuristics(self, heuristics: List[Heuristic]) -> List[str]:
+        """Save multiple heuristics in a batch. Default implementation calls save_heuristic in a loop."""
+        return [self.save_heuristic(h) for h in heuristics]
+
+    def save_outcomes(self, outcomes: List[Outcome]) -> List[str]:
+        """Save multiple outcomes in a batch. Default implementation calls save_outcome in a loop."""
+        return [self.save_outcome(o) for o in outcomes]
+
+    def save_domain_knowledge_batch(self, knowledge_items: List[DomainKnowledge]) -> List[str]:
+        """Save multiple domain knowledge items in a batch. Default implementation calls save_domain_knowledge in a loop."""
+        return [self.save_domain_knowledge(k) for k in knowledge_items]
+
     # ==================== READ OPERATIONS ====================
 
     @abstractmethod

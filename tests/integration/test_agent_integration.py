@@ -29,9 +29,9 @@ class TestAgentIntegration:
         alma.retrieve.return_value = MemorySlice(
             heuristics=[],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
         alma.learn.return_value = True
         alma.get_stats.return_value = {"heuristics": 0, "outcomes": 0}
@@ -111,9 +111,9 @@ class TestClaudeAgentHooks:
                 ),
             ],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
         alma.learn.return_value = True
         alma.add_domain_knowledge.return_value = MagicMock(id="dk1")
@@ -194,9 +194,9 @@ class TestClaudeAgentHooks:
         memories = MemorySlice(
             heuristics=[],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
 
         prompt = hooks.format_memories_for_prompt(memories)
@@ -235,12 +235,12 @@ class TestCreateIntegration:
         mock_alma.retrieve.return_value = MemorySlice(
             heuristics=[],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
 
-        with patch("alma.integration.claude_agents.CodingDomain") as mock_domain:
+        with patch("alma.harness.domains.CodingDomain") as mock_domain:
             mock_domain.create_helena.return_value = MagicMock()
             mock_domain.create_victor.return_value = MagicMock()
 
@@ -256,12 +256,12 @@ class TestCreateIntegration:
         mock_alma.retrieve.return_value = MemorySlice(
             heuristics=[],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
 
-        with patch("alma.integration.claude_agents.CodingDomain") as mock_domain:
+        with patch("alma.harness.domains.CodingDomain") as mock_domain:
             mock_domain.create_helena.return_value = MagicMock()
 
             integration = create_integration(mock_alma, agents=[AgentType.HELENA])
@@ -307,9 +307,9 @@ class TestEndToEndFlow:
                         ),
                     ],
                     anti_patterns=[],
-                    recent_outcomes=[],
+                    outcomes=[],
                     domain_knowledge=[],
-                    user_preferences=[],
+                    preferences=[],
                 )
             else:
                 return MemorySlice(
@@ -328,9 +328,9 @@ class TestEndToEndFlow:
                         ),
                     ],
                     anti_patterns=[],
-                    recent_outcomes=[],
+                    outcomes=[],
                     domain_knowledge=[],
-                    user_preferences=[],
+                    preferences=[],
                 )
 
         alma.retrieve.side_effect = retrieve_side_effect

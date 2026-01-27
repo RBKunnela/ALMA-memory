@@ -18,6 +18,7 @@ from alma.integration.helena import HELENA_CATEGORIES
 from alma.integration.victor import VICTOR_CATEGORIES
 
 
+@pytest.mark.asyncio
 class TestALMAMCPServer:
     """Tests for ALMAMCPServer class."""
 
@@ -377,6 +378,7 @@ class TestMCPResources:
         assert "backend" in helena["scope"]["cannot_learn"]
 
 
+@pytest.mark.asyncio
 class TestMCPFullWorkflow:
     """Tests for complete MCP workflows."""
 

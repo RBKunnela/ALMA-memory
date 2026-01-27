@@ -44,7 +44,7 @@ class TestVictorHooks:
                 ),
             ],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[
                 DomainKnowledge(
                     id="dk1",
@@ -53,10 +53,10 @@ class TestVictorHooks:
                     domain="error_handling",
                     fact="Always return structured error responses with error codes",
                     source="api_test:success=True",
-                    created_at=datetime.now(timezone.utc),
+                    last_verified=datetime.now(timezone.utc),
                 ),
             ],
-            user_preferences=[],
+            preferences=[],
         )
 
         alma.learn.return_value = True
@@ -72,6 +72,7 @@ class TestVictorHooks:
             mock_domain.create_victor.return_value = MagicMock()
             hooks = VictorHooks(alma=mock_alma)
             hooks.alma = mock_alma  # Ensure mock is used
+            hooks.harness = None  # Disable harness to test direct ALMA retrieval
             return hooks
 
     def test_pre_task_retrieves_memories(self, victor_hooks, mock_alma):
@@ -258,9 +259,9 @@ class TestConvenienceFunctions:
         mock_alma.retrieve.return_value = MemorySlice(
             heuristics=[],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
 
         with patch("alma.integration.victor.CodingDomain"):

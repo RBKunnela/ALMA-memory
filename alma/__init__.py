@@ -92,6 +92,17 @@ from alma.confidence import (
     RiskSignal,
 )
 
+# Exceptions
+from alma.exceptions import (
+    ALMAError,
+    ConfigurationError,
+    ScopeViolationError,
+    StorageError,
+    EmbeddingError,
+    RetrievalError,
+    ExtractionError,
+)
+
 __all__ = [
     # Core
     "ALMA",
@@ -147,4 +158,12 @@ __all__ = [
     "ConfidenceSignal",
     "OpportunitySignal",
     "RiskSignal",
+    # Exceptions
+    "ALMAError",
+    "ConfigurationError",
+    "ScopeViolationError",
+    "StorageError",
+    "EmbeddingError",
+    "RetrievalError",
+    "ExtractionError",
 ]
