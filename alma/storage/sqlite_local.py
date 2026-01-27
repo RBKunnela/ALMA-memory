@@ -806,6 +806,167 @@ class SQLiteStorage(StorageBackend):
 
         return [self._row_to_anti_pattern(row) for row in rows]
 
+    # ==================== MULTI-AGENT MEMORY SHARING ====================
+
+    def get_heuristics_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+        min_confidence: float = 0.0,
+    ) -> List[Heuristic]:
+        """Get heuristics from multiple agents using optimized IN query."""
+        if not agents:
+            return []
+
+        candidate_ids = None
+        if embedding:
+            search_results = self._search_index("heuristics", embedding, top_k * 2 * len(agents))
+            candidate_ids = [id for id, _ in search_results]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            placeholders = ",".join("?" * len(agents))
+            query = f"SELECT * FROM heuristics WHERE project_id = ? AND confidence >= ? AND agent IN ({placeholders})"
+            params: List[Any] = [project_id, min_confidence] + list(agents)
+
+            if candidate_ids is not None:
+                id_placeholders = ",".join("?" * len(candidate_ids))
+                query += f" AND id IN ({id_placeholders})"
+                params.extend(candidate_ids)
+
+            query += " ORDER BY confidence DESC LIMIT ?"
+            params.append(top_k * len(agents))
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_heuristic(row) for row in rows]
+
+    def get_outcomes_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        task_type: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+        success_only: bool = False,
+    ) -> List[Outcome]:
+        """Get outcomes from multiple agents using optimized IN query."""
+        if not agents:
+            return []
+
+        candidate_ids = None
+        if embedding:
+            search_results = self._search_index("outcomes", embedding, top_k * 2 * len(agents))
+            candidate_ids = [id for id, _ in search_results]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            placeholders = ",".join("?" * len(agents))
+            query = f"SELECT * FROM outcomes WHERE project_id = ? AND agent IN ({placeholders})"
+            params: List[Any] = [project_id] + list(agents)
+
+            if task_type:
+                query += " AND task_type = ?"
+                params.append(task_type)
+
+            if success_only:
+                query += " AND success = 1"
+
+            if candidate_ids is not None:
+                id_placeholders = ",".join("?" * len(candidate_ids))
+                query += f" AND id IN ({id_placeholders})"
+                params.extend(candidate_ids)
+
+            query += " ORDER BY timestamp DESC LIMIT ?"
+            params.append(top_k * len(agents))
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_outcome(row) for row in rows]
+
+    def get_domain_knowledge_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        domain: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+    ) -> List[DomainKnowledge]:
+        """Get domain knowledge from multiple agents using optimized IN query."""
+        if not agents:
+            return []
+
+        candidate_ids = None
+        if embedding:
+            search_results = self._search_index("domain_knowledge", embedding, top_k * 2 * len(agents))
+            candidate_ids = [id for id, _ in search_results]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            placeholders = ",".join("?" * len(agents))
+            query = f"SELECT * FROM domain_knowledge WHERE project_id = ? AND agent IN ({placeholders})"
+            params: List[Any] = [project_id] + list(agents)
+
+            if domain:
+                query += " AND domain = ?"
+                params.append(domain)
+
+            if candidate_ids is not None:
+                id_placeholders = ",".join("?" * len(candidate_ids))
+                query += f" AND id IN ({id_placeholders})"
+                params.extend(candidate_ids)
+
+            query += " ORDER BY confidence DESC LIMIT ?"
+            params.append(top_k * len(agents))
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_domain_knowledge(row) for row in rows]
+
+    def get_anti_patterns_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+    ) -> List[AntiPattern]:
+        """Get anti-patterns from multiple agents using optimized IN query."""
+        if not agents:
+            return []
+
+        candidate_ids = None
+        if embedding:
+            search_results = self._search_index("anti_patterns", embedding, top_k * 2 * len(agents))
+            candidate_ids = [id for id, _ in search_results]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            placeholders = ",".join("?" * len(agents))
+            query = f"SELECT * FROM anti_patterns WHERE project_id = ? AND agent IN ({placeholders})"
+            params: List[Any] = [project_id] + list(agents)
+
+            if candidate_ids is not None:
+                id_placeholders = ",".join("?" * len(candidate_ids))
+                query += f" AND id IN ({id_placeholders})"
+                params.extend(candidate_ids)
+
+            query += " ORDER BY occurrence_count DESC LIMIT ?"
+            params.append(top_k * len(agents))
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_anti_pattern(row) for row in rows]
+
     # ==================== UPDATE OPERATIONS ====================
 
     def update_heuristic(

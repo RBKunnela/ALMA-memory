@@ -892,6 +892,197 @@ class PostgreSQLStorage(StorageBackend):
         scored.sort(key=lambda x: x[1], reverse=True)
         return [item for item, _ in scored[:top_k]]
 
+    # ==================== MULTI-AGENT MEMORY SHARING ====================
+
+    def get_heuristics_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+        min_confidence: float = 0.0,
+    ) -> List[Heuristic]:
+        """Get heuristics from multiple agents using optimized ANY query."""
+        if not agents:
+            return []
+
+        with self._get_connection() as conn:
+            if embedding and self._pgvector_available:
+                query = f"""
+                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    FROM {self.schema}.alma_heuristics
+                    WHERE project_id = %s AND confidence >= %s AND agent = ANY(%s)
+                    ORDER BY similarity DESC LIMIT %s
+                """
+                params: List[Any] = [
+                    self._embedding_to_db(embedding),
+                    project_id,
+                    min_confidence,
+                    agents,
+                    top_k * len(agents),
+                ]
+            else:
+                query = f"""
+                    SELECT *
+                    FROM {self.schema}.alma_heuristics
+                    WHERE project_id = %s AND confidence >= %s AND agent = ANY(%s)
+                    ORDER BY confidence DESC LIMIT %s
+                """
+                params = [project_id, min_confidence, agents, top_k * len(agents)]
+
+            cursor = conn.execute(query, params)
+            rows = cursor.fetchall()
+
+        results = [self._row_to_heuristic(row) for row in rows]
+
+        if embedding and not self._pgvector_available and results:
+            results = self._filter_by_similarity(results, embedding, top_k * len(agents), "embedding")
+
+        return results
+
+    def get_outcomes_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        task_type: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+        success_only: bool = False,
+    ) -> List[Outcome]:
+        """Get outcomes from multiple agents using optimized ANY query."""
+        if not agents:
+            return []
+
+        with self._get_connection() as conn:
+            if embedding and self._pgvector_available:
+                query = f"""
+                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    FROM {self.schema}.alma_outcomes
+                    WHERE project_id = %s AND agent = ANY(%s)
+                """
+                params: List[Any] = [self._embedding_to_db(embedding), project_id, agents]
+            else:
+                query = f"""
+                    SELECT *
+                    FROM {self.schema}.alma_outcomes
+                    WHERE project_id = %s AND agent = ANY(%s)
+                """
+                params = [project_id, agents]
+
+            if task_type:
+                query += " AND task_type = %s"
+                params.append(task_type)
+
+            if success_only:
+                query += " AND success = TRUE"
+
+            if embedding and self._pgvector_available:
+                query += " ORDER BY similarity DESC LIMIT %s"
+            else:
+                query += " ORDER BY timestamp DESC LIMIT %s"
+            params.append(top_k * len(agents))
+
+            cursor = conn.execute(query, params)
+            rows = cursor.fetchall()
+
+        results = [self._row_to_outcome(row) for row in rows]
+
+        if embedding and not self._pgvector_available and results:
+            results = self._filter_by_similarity(results, embedding, top_k * len(agents), "embedding")
+
+        return results
+
+    def get_domain_knowledge_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        domain: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+    ) -> List[DomainKnowledge]:
+        """Get domain knowledge from multiple agents using optimized ANY query."""
+        if not agents:
+            return []
+
+        with self._get_connection() as conn:
+            if embedding and self._pgvector_available:
+                query = f"""
+                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    FROM {self.schema}.alma_domain_knowledge
+                    WHERE project_id = %s AND agent = ANY(%s)
+                """
+                params: List[Any] = [self._embedding_to_db(embedding), project_id, agents]
+            else:
+                query = f"""
+                    SELECT *
+                    FROM {self.schema}.alma_domain_knowledge
+                    WHERE project_id = %s AND agent = ANY(%s)
+                """
+                params = [project_id, agents]
+
+            if domain:
+                query += " AND domain = %s"
+                params.append(domain)
+
+            if embedding and self._pgvector_available:
+                query += " ORDER BY similarity DESC LIMIT %s"
+            else:
+                query += " ORDER BY confidence DESC LIMIT %s"
+            params.append(top_k * len(agents))
+
+            cursor = conn.execute(query, params)
+            rows = cursor.fetchall()
+
+        results = [self._row_to_domain_knowledge(row) for row in rows]
+
+        if embedding and not self._pgvector_available and results:
+            results = self._filter_by_similarity(results, embedding, top_k * len(agents), "embedding")
+
+        return results
+
+    def get_anti_patterns_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+    ) -> List[AntiPattern]:
+        """Get anti-patterns from multiple agents using optimized ANY query."""
+        if not agents:
+            return []
+
+        with self._get_connection() as conn:
+            if embedding and self._pgvector_available:
+                query = f"""
+                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    FROM {self.schema}.alma_anti_patterns
+                    WHERE project_id = %s AND agent = ANY(%s)
+                """
+                params: List[Any] = [self._embedding_to_db(embedding), project_id, agents]
+            else:
+                query = f"""
+                    SELECT *
+                    FROM {self.schema}.alma_anti_patterns
+                    WHERE project_id = %s AND agent = ANY(%s)
+                """
+                params = [project_id, agents]
+
+            if embedding and self._pgvector_available:
+                query += " ORDER BY similarity DESC LIMIT %s"
+            else:
+                query += " ORDER BY occurrence_count DESC LIMIT %s"
+            params.append(top_k * len(agents))
+
+            cursor = conn.execute(query, params)
+            rows = cursor.fetchall()
+
+        results = [self._row_to_anti_pattern(row) for row in rows]
+
+        if embedding and not self._pgvector_available and results:
+            results = self._filter_by_similarity(results, embedding, top_k * len(agents), "embedding")
+
+        return results
+
     # ==================== UPDATE OPERATIONS ====================
 
     def update_heuristic(

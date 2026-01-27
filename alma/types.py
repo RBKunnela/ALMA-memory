@@ -22,13 +22,16 @@ class MemoryType(Enum):
 @dataclass
 class MemoryScope:
     """
-    Defines what an agent is allowed to learn.
+    Defines what an agent is allowed to learn and share.
 
     Prevents scope creep by explicitly listing allowed and forbidden domains.
+    Supports multi-agent memory sharing through share_with and inherit_from.
     """
     agent_name: str
     can_learn: List[str]
     cannot_learn: List[str]
+    share_with: List[str] = field(default_factory=list)  # Agents that can read this agent's memories
+    inherit_from: List[str] = field(default_factory=list)  # Agents whose memories this agent can read
     min_occurrences_for_heuristic: int = 3
 
     def is_allowed(self, domain: str) -> bool:
@@ -38,6 +41,39 @@ class MemoryScope:
         if not self.can_learn:  # Empty means all allowed (except cannot_learn)
             return True
         return domain in self.can_learn
+
+    def get_readable_agents(self) -> List[str]:
+        """
+        Get list of agents whose memories this agent can read.
+
+        Returns:
+            List containing this agent's name plus all inherited agents.
+        """
+        return [self.agent_name] + list(self.inherit_from)
+
+    def can_read_from(self, other_agent: str) -> bool:
+        """
+        Check if this agent can read memories from another agent.
+
+        Args:
+            other_agent: Name of the agent to check
+
+        Returns:
+            True if this agent can read from other_agent
+        """
+        return other_agent == self.agent_name or other_agent in self.inherit_from
+
+    def shares_with(self, other_agent: str) -> bool:
+        """
+        Check if this agent shares memories with another agent.
+
+        Args:
+            other_agent: Name of the agent to check
+
+        Returns:
+            True if this agent shares with other_agent
+        """
+        return other_agent in self.share_with
 
 
 @dataclass

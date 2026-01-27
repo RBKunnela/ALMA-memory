@@ -569,24 +569,27 @@ def large_memory_storage(temp_storage_dir: Path) -> FileBasedStorage:
 
 @pytest.fixture
 def multi_agent_scopes() -> Dict[str, MemoryScope]:
-    """Create scopes for multiple agents with overlapping permissions."""
+    """Create scopes for multiple agents with overlapping permissions and sharing."""
     return {
         "helena": MemoryScope(
             agent_name="helena",
             can_learn=HELENA_CATEGORIES,
             cannot_learn=["backend_logic", "database_queries"],
+            share_with=["shared_agent"],  # Helena shares with shared_agent
             min_occurrences_for_heuristic=3,
         ),
         "victor": MemoryScope(
             agent_name="victor",
             can_learn=VICTOR_CATEGORIES,
             cannot_learn=["frontend_styling", "ui_testing"],
+            share_with=["shared_agent"],  # Victor shares with shared_agent
             min_occurrences_for_heuristic=3,
         ),
         "shared_agent": MemoryScope(
             agent_name="shared_agent",
             can_learn=HELENA_CATEGORIES + VICTOR_CATEGORIES,
             cannot_learn=[],
+            inherit_from=["helena", "victor"],  # Shared agent can read from both
             min_occurrences_for_heuristic=5,
         ),
     }
