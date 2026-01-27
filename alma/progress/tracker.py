@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 SelectionStrategy = Literal[
-    "priority",         # Highest priority first
+    "priority",  # Highest priority first
     "blocked_unblock",  # Items that unblock others
-    "quick_win",        # Smallest/easiest first
-    "fifo",             # First in, first out
+    "quick_win",  # Smallest/easiest first
+    "fifo",  # First in, first out
 ]
 
 
@@ -174,12 +174,14 @@ class ProgressTracker:
         if notes:
             if "status_notes" not in item.metadata:
                 item.metadata["status_notes"] = []
-            item.metadata["status_notes"].append({
-                "from": old_status,
-                "to": status,
-                "notes": notes,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            item.metadata["status_notes"].append(
+                {
+                    "from": old_status,
+                    "to": status,
+                    "notes": notes,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            )
 
         logger.info(f"Status updated: {item_id} {old_status} -> {status}")
         return item
@@ -260,7 +262,8 @@ class ProgressTracker:
     ) -> List[WorkItem]:
         """Get items that can be worked on (not blocked, not done)."""
         return [
-            item for item in self._work_items.values()
+            item
+            for item in self._work_items.values()
             if item.is_actionable()
             and (agent is None or item.agent == agent or item.agent is None)
         ]
@@ -310,7 +313,8 @@ class ProgressTracker:
             unblock_counts = {}
             for item in actionable:
                 count = sum(
-                    1 for other in self._work_items.values()
+                    1
+                    for other in self._work_items.values()
                     if item.id in other.blocked_by
                 )
                 unblock_counts[item.id] = count
@@ -528,8 +532,12 @@ class ProgressTracker:
                     "attempt_count": item.attempt_count,
                     "created_at": item.created_at.isoformat(),
                     "updated_at": item.updated_at.isoformat(),
-                    "started_at": item.started_at.isoformat() if item.started_at else None,
-                    "completed_at": item.completed_at.isoformat() if item.completed_at else None,
+                    "started_at": item.started_at.isoformat()
+                    if item.started_at
+                    else None,
+                    "completed_at": item.completed_at.isoformat()
+                    if item.completed_at
+                    else None,
                     "metadata": item.metadata,
                 }
                 for item in self._work_items.values()

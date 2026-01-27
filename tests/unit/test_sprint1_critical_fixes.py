@@ -58,7 +58,11 @@ class TestGraphStoreJsonParsing:
         # Retrieve entity
         retrieved = graph_store.get_entity("entity_001")
         assert retrieved is not None
-        assert retrieved.properties == {"key": "value", "number": 42, "nested": {"a": 1}}
+        assert retrieved.properties == {
+            "key": "value",
+            "number": 42,
+            "nested": {"a": 1},
+        }
 
     def test_entity_with_empty_properties(self, graph_store):
         """Test that entities with empty properties are handled correctly."""
@@ -103,7 +107,10 @@ class TestGraphStoreJsonParsing:
         # Retrieve relationships
         relationships = graph_store.get_relationships("src_001", direction="outgoing")
         assert len(relationships) == 1
-        assert relationships[0].properties == {"weight": 1.5, "label": "test connection"}
+        assert relationships[0].properties == {
+            "weight": 1.5,
+            "label": "test connection",
+        }
 
     def test_relationship_with_empty_properties(self, graph_store):
         """Test that relationships with empty properties are handled correctly."""
@@ -160,7 +167,7 @@ class TestGraphStoreJsonParsing:
         This validates that the code properly propagates JSON parsing
         errors rather than silently failing.
         """
-        invalid_json = '{invalid: json without quotes}'
+        invalid_json = "{invalid: json without quotes}"
 
         with pytest.raises(json.JSONDecodeError):
             json.loads(invalid_json)
@@ -184,11 +191,7 @@ class TestGraphStoreJsonParsing:
             "bool": True,
             "null": None,
             "array": [1, 2, 3],
-            "nested": {
-                "deep": {
-                    "value": "found"
-                }
-            }
+            "nested": {"deep": {"value": "found"}},
         }
 
         entity = Entity(
@@ -459,12 +462,14 @@ class TestTimezoneAwareTimestamps:
         assert outcome.timestamp is not None
 
         # Verify timestamp is timezone-aware (tzinfo is not None)
-        assert outcome.timestamp.tzinfo is not None, \
+        assert outcome.timestamp.tzinfo is not None, (
             "Outcome timestamp should be timezone-aware"
+        )
 
         # Verify it's UTC
-        assert outcome.timestamp.tzinfo == timezone.utc, \
+        assert outcome.timestamp.tzinfo == timezone.utc, (
             "Outcome timestamp should be in UTC"
+        )
 
     def test_user_preference_default_timestamp_is_timezone_aware(self):
         """Test that UserPreference's default timestamp is timezone-aware."""
@@ -477,8 +482,9 @@ class TestTimezoneAwareTimestamps:
         )
 
         assert preference.timestamp is not None
-        assert preference.timestamp.tzinfo is not None, \
+        assert preference.timestamp.tzinfo is not None, (
             "UserPreference timestamp should be timezone-aware"
+        )
         assert preference.timestamp.tzinfo == timezone.utc
 
     def test_domain_knowledge_default_timestamp_is_timezone_aware(self):
@@ -493,8 +499,9 @@ class TestTimezoneAwareTimestamps:
         )
 
         assert knowledge.last_verified is not None
-        assert knowledge.last_verified.tzinfo is not None, \
+        assert knowledge.last_verified.tzinfo is not None, (
             "DomainKnowledge last_verified should be timezone-aware"
+        )
         assert knowledge.last_verified.tzinfo == timezone.utc
 
     def test_anti_pattern_default_timestamp_is_timezone_aware(self):
@@ -512,8 +519,9 @@ class TestTimezoneAwareTimestamps:
 
         # Check created_at default
         assert anti_pattern.created_at is not None
-        assert anti_pattern.created_at.tzinfo is not None, \
+        assert anti_pattern.created_at.tzinfo is not None, (
             "AntiPattern created_at should be timezone-aware"
+        )
         assert anti_pattern.created_at.tzinfo == timezone.utc
 
     def test_entity_default_timestamp_is_timezone_aware(self):
@@ -525,8 +533,9 @@ class TestTimezoneAwareTimestamps:
         )
 
         assert entity.created_at is not None
-        assert entity.created_at.tzinfo is not None, \
+        assert entity.created_at.tzinfo is not None, (
             "Entity created_at should be timezone-aware"
+        )
         assert entity.created_at.tzinfo == timezone.utc
 
     def test_relationship_default_timestamp_is_timezone_aware(self):
@@ -539,8 +548,9 @@ class TestTimezoneAwareTimestamps:
         )
 
         assert relationship.created_at is not None
-        assert relationship.created_at.tzinfo is not None, \
+        assert relationship.created_at.tzinfo is not None, (
             "Relationship created_at should be timezone-aware"
+        )
         assert relationship.created_at.tzinfo == timezone.utc
 
     def test_all_memory_types_have_consistent_utc_timestamps(self):

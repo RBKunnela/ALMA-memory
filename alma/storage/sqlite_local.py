@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 # Try to import FAISS, fall back to numpy-based search if not available
 try:
     import faiss
+
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
@@ -235,7 +236,12 @@ class SQLiteStorage(StorageBackend):
             memory_types: List of memory types to load. If None, loads all types.
         """
         if memory_types is None:
-            memory_types = ["heuristics", "outcomes", "domain_knowledge", "anti_patterns"]
+            memory_types = [
+                "heuristics",
+                "outcomes",
+                "domain_knowledge",
+                "anti_patterns",
+            ]
 
         for memory_type in memory_types:
             if FAISS_AVAILABLE:
@@ -332,7 +338,9 @@ class SQLiteStorage(StorageBackend):
         if FAISS_AVAILABLE:
             # Normalize for cosine similarity (IndexFlatIP)
             faiss.normalize_L2(query)
-            scores, indices = self._indices[memory_type].search(query, min(top_k, len(self._id_maps[memory_type])))
+            scores, indices = self._indices[memory_type].search(
+                query, min(top_k, len(self._id_maps[memory_type]))
+            )
 
             results = []
             for score, idx in zip(scores[0], indices[0], strict=False):
@@ -382,7 +390,9 @@ class SQLiteStorage(StorageBackend):
                     heuristic.confidence,
                     heuristic.occurrence_count,
                     heuristic.success_count,
-                    heuristic.last_validated.isoformat() if heuristic.last_validated else None,
+                    heuristic.last_validated.isoformat()
+                    if heuristic.last_validated
+                    else None,
                     heuristic.created_at.isoformat() if heuristic.created_at else None,
                     json.dumps(heuristic.metadata) if heuristic.metadata else None,
                 ),
@@ -467,7 +477,9 @@ class SQLiteStorage(StorageBackend):
                     knowledge.fact,
                     knowledge.source,
                     knowledge.confidence,
-                    knowledge.last_verified.isoformat() if knowledge.last_verified else None,
+                    knowledge.last_verified.isoformat()
+                    if knowledge.last_verified
+                    else None,
                     json.dumps(knowledge.metadata) if knowledge.metadata else None,
                 ),
             )
@@ -496,9 +508,15 @@ class SQLiteStorage(StorageBackend):
                     anti_pattern.why_bad,
                     anti_pattern.better_alternative,
                     anti_pattern.occurrence_count,
-                    anti_pattern.last_seen.isoformat() if anti_pattern.last_seen else None,
-                    anti_pattern.created_at.isoformat() if anti_pattern.created_at else None,
-                    json.dumps(anti_pattern.metadata) if anti_pattern.metadata else None,
+                    anti_pattern.last_seen.isoformat()
+                    if anti_pattern.last_seen
+                    else None,
+                    anti_pattern.created_at.isoformat()
+                    if anti_pattern.created_at
+                    else None,
+                    json.dumps(anti_pattern.metadata)
+                    if anti_pattern.metadata
+                    else None,
                 ),
             )
 
@@ -588,7 +606,9 @@ class SQLiteStorage(StorageBackend):
         logger.debug(f"Batch saved {len(outcomes)} outcomes")
         return [o.id for o in outcomes]
 
-    def save_domain_knowledge_batch(self, knowledge_items: List[DomainKnowledge]) -> List[str]:
+    def save_domain_knowledge_batch(
+        self, knowledge_items: List[DomainKnowledge]
+    ) -> List[str]:
         """Save multiple domain knowledge items in a batch using executemany."""
         if not knowledge_items:
             return []
@@ -741,7 +761,9 @@ class SQLiteStorage(StorageBackend):
         """Get domain knowledge with optional vector search."""
         candidate_ids = None
         if embedding:
-            search_results = self._search_index("domain_knowledge", embedding, top_k * 2)
+            search_results = self._search_index(
+                "domain_knowledge", embedding, top_k * 2
+            )
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -823,7 +845,9 @@ class SQLiteStorage(StorageBackend):
 
         candidate_ids = None
         if embedding:
-            search_results = self._search_index("heuristics", embedding, top_k * 2 * len(agents))
+            search_results = self._search_index(
+                "heuristics", embedding, top_k * 2 * len(agents)
+            )
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -861,7 +885,9 @@ class SQLiteStorage(StorageBackend):
 
         candidate_ids = None
         if embedding:
-            search_results = self._search_index("outcomes", embedding, top_k * 2 * len(agents))
+            search_results = self._search_index(
+                "outcomes", embedding, top_k * 2 * len(agents)
+            )
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -905,7 +931,9 @@ class SQLiteStorage(StorageBackend):
 
         candidate_ids = None
         if embedding:
-            search_results = self._search_index("domain_knowledge", embedding, top_k * 2 * len(agents))
+            search_results = self._search_index(
+                "domain_knowledge", embedding, top_k * 2 * len(agents)
+            )
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -945,7 +973,9 @@ class SQLiteStorage(StorageBackend):
 
         candidate_ids = None
         if embedding:
-            search_results = self._search_index("anti_patterns", embedding, top_k * 2 * len(agents))
+            search_results = self._search_index(
+                "anti_patterns", embedding, top_k * 2 * len(agents)
+            )
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:

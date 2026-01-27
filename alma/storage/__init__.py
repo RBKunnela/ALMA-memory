@@ -7,6 +7,7 @@ from alma.storage.sqlite_local import SQLiteStorage
 # Azure Cosmos DB is optional - requires azure-cosmos package
 try:
     from alma.storage.azure_cosmos import AzureCosmosStorage
+
     _HAS_AZURE = True
 except ImportError:
     AzureCosmosStorage = None  # type: ignore
@@ -15,6 +16,7 @@ except ImportError:
 # PostgreSQL is optional - requires psycopg package
 try:
     from alma.storage.postgresql import PostgreSQLStorage
+
     _HAS_POSTGRES = True
 except ImportError:
     PostgreSQLStorage = None  # type: ignore

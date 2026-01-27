@@ -489,9 +489,7 @@ class FileBasedStorage(StorageBackend):
                         count += 1
             stats[f"{name}_count"] = count
 
-        stats["total_count"] = sum(
-            stats[k] for k in stats if k.endswith("_count")
-        )
+        stats["total_count"] = sum(stats[k] for k in stats if k.endswith("_count"))
 
         return stats
 

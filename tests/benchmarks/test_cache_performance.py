@@ -437,7 +437,9 @@ class TestPerformanceMetrics:
 
         assert stats.hits == 10
         assert stats.misses == 10
-        assert abs(stats.hit_rate - 0.5) < 0.01, f"Hit rate should be 50%, got {stats.hit_rate}"
+        assert abs(stats.hit_rate - 0.5) < 0.01, (
+            f"Hit rate should be 50%, got {stats.hit_rate}"
+        )
 
         print("\nHit rate tracking:")
         print(f"  Hits: {stats.hits}")
@@ -498,18 +500,24 @@ if __name__ == "__main__":
         print(f"\n{size.upper()} payload benchmark:")
         results = run_benchmark(cache, n_iterations=100, result_size=size)
 
-        print(f"  SET - mean: {results['set']['mean']:.3f}ms, "
-              f"p95: {results['set']['p95']:.3f}ms, "
-              f"p99: {results['set']['p99']:.3f}ms")
-        print(f"  GET HIT - mean: {results['get_hit']['mean']:.3f}ms, "
-              f"p95: {results['get_hit']['p95']:.3f}ms, "
-              f"p99: {results['get_hit']['p99']:.3f}ms")
-        print(f"  GET MISS - mean: {results['get_miss']['mean']:.3f}ms, "
-              f"p95: {results['get_miss']['p95']:.3f}ms, "
-              f"p99: {results['get_miss']['p99']:.3f}ms")
+        print(
+            f"  SET - mean: {results['set']['mean']:.3f}ms, "
+            f"p95: {results['set']['p95']:.3f}ms, "
+            f"p99: {results['set']['p99']:.3f}ms"
+        )
+        print(
+            f"  GET HIT - mean: {results['get_hit']['mean']:.3f}ms, "
+            f"p95: {results['get_hit']['p95']:.3f}ms, "
+            f"p99: {results['get_hit']['p99']:.3f}ms"
+        )
+        print(
+            f"  GET MISS - mean: {results['get_miss']['mean']:.3f}ms, "
+            f"p95: {results['get_miss']['p95']:.3f}ms, "
+            f"p99: {results['get_miss']['p99']:.3f}ms"
+        )
 
         # Check targets
-        target_met = results['set']['p95'] < 200 and results['get_hit']['p95'] < 200
+        target_met = results["set"]["p95"] < 200 and results["get_hit"]["p95"] < 200
         print(f"  Target (<200ms p95): {'✓ PASS' if target_met else '✗ FAIL'}")
 
         cache.clear()

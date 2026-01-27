@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional
 # numpy is optional - only needed for fallback similarity when pgvector unavailable
 try:
     import numpy as np
+
     NUMPY_AVAILABLE = True
 except ImportError:
     np = None  # type: ignore
@@ -40,6 +41,7 @@ logger = logging.getLogger(__name__)
 try:
     from psycopg.rows import dict_row
     from psycopg_pool import ConnectionPool
+
     PSYCOPG_AVAILABLE = True
 except ImportError:
     PSYCOPG_AVAILABLE = False
@@ -127,7 +129,11 @@ class PostgreSQLStorage(StorageBackend):
         # Support environment variable expansion
         def get_value(key: str, default: Any = None) -> Any:
             value = pg_config.get(key, default)
-            if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+            if (
+                isinstance(value, str)
+                and value.startswith("${")
+                and value.endswith("}")
+            ):
                 env_var = value[2:-1]
                 return os.environ.get(env_var, default)
             return value
@@ -165,7 +171,9 @@ class PostgreSQLStorage(StorageBackend):
                 self._pgvector_available = False
 
             # Create tables
-            vector_type = f"VECTOR({self.embedding_dim})" if self._pgvector_available else "BYTEA"
+            vector_type = (
+                f"VECTOR({self.embedding_dim})" if self._pgvector_available else "BYTEA"
+            )
 
             # Heuristics table
             conn.execute(f"""
@@ -283,7 +291,12 @@ class PostgreSQLStorage(StorageBackend):
             # Using HNSW instead of IVFFlat because HNSW can be built on empty tables
             # IVFFlat requires existing data to build, which causes silent failures on fresh databases
             if self._pgvector_available:
-                for table in ["alma_heuristics", "alma_outcomes", "alma_domain_knowledge", "alma_anti_patterns"]:
+                for table in [
+                    "alma_heuristics",
+                    "alma_outcomes",
+                    "alma_domain_knowledge",
+                    "alma_anti_patterns",
+                ]:
                     try:
                         conn.execute(f"""
                             CREATE INDEX IF NOT EXISTS idx_{table}_embedding
@@ -335,7 +348,9 @@ class PostgreSQLStorage(StorageBackend):
             return dot / (norm_a * norm_b) if norm_a and norm_b else 0.0
         a_arr = np.array(a)
         b_arr = np.array(b)
-        return float(np.dot(a_arr, b_arr) / (np.linalg.norm(a_arr) * np.linalg.norm(b_arr)))
+        return float(
+            np.dot(a_arr, b_arr) / (np.linalg.norm(a_arr) * np.linalg.norm(b_arr))
+        )
 
     # ==================== WRITE OPERATIONS ====================
 
@@ -510,7 +525,9 @@ class PostgreSQLStorage(StorageBackend):
                     anti_pattern.occurrence_count,
                     anti_pattern.last_seen,
                     anti_pattern.created_at,
-                    json.dumps(anti_pattern.metadata) if anti_pattern.metadata else None,
+                    json.dumps(anti_pattern.metadata)
+                    if anti_pattern.metadata
+                    else None,
                     self._embedding_to_db(anti_pattern.embedding),
                 ),
             )
@@ -612,7 +629,9 @@ class PostgreSQLStorage(StorageBackend):
         logger.debug(f"Batch saved {len(outcomes)} outcomes")
         return [o.id for o in outcomes]
 
-    def save_domain_knowledge_batch(self, knowledge_items: List[DomainKnowledge]) -> List[str]:
+    def save_domain_knowledge_batch(
+        self, knowledge_items: List[DomainKnowledge]
+    ) -> List[str]:
         """Save multiple domain knowledge items in a batch using executemany."""
         if not knowledge_items:
             return []
@@ -671,7 +690,11 @@ class PostgreSQLStorage(StorageBackend):
                     FROM {self.schema}.alma_heuristics
                     WHERE project_id = %s AND confidence >= %s
                 """
-                params: List[Any] = [self._embedding_to_db(embedding), project_id, min_confidence]
+                params: List[Any] = [
+                    self._embedding_to_db(embedding),
+                    project_id,
+                    min_confidence,
+                ]
 
                 if agent:
                     query += " AND agent = %s"
@@ -935,7 +958,9 @@ class PostgreSQLStorage(StorageBackend):
         results = [self._row_to_heuristic(row) for row in rows]
 
         if embedding and not self._pgvector_available and results:
-            results = self._filter_by_similarity(results, embedding, top_k * len(agents), "embedding")
+            results = self._filter_by_similarity(
+                results, embedding, top_k * len(agents), "embedding"
+            )
 
         return results
 
@@ -959,7 +984,11 @@ class PostgreSQLStorage(StorageBackend):
                     FROM {self.schema}.alma_outcomes
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
-                params: List[Any] = [self._embedding_to_db(embedding), project_id, agents]
+                params: List[Any] = [
+                    self._embedding_to_db(embedding),
+                    project_id,
+                    agents,
+                ]
             else:
                 query = f"""
                     SELECT *
@@ -987,7 +1016,9 @@ class PostgreSQLStorage(StorageBackend):
         results = [self._row_to_outcome(row) for row in rows]
 
         if embedding and not self._pgvector_available and results:
-            results = self._filter_by_similarity(results, embedding, top_k * len(agents), "embedding")
+            results = self._filter_by_similarity(
+                results, embedding, top_k * len(agents), "embedding"
+            )
 
         return results
 
@@ -1010,7 +1041,11 @@ class PostgreSQLStorage(StorageBackend):
                     FROM {self.schema}.alma_domain_knowledge
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
-                params: List[Any] = [self._embedding_to_db(embedding), project_id, agents]
+                params: List[Any] = [
+                    self._embedding_to_db(embedding),
+                    project_id,
+                    agents,
+                ]
             else:
                 query = f"""
                     SELECT *
@@ -1035,7 +1070,9 @@ class PostgreSQLStorage(StorageBackend):
         results = [self._row_to_domain_knowledge(row) for row in rows]
 
         if embedding and not self._pgvector_available and results:
-            results = self._filter_by_similarity(results, embedding, top_k * len(agents), "embedding")
+            results = self._filter_by_similarity(
+                results, embedding, top_k * len(agents), "embedding"
+            )
 
         return results
 
@@ -1057,7 +1094,11 @@ class PostgreSQLStorage(StorageBackend):
                     FROM {self.schema}.alma_anti_patterns
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
-                params: List[Any] = [self._embedding_to_db(embedding), project_id, agents]
+                params: List[Any] = [
+                    self._embedding_to_db(embedding),
+                    project_id,
+                    agents,
+                ]
             else:
                 query = f"""
                     SELECT *
@@ -1078,7 +1119,9 @@ class PostgreSQLStorage(StorageBackend):
         results = [self._row_to_anti_pattern(row) for row in rows]
 
         if embedding and not self._pgvector_available and results:
-            results = self._filter_by_similarity(results, embedding, top_k * len(agents), "embedding")
+            results = self._filter_by_similarity(
+                results, embedding, top_k * len(agents), "embedding"
+            )
 
         return results
 
@@ -1290,7 +1333,9 @@ class PostgreSQLStorage(StorageBackend):
                 stats[f"{stat_name}_count"] = row["count"] if row else 0
 
             # Preferences don't have project_id
-            cursor = conn.execute(f"SELECT COUNT(*) as count FROM {self.schema}.alma_preferences")
+            cursor = conn.execute(
+                f"SELECT COUNT(*) as count FROM {self.schema}.alma_preferences"
+            )
             row = cursor.fetchone()
             stats["preferences_count"] = row["count"] if row else 0
 

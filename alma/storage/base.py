@@ -64,7 +64,9 @@ class StorageBackend(ABC):
         """Save multiple outcomes in a batch. Default implementation calls save_outcome in a loop."""
         return [self.save_outcome(o) for o in outcomes]
 
-    def save_domain_knowledge_batch(self, knowledge_items: List[DomainKnowledge]) -> List[str]:
+    def save_domain_knowledge_batch(
+        self, knowledge_items: List[DomainKnowledge]
+    ) -> List[str]:
         """Save multiple domain knowledge items in a batch. Default implementation calls save_domain_knowledge in a loop."""
         return [self.save_domain_knowledge(k) for k in knowledge_items]
 

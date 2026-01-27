@@ -275,7 +275,9 @@ class SessionContext:
             if "branch" in self.codebase_state:
                 lines.append(f"Branch: {self.codebase_state['branch']}")
             if "uncommitted" in self.codebase_state:
-                lines.append(f"Uncommitted Changes: {self.codebase_state['uncommitted']}")
+                lines.append(
+                    f"Uncommitted Changes: {self.codebase_state['uncommitted']}"
+                )
 
         # Rules
         if self.rules_of_engagement:

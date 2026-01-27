@@ -176,7 +176,10 @@ class TestTaskTypeValidator:
         # "api endpoint request" matches "api", "endpoint", "request" -> api_testing (3)
         assert validator.infer_type("Test API endpoint request") == "api_testing"
         # "database query" matches both keywords -> database_validation (2)
-        assert validator.infer_type("Run database query validation") == "database_validation"
+        assert (
+            validator.infer_type("Run database query validation")
+            == "database_validation"
+        )
 
     def test_infer_type_ui(self):
         """Test inferring UI task types."""
@@ -209,9 +212,7 @@ class TestTaskTypeValidator:
 
     def test_custom_types(self):
         """Test custom type definitions."""
-        custom = {
-            "ml_testing": ["model", "inference", "prediction"]
-        }
+        custom = {"ml_testing": ["model", "inference", "prediction"]}
         validator = TaskTypeValidator(custom_types=custom)
 
         result = validator.infer_type("Test the ML model inference")

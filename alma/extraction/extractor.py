@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class FactType(Enum):
     """Types of facts that can be extracted from conversations."""
+
     HEURISTIC = "heuristic"  # Strategy that worked
     ANTI_PATTERN = "anti_pattern"  # What NOT to do
     PREFERENCE = "preference"  # User preference
@@ -26,6 +27,7 @@ class FactType(Enum):
 @dataclass
 class ExtractedFact:
     """A fact extracted from conversation."""
+
     fact_type: FactType
     content: str
     confidence: float  # 0.0 to 1.0
@@ -46,6 +48,7 @@ class ExtractedFact:
 @dataclass
 class ExtractionResult:
     """Result of fact extraction from a conversation."""
+
     facts: List[ExtractedFact]
     raw_response: str  # LLM's raw response for debugging
     tokens_used: int
@@ -84,7 +87,7 @@ class LLMFactExtractor(FactExtractor):
     from conversations. Supports OpenAI, Anthropic, and local models.
     """
 
-    EXTRACTION_PROMPT = '''You are a fact extraction system for an AI agent memory architecture.
+    EXTRACTION_PROMPT = """You are a fact extraction system for an AI agent memory architecture.
 
 Analyze the following conversation and extract facts worth remembering.
 
@@ -135,7 +138,7 @@ Respond in JSON format:
 ```
 
 If no facts worth extracting, return: {{"facts": []}}
-'''
+"""
 
     def __init__(
         self,
@@ -164,9 +167,11 @@ If no facts worth extracting, return: {{"facts": []}}
         if self._client is None:
             if self.provider == "openai":
                 from openai import OpenAI
+
                 self._client = OpenAI(api_key=self.api_key)
             elif self.provider == "anthropic":
                 from anthropic import Anthropic
+
                 self._client = Anthropic(api_key=self.api_key)
             else:
                 raise ValueError(f"Unsupported provider: {self.provider}")
@@ -185,8 +190,7 @@ If no facts worth extracting, return: {{"facts": []}}
 
         # Format conversation
         conversation = "\n".join(
-            f"{msg['role'].upper()}: {msg['content']}"
-            for msg in messages
+            f"{msg['role'].upper()}: {msg['content']}" for msg in messages
         )
 
         # Build prompt
@@ -197,7 +201,9 @@ If no facts worth extracting, return: {{"facts": []}}
         existing_facts_section = ""
         if existing_facts:
             facts_list = "\n".join(f"- {f}" for f in existing_facts)
-            existing_facts_section = f"\nEXISTING FACTS (do not duplicate):\n{facts_list}\n"
+            existing_facts_section = (
+                f"\nEXISTING FACTS (do not duplicate):\n{facts_list}\n"
+            )
 
         prompt = self.EXTRACTION_PROMPT.format(
             agent_context=agent_context_section,
@@ -249,16 +255,18 @@ If no facts worth extracting, return: {{"facts": []}}
         import re
 
         # Extract JSON from response (handle markdown code blocks)
-        json_match = re.search(r'```json\s*(.*?)\s*```', raw_response, re.DOTALL)
+        json_match = re.search(r"```json\s*(.*?)\s*```", raw_response, re.DOTALL)
         if json_match:
             json_str = json_match.group(1)
         else:
             # Try to find raw JSON
-            json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
+            json_match = re.search(r"\{.*\}", raw_response, re.DOTALL)
             if json_match:
                 json_str = json_match.group(0)
             else:
-                logger.warning(f"Could not parse JSON from response: {raw_response[:200]}")
+                logger.warning(
+                    f"Could not parse JSON from response: {raw_response[:200]}"
+                )
                 return []
 
         try:
@@ -271,16 +279,18 @@ If no facts worth extracting, return: {{"facts": []}}
         for item in data.get("facts", []):
             try:
                 fact_type = FactType[item["fact_type"].upper()]
-                facts.append(ExtractedFact(
-                    fact_type=fact_type,
-                    content=item["content"],
-                    confidence=float(item.get("confidence", 0.7)),
-                    source_text=source_text[:500],  # Truncate for storage
-                    condition=item.get("condition"),
-                    strategy=item.get("strategy"),
-                    category=item.get("category"),
-                    domain=item.get("domain"),
-                ))
+                facts.append(
+                    ExtractedFact(
+                        fact_type=fact_type,
+                        content=item["content"],
+                        confidence=float(item.get("confidence", 0.7)),
+                        source_text=source_text[:500],  # Truncate for storage
+                        condition=item.get("condition"),
+                        strategy=item.get("strategy"),
+                        category=item.get("category"),
+                        domain=item.get("domain"),
+                    )
+                )
             except (KeyError, ValueError) as e:
                 logger.warning(f"Could not parse fact: {item}, error: {e}")
                 continue
@@ -333,34 +343,40 @@ class RuleBasedExtractor(FactExtractor):
             # Check for heuristics
             for pattern in self.HEURISTIC_PATTERNS:
                 if re.search(pattern, content, re.IGNORECASE):
-                    facts.append(ExtractedFact(
-                        fact_type=FactType.HEURISTIC,
-                        content=msg["content"][:200],
-                        confidence=0.5,  # Lower confidence for rule-based
-                        source_text=msg["content"],
-                    ))
+                    facts.append(
+                        ExtractedFact(
+                            fact_type=FactType.HEURISTIC,
+                            content=msg["content"][:200],
+                            confidence=0.5,  # Lower confidence for rule-based
+                            source_text=msg["content"],
+                        )
+                    )
                     break
 
             # Check for anti-patterns
             for pattern in self.ANTI_PATTERN_PATTERNS:
                 if re.search(pattern, content, re.IGNORECASE):
-                    facts.append(ExtractedFact(
-                        fact_type=FactType.ANTI_PATTERN,
-                        content=msg["content"][:200],
-                        confidence=0.5,
-                        source_text=msg["content"],
-                    ))
+                    facts.append(
+                        ExtractedFact(
+                            fact_type=FactType.ANTI_PATTERN,
+                            content=msg["content"][:200],
+                            confidence=0.5,
+                            source_text=msg["content"],
+                        )
+                    )
                     break
 
             # Check for preferences
             for pattern in self.PREFERENCE_PATTERNS:
                 if re.search(pattern, content, re.IGNORECASE):
-                    facts.append(ExtractedFact(
-                        fact_type=FactType.PREFERENCE,
-                        content=msg["content"][:200],
-                        confidence=0.5,
-                        source_text=msg["content"],
-                    ))
+                    facts.append(
+                        ExtractedFact(
+                            fact_type=FactType.PREFERENCE,
+                            content=msg["content"][:200],
+                            confidence=0.5,
+                            source_text=msg["content"],
+                        )
+                    )
                     break
 
         extraction_time_ms = int((time.time() - start_time) * 1000)
@@ -390,6 +406,7 @@ def create_extractor(
     if provider == "auto":
         # Try to use LLM if API key is available
         import os
+
         if os.environ.get("OPENAI_API_KEY"):
             provider = "openai"
         elif os.environ.get("ANTHROPIC_API_KEY"):

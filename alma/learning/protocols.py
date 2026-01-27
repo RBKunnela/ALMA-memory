@@ -109,7 +109,9 @@ class LearningProtocol:
 
         # Save outcome
         self.storage.save_outcome(outcome_record)
-        logger.info(f"Recorded outcome for {agent}: {'success' if outcome else 'failure'}")
+        logger.info(
+            f"Recorded outcome for {agent}: {'success' if outcome else 'failure'}"
+        )
 
         # Check if we should create/update a heuristic
         self._maybe_create_heuristic(
@@ -162,7 +164,8 @@ class LearningProtocol:
 
         # Filter to same strategy
         same_strategy = [
-            o for o in similar_outcomes
+            o
+            for o in similar_outcomes
             if self._strategies_similar(o.strategy_used, strategy)
         ]
 
@@ -209,9 +212,11 @@ class LearningProtocol:
 
         # Filter to failures with similar error
         similar = [
-            o for o in similar_failures
-            if not o.success and o.error_message and
-            self._errors_similar(o.error_message, error)
+            o
+            for o in similar_failures
+            if not o.success
+            and o.error_message
+            and self._errors_similar(o.error_message, error)
         ]
 
         if len(similar) >= 2:  # At least 2 similar failures
@@ -338,7 +343,9 @@ class LearningProtocol:
             similarity = self._cosine_similarity(emb1, emb2)
             return similarity >= self.similarity_threshold
         except Exception as e:
-            logger.warning(f"Embedding similarity failed, falling back to word overlap: {e}")
+            logger.warning(
+                f"Embedding similarity failed, falling back to word overlap: {e}"
+            )
             return self._strategies_similar_word_overlap(s1, s2)
 
     def _strategies_similar_word_overlap(self, s1: str, s2: str) -> bool:

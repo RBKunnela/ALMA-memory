@@ -110,12 +110,26 @@ def get_research_schema() -> DomainSchema:
     schema.add_entity_type(
         name="paper",
         description="An academic paper or article",
-        attributes=["title", "authors", "year", "citations", "abstract", "venue", "doi"],
+        attributes=[
+            "title",
+            "authors",
+            "year",
+            "citations",
+            "abstract",
+            "venue",
+            "doi",
+        ],
     )
     schema.add_entity_type(
         name="hypothesis",
         description="A research hypothesis",
-        attributes=["statement", "confidence", "evidence_for", "evidence_against", "status"],
+        attributes=[
+            "statement",
+            "confidence",
+            "evidence_for",
+            "evidence_against",
+            "status",
+        ],
     )
     schema.add_entity_type(
         name="experiment",

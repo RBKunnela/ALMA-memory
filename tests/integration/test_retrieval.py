@@ -30,6 +30,7 @@ from alma.types import (
 # Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def mock_storage():
     """Create a mock storage backend."""
@@ -143,6 +144,7 @@ def custom_scorer():
 # Scoring Tests
 # ============================================================================
 
+
 class TestMemoryScorer:
     """Tests for MemoryScorer class."""
 
@@ -200,7 +202,12 @@ class TestMemoryScorer:
     def test_custom_weights(self, custom_scorer):
         """Test that custom weights are applied correctly."""
         weights = custom_scorer.weights
-        total = weights.similarity + weights.recency + weights.success_rate + weights.confidence
+        total = (
+            weights.similarity
+            + weights.recency
+            + weights.success_rate
+            + weights.confidence
+        )
         # Weights should be normalized to sum to 1.0
         assert 0.99 <= total <= 1.01
 
@@ -239,6 +246,7 @@ class TestCompositeScore:
 # ============================================================================
 # Cache Tests
 # ============================================================================
+
 
 class TestRetrievalCache:
     """Tests for RetrievalCache class."""
@@ -345,6 +353,7 @@ class TestRetrievalCache:
 # ============================================================================
 # Retrieval Engine Integration Tests
 # ============================================================================
+
 
 class TestRetrievalEngine:
     """Integration tests for RetrievalEngine."""
@@ -483,6 +492,7 @@ class TestRetrievalEngine:
 # ============================================================================
 # Edge Cases
 # ============================================================================
+
 
 class TestEdgeCases:
     """Test edge cases and error handling."""

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExtractionConfig:
     """Configuration for entity extraction."""
+
     provider: str = "openai"
     model: str = "gpt-4o-mini"
     temperature: float = 0.1
@@ -29,7 +30,7 @@ class EntityExtractor:
     relationships between them from text.
     """
 
-    EXTRACTION_PROMPT = '''Extract entities and relationships from the following text.
+    EXTRACTION_PROMPT = """Extract entities and relationships from the following text.
 
 Entities are things like:
 - People (names, roles)
@@ -62,7 +63,7 @@ Respond in JSON format:
 ```
 
 Only extract entities and relationships that are explicitly mentioned or strongly implied.
-'''
+"""
 
     def __init__(self, config: Optional[ExtractionConfig] = None):
         self.config = config or ExtractionConfig()
@@ -73,9 +74,11 @@ Only extract entities and relationships that are explicitly mentioned or strongl
         if self._client is None:
             if self.config.provider == "openai":
                 from openai import OpenAI
+
                 self._client = OpenAI()
             elif self.config.provider == "anthropic":
                 from anthropic import Anthropic
+
                 self._client = Anthropic()
         return self._client
 
@@ -120,11 +123,11 @@ Only extract entities and relationships that are explicitly mentioned or strongl
             raise ValueError(f"Unsupported provider: {self.config.provider}")
 
         # Parse JSON from response
-        json_match = re.search(r'```json\s*(.*?)\s*```', raw_response, re.DOTALL)
+        json_match = re.search(r"```json\s*(.*?)\s*```", raw_response, re.DOTALL)
         if json_match:
             json_str = json_match.group(1)
         else:
-            json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
+            json_match = re.search(r"\{.*\}", raw_response, re.DOTALL)
             json_str = json_match.group(0) if json_match else "{}"
 
         try:
@@ -157,8 +160,12 @@ Only extract entities and relationships that are explicitly mentioned or strongl
             target_id = r.get("target")
 
             # Try to resolve IDs
-            source = entity_map.get(source_id) or entity_map.get(source_id.lower() if source_id else "")
-            target = entity_map.get(target_id) or entity_map.get(target_id.lower() if target_id else "")
+            source = entity_map.get(source_id) or entity_map.get(
+                source_id.lower() if source_id else ""
+            )
+            target = entity_map.get(target_id) or entity_map.get(
+                target_id.lower() if target_id else ""
+            )
 
             if source and target:
                 rel = Relationship(
@@ -186,9 +193,6 @@ Only extract entities and relationships that are explicitly mentioned or strongl
             Tuple of (entities, relationships)
         """
         # Combine messages into text
-        text = "\n".join(
-            f"{msg['role'].upper()}: {msg['content']}"
-            for msg in messages
-        )
+        text = "\n".join(f"{msg['role'].upper()}: {msg['content']}" for msg in messages)
 
         return self.extract(text)

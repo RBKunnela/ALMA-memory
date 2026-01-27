@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 
 class MemoryType(Enum):
     """Categories of memory that agents can store and retrieve."""
+
     HEURISTIC = "heuristic"
     OUTCOME = "outcome"
     USER_PREFERENCE = "user_preference"
@@ -27,11 +28,16 @@ class MemoryScope:
     Prevents scope creep by explicitly listing allowed and forbidden domains.
     Supports multi-agent memory sharing through share_with and inherit_from.
     """
+
     agent_name: str
     can_learn: List[str]
     cannot_learn: List[str]
-    share_with: List[str] = field(default_factory=list)  # Agents that can read this agent's memories
-    inherit_from: List[str] = field(default_factory=list)  # Agents whose memories this agent can read
+    share_with: List[str] = field(
+        default_factory=list
+    )  # Agents that can read this agent's memories
+    inherit_from: List[str] = field(
+        default_factory=list
+    )  # Agents whose memories this agent can read
     min_occurrences_for_heuristic: int = 3
 
     def is_allowed(self, domain: str) -> bool:
@@ -83,11 +89,12 @@ class Heuristic:
 
     Heuristics are only created after min_occurrences validations.
     """
+
     id: str
     agent: str
     project_id: str
     condition: str  # "form with multiple required fields"
-    strategy: str   # "test happy path first, then individual validation"
+    strategy: str  # "test happy path first, then individual validation"
     confidence: float  # 0.0 to 1.0
     occurrence_count: int
     success_count: int
@@ -111,6 +118,7 @@ class Outcome:
 
     Outcomes are raw data that can be consolidated into heuristics.
     """
+
     id: str
     agent: str
     project_id: str
@@ -133,6 +141,7 @@ class UserPreference:
 
     Persists across sessions so users don't repeat themselves.
     """
+
     id: str
     user_id: str
     category: str  # "communication", "code_style", "workflow"
@@ -150,6 +159,7 @@ class DomainKnowledge:
 
     Different from heuristics - these are facts, not strategies.
     """
+
     id: str
     agent: str
     project_id: str
@@ -169,6 +179,7 @@ class AntiPattern:
 
     Helps agents avoid repeating mistakes.
     """
+
     id: str
     agent: str
     project_id: str
@@ -189,6 +200,7 @@ class MemorySlice:
 
     This is what gets injected per-call - must stay under token budget.
     """
+
     heuristics: List[Heuristic] = field(default_factory=list)
     outcomes: List[Outcome] = field(default_factory=list)
     preferences: List[UserPreference] = field(default_factory=list)
@@ -236,7 +248,7 @@ class MemorySlice:
 
         # Basic token estimation (rough: 1 token ~ 4 chars)
         if len(result) > max_tokens * 4:
-            result = result[:max_tokens * 4] + "\n[truncated]"
+            result = result[: max_tokens * 4] + "\n[truncated]"
 
         return result
 
@@ -244,9 +256,9 @@ class MemorySlice:
     def total_items(self) -> int:
         """Total number of memory items in this slice."""
         return (
-            len(self.heuristics) +
-            len(self.outcomes) +
-            len(self.preferences) +
-            len(self.domain_knowledge) +
-            len(self.anti_patterns)
+            len(self.heuristics)
+            + len(self.outcomes)
+            + len(self.preferences)
+            + len(self.domain_knowledge)
+            + len(self.anti_patterns)
         )

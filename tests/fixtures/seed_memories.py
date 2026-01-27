@@ -45,7 +45,10 @@ def seed_helena_memories(
 
     # Helena heuristics - UI testing strategies
     helena_heuristics = [
-        ("form with multiple required fields", "validate each field individually before full form submit"),
+        (
+            "form with multiple required fields",
+            "validate each field individually before full form submit",
+        ),
         ("modal dialog testing", "wait for animation to complete before interacting"),
         ("dropdown selection", "use keyboard navigation for more reliable selection"),
         ("table with pagination", "verify total count before and after page change"),

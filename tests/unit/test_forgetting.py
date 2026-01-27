@@ -172,8 +172,7 @@ class TestForgettingEngine:
 
         # h2 has confidence 0.2, below threshold 0.3
         low_conf = [
-            r for r in summary.pruned_items
-            if r.reason == PruneReason.LOW_CONFIDENCE
+            r for r in summary.pruned_items if r.reason == PruneReason.LOW_CONFIDENCE
         ]
         assert len(low_conf) >= 1
 
@@ -712,7 +711,9 @@ class TestMemoryHealthMonitor:
 
     def test_alert_handler(self, mock_storage_for_monitor):
         """Test alert handler callback."""
-        thresholds = HealthThresholds(max_total_items_warning=1, max_total_items_critical=2)  # Will trigger alert
+        thresholds = HealthThresholds(
+            max_total_items_warning=1, max_total_items_critical=2
+        )  # Will trigger alert
         monitor = MemoryHealthMonitor(mock_storage_for_monitor, thresholds)
 
         received_alerts = []
@@ -884,8 +885,12 @@ class TestCleanupScheduler:
         """Test getting multiple jobs."""
         scheduler = CleanupScheduler(mock_storage_for_scheduler)
 
-        scheduler.register_job(CleanupJob(name="job1", project_id="test1", interval_hours=1.0))
-        scheduler.register_job(CleanupJob(name="job2", project_id="test2", interval_hours=2.0))
+        scheduler.register_job(
+            CleanupJob(name="job1", project_id="test1", interval_hours=1.0)
+        )
+        scheduler.register_job(
+            CleanupJob(name="job2", project_id="test2", interval_hours=2.0)
+        )
 
         jobs = scheduler.get_jobs()
 

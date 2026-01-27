@@ -2,7 +2,6 @@
 Tests for the Domain Memory Factory module.
 """
 
-
 from alma.domains import (
     DomainMemoryFactory,
     DomainSchema,
@@ -261,7 +260,11 @@ class TestDomainMemoryFactory:
             config={
                 "description": "My custom domain",
                 "entity_types": [
-                    {"name": "item", "description": "An item", "attributes": ["status"]},
+                    {
+                        "name": "item",
+                        "description": "An item",
+                        "attributes": ["status"],
+                    },
                 ],
                 "learning_categories": ["pattern1", "pattern2"],
             },
@@ -331,10 +334,14 @@ class TestDomainMemoryFactory:
         assert coding is not None
         assert coding._domain_schema.name == "coding"
 
-        research = create_research_alma("proj", agent="researcher", embedding_provider="mock")
+        research = create_research_alma(
+            "proj", agent="researcher", embedding_provider="mock"
+        )
         assert research is not None
         assert research._domain_schema.name == "research"
 
-        general = create_general_alma("proj", agent="assistant", embedding_provider="mock")
+        general = create_general_alma(
+            "proj", agent="assistant", embedding_provider="mock"
+        )
         assert general is not None
         assert general._domain_schema.name == "general"

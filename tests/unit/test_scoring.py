@@ -21,7 +21,12 @@ class TestScoringWeights:
     def test_default_weights_sum_to_one(self):
         """Default weights should sum to 1.0."""
         weights = ScoringWeights()
-        total = weights.similarity + weights.recency + weights.success_rate + weights.confidence
+        total = (
+            weights.similarity
+            + weights.recency
+            + weights.success_rate
+            + weights.confidence
+        )
         assert abs(total - 1.0) < 0.01
 
     def test_custom_weights_normalized(self):
@@ -33,7 +38,12 @@ class TestScoringWeights:
             success_rate=0.5,
             confidence=0.5,
         )
-        total = weights.similarity + weights.recency + weights.success_rate + weights.confidence
+        total = (
+            weights.similarity
+            + weights.recency
+            + weights.success_rate
+            + weights.confidence
+        )
         assert abs(total - 1.0) < 0.01
 
     def test_zero_weights_handled(self):
@@ -300,12 +310,30 @@ class TestScoreThreshold:
         scorer = MemoryScorer()
 
         items = [
-            ScoredItem(item="high", score=0.9, similarity_score=0.9,
-                      recency_score=0.9, success_score=0.9, confidence_score=0.9),
-            ScoredItem(item="medium", score=0.5, similarity_score=0.5,
-                      recency_score=0.5, success_score=0.5, confidence_score=0.5),
-            ScoredItem(item="low", score=0.1, similarity_score=0.1,
-                      recency_score=0.1, success_score=0.1, confidence_score=0.1),
+            ScoredItem(
+                item="high",
+                score=0.9,
+                similarity_score=0.9,
+                recency_score=0.9,
+                success_score=0.9,
+                confidence_score=0.9,
+            ),
+            ScoredItem(
+                item="medium",
+                score=0.5,
+                similarity_score=0.5,
+                recency_score=0.5,
+                success_score=0.5,
+                confidence_score=0.5,
+            ),
+            ScoredItem(
+                item="low",
+                score=0.1,
+                similarity_score=0.1,
+                recency_score=0.1,
+                success_score=0.1,
+                confidence_score=0.1,
+            ),
         ]
 
         filtered = scorer.apply_score_threshold(items, min_score=0.4)

@@ -109,15 +109,19 @@ class ALMA:
 
         if storage_type == "azure":
             from alma.storage.azure_cosmos import AzureCosmosStorage
+
             return AzureCosmosStorage.from_config(config)
         elif storage_type == "postgres":
             from alma.storage.postgresql import PostgreSQLStorage
+
             return PostgreSQLStorage.from_config(config)
         elif storage_type == "sqlite":
             from alma.storage.sqlite_local import SQLiteStorage
+
             return SQLiteStorage.from_config(config)
         else:
             from alma.storage.file_based import FileBasedStorage
+
             return FileBasedStorage.from_config(config)
 
     def retrieve(
@@ -253,9 +257,7 @@ class ALMA:
         # Check scope
         scope = self.scopes.get(agent)
         if scope and not scope.is_allowed(domain):
-            logger.warning(
-                f"Agent '{agent}' not allowed to learn in domain '{domain}'"
-            )
+            logger.warning(f"Agent '{agent}' not allowed to learn in domain '{domain}'")
             return None
 
         result = self.learning.add_domain_knowledge(

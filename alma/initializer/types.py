@@ -169,8 +169,8 @@ class InitializationResult:
         if self.work_items:
             sections.append("### Work Items")
             for i, item in enumerate(self.work_items, 1):
-                title = getattr(item, 'title', str(item))
-                status = getattr(item, 'status', 'pending')
+                title = getattr(item, "title", str(item))
+                status = getattr(item, "status", "pending")
                 sections.append(f"{i}. [{status}] {title}")
             sections.append("")
 
@@ -183,7 +183,7 @@ class InitializationResult:
         # Relevant memories
         if self.relevant_memories:
             sections.append("### Relevant Knowledge from Past Runs")
-            if hasattr(self.relevant_memories, 'to_prompt'):
+            if hasattr(self.relevant_memories, "to_prompt"):
                 sections.append(self.relevant_memories.to_prompt())
             else:
                 sections.append(str(self.relevant_memories))
@@ -198,7 +198,9 @@ class InitializationResult:
         # Recommended start
         if self.recommended_start:
             sections.append("### Recommended First Action")
-            title = getattr(self.recommended_start, 'title', str(self.recommended_start))
+            title = getattr(
+                self.recommended_start, "title", str(self.recommended_start)
+            )
             sections.append(f"Start with: {title}")
             sections.append("")
 
@@ -214,7 +216,7 @@ class InitializationResult:
             "original_prompt": self.original_prompt,
             "goal": self.goal,
             "work_items": [
-                item.to_dict() if hasattr(item, 'to_dict') else str(item)
+                item.to_dict() if hasattr(item, "to_dict") else str(item)
                 for item in self.work_items
             ],
             "orientation": {
@@ -225,7 +227,9 @@ class InitializationResult:
                 "key_directories": self.orientation.key_directories,
                 "config_files": self.orientation.config_files,
                 "summary": self.orientation.summary,
-            } if self.orientation else None,
+            }
+            if self.orientation
+            else None,
             "recent_activity": self.recent_activity,
             "rules": {
                 "scope_rules": self.rules.scope_rules,
@@ -234,8 +238,10 @@ class InitializationResult:
             },
             "recommended_start": (
                 self.recommended_start.to_dict()
-                if self.recommended_start and hasattr(self.recommended_start, 'to_dict')
-                else str(self.recommended_start) if self.recommended_start else None
+                if self.recommended_start and hasattr(self.recommended_start, "to_dict")
+                else str(self.recommended_start)
+                if self.recommended_start
+                else None
             ),
             "initialized_at": self.initialized_at.isoformat(),
             "metadata": self.metadata,

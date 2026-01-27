@@ -120,10 +120,12 @@ class AutoLearner:
         for fact in extraction_result.facts:
             # Check confidence
             if fact.confidence < self.min_confidence:
-                rejected_facts.append({
-                    "fact": fact,
-                    "reason": f"Low confidence: {fact.confidence} < {self.min_confidence}",
-                })
+                rejected_facts.append(
+                    {
+                        "fact": fact,
+                        "reason": f"Low confidence: {fact.confidence} < {self.min_confidence}",
+                    }
+                )
                 continue
 
             # Check scope for heuristics and anti-patterns
@@ -131,10 +133,12 @@ class AutoLearner:
                 # Infer domain from content
                 inferred_domain = self._infer_domain(fact.content)
                 if inferred_domain and not scope.is_allowed(inferred_domain):
-                    rejected_facts.append({
-                        "fact": fact,
-                        "reason": f"Outside agent scope: {inferred_domain}",
-                    })
+                    rejected_facts.append(
+                        {
+                            "fact": fact,
+                            "reason": f"Outside agent scope: {inferred_domain}",
+                        }
+                    )
                     continue
 
             valid_facts.append(fact)
@@ -149,10 +153,12 @@ class AutoLearner:
                         committed.append({"fact": fact, "id": result})
                 except Exception as e:
                     logger.error(f"Failed to commit fact: {e}")
-                    rejected_facts.append({
-                        "fact": fact,
-                        "reason": f"Commit failed: {str(e)}",
-                    })
+                    rejected_facts.append(
+                        {
+                            "fact": fact,
+                            "reason": f"Commit failed: {str(e)}",
+                        }
+                    )
 
         return {
             "extracted_count": len(extraction_result.facts),

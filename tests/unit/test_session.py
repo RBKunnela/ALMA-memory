@@ -2,7 +2,6 @@
 Tests for the Session Management module.
 """
 
-
 import pytest
 
 from alma.session import (
@@ -134,7 +133,9 @@ class TestSessionContext:
 
     def test_format_orientation(self):
         """Test formatting orientation briefing."""
-        previous = SessionHandoff.create("proj", "Helena", "prev", "test_ui", "UI Testing")
+        previous = SessionHandoff.create(
+            "proj", "Helena", "prev", "test_ui", "UI Testing"
+        )
         previous.next_steps = ["Complete form tests"]
 
         context = SessionContext.create(

@@ -260,7 +260,9 @@ class TestSQLiteMultiAgentSharing:
         assert len(knowledge) == 1
         assert knowledge[0].agent == "agent_a"
 
-    def test_empty_agents_list(self, storage: SQLiteStorage, agents_with_memories: Dict[str, list]):
+    def test_empty_agents_list(
+        self, storage: SQLiteStorage, agents_with_memories: Dict[str, list]
+    ):
         """Test that empty agents list returns empty results."""
         heuristics = storage.get_heuristics_for_agents(
             project_id="test-project",
@@ -339,79 +341,89 @@ class TestRetrievalEngineMultiAgentSharing:
         embedding = [0.1] * 384
 
         # Agent A heuristic
-        storage.save_heuristic(Heuristic(
-            id="h_agent_a",
-            agent="agent_a",
-            project_id="test-project",
-            condition="when testing forms",
-            strategy="validate inputs first",
-            confidence=0.9,
-            occurrence_count=10,
-            success_count=9,
-            last_validated=now,
-            created_at=now,
-            embedding=embedding,
-        ))
+        storage.save_heuristic(
+            Heuristic(
+                id="h_agent_a",
+                agent="agent_a",
+                project_id="test-project",
+                condition="when testing forms",
+                strategy="validate inputs first",
+                confidence=0.9,
+                occurrence_count=10,
+                success_count=9,
+                last_validated=now,
+                created_at=now,
+                embedding=embedding,
+            )
+        )
 
         # Agent B heuristic
-        storage.save_heuristic(Heuristic(
-            id="h_agent_b",
-            agent="agent_b",
-            project_id="test-project",
-            condition="when testing APIs",
-            strategy="check auth first",
-            confidence=0.85,
-            occurrence_count=5,
-            success_count=4,
-            last_validated=now,
-            created_at=now,
-            embedding=embedding,
-        ))
+        storage.save_heuristic(
+            Heuristic(
+                id="h_agent_b",
+                agent="agent_b",
+                project_id="test-project",
+                condition="when testing APIs",
+                strategy="check auth first",
+                confidence=0.85,
+                occurrence_count=5,
+                success_count=4,
+                last_validated=now,
+                created_at=now,
+                embedding=embedding,
+            )
+        )
 
         # Agent C heuristic (isolated)
-        storage.save_heuristic(Heuristic(
-            id="h_agent_c",
-            agent="agent_c",
-            project_id="test-project",
-            condition="secret condition",
-            strategy="secret strategy",
-            confidence=0.95,
-            occurrence_count=20,
-            success_count=19,
-            last_validated=now,
-            created_at=now,
-            embedding=embedding,
-        ))
+        storage.save_heuristic(
+            Heuristic(
+                id="h_agent_c",
+                agent="agent_c",
+                project_id="test-project",
+                condition="secret condition",
+                strategy="secret strategy",
+                confidence=0.95,
+                occurrence_count=20,
+                success_count=19,
+                last_validated=now,
+                created_at=now,
+                embedding=embedding,
+            )
+        )
 
         # Agent D heuristic
-        storage.save_heuristic(Heuristic(
-            id="h_agent_d",
-            agent="agent_d",
-            project_id="test-project",
-            condition="bidirectional d",
-            strategy="strategy d",
-            confidence=0.88,
-            occurrence_count=8,
-            success_count=7,
-            last_validated=now,
-            created_at=now,
-            embedding=embedding,
-        ))
+        storage.save_heuristic(
+            Heuristic(
+                id="h_agent_d",
+                agent="agent_d",
+                project_id="test-project",
+                condition="bidirectional d",
+                strategy="strategy d",
+                confidence=0.88,
+                occurrence_count=8,
+                success_count=7,
+                last_validated=now,
+                created_at=now,
+                embedding=embedding,
+            )
+        )
 
         # Agent E heuristic
-        storage.save_heuristic(Heuristic(
-            id="h_agent_e",
-            agent="agent_e",
-            project_id="test-project",
-            condition="bidirectional e",
-            strategy="strategy e",
-            confidence=0.87,
-            occurrence_count=7,
-            success_count=6,
-            last_validated=now,
-            created_at=now,
-            embedding=embedding,
-        ))
+        storage.save_heuristic(
+            Heuristic(
+                id="h_agent_e",
+                agent="agent_e",
+                project_id="test-project",
+                condition="bidirectional e",
+                strategy="strategy e",
+                confidence=0.87,
+                occurrence_count=7,
+                success_count=6,
+                last_validated=now,
+                created_at=now,
+                embedding=embedding,
+            )
+        )
 
         return storage
 
@@ -464,7 +476,9 @@ class TestRetrievalEngineMultiAgentSharing:
 
         # Should only see agent_c's own memories
         for h in result.heuristics:
-            assert h.agent == "agent_c", f"Agent C should only see its own memories, got {h.agent}"
+            assert h.agent == "agent_c", (
+                f"Agent C should only see its own memories, got {h.agent}"
+            )
 
     def test_agent_a_cannot_see_agent_b_without_inheritance(
         self,
@@ -489,7 +503,9 @@ class TestRetrievalEngineMultiAgentSharing:
 
         # Should NOT see agent_b's memories
         for h in result.heuristics:
-            assert h.agent == "agent_a", f"Agent A should not see Agent B's memories, got {h.agent}"
+            assert h.agent == "agent_a", (
+                f"Agent A should not see Agent B's memories, got {h.agent}"
+            )
 
     def test_bidirectional_sharing(
         self,
@@ -554,12 +570,16 @@ class TestRetrievalEngineMultiAgentSharing:
         for h in result.heuristics:
             if h.agent == "agent_a":
                 # Shared memory should have shared_from metadata
-                assert "shared_from" in h.metadata, "Shared memory should have shared_from metadata"
+                assert "shared_from" in h.metadata, (
+                    "Shared memory should have shared_from metadata"
+                )
                 assert h.metadata["shared_from"] == "agent_a"
             elif h.agent == "agent_b":
                 # Own memory should NOT have shared_from (or it should be absent)
                 shared_from = h.metadata.get("shared_from")
-                assert shared_from is None, "Own memory should not have shared_from metadata"
+                assert shared_from is None, (
+                    "Own memory should not have shared_from metadata"
+                )
 
     def test_include_shared_false_disables_sharing(
         self,
@@ -584,7 +604,9 @@ class TestRetrievalEngineMultiAgentSharing:
 
         # Should only see agent_b's own memories
         for h in result.heuristics:
-            assert h.agent == "agent_b", "With include_shared=False, should only see own memories"
+            assert h.agent == "agent_b", (
+                "With include_shared=False, should only see own memories"
+            )
 
     def test_backward_compatibility_no_scope(
         self,
@@ -709,40 +731,46 @@ class TestOutcomesAndAntiPatternsSharing:
         now = datetime.now(timezone.utc)
 
         # Outcomes
-        storage.save_outcome(Outcome(
-            id="o_agent_a",
-            agent="agent_a",
-            project_id="test-project",
-            task_type="testing",
-            task_description="Test form validation",
-            success=True,
-            strategy_used="validate first",
-            timestamp=now,
-        ))
+        storage.save_outcome(
+            Outcome(
+                id="o_agent_a",
+                agent="agent_a",
+                project_id="test-project",
+                task_type="testing",
+                task_description="Test form validation",
+                success=True,
+                strategy_used="validate first",
+                timestamp=now,
+            )
+        )
 
-        storage.save_outcome(Outcome(
-            id="o_agent_b",
-            agent="agent_b",
-            project_id="test-project",
-            task_type="testing",
-            task_description="Test API auth",
-            success=True,
-            strategy_used="check tokens",
-            timestamp=now,
-        ))
+        storage.save_outcome(
+            Outcome(
+                id="o_agent_b",
+                agent="agent_b",
+                project_id="test-project",
+                task_type="testing",
+                task_description="Test API auth",
+                success=True,
+                strategy_used="check tokens",
+                timestamp=now,
+            )
+        )
 
         # Anti-patterns
-        storage.save_anti_pattern(AntiPattern(
-            id="ap_agent_a",
-            agent="agent_a",
-            project_id="test-project",
-            pattern="using sleep",
-            why_bad="flaky tests",
-            better_alternative="use waits",
-            occurrence_count=5,
-            last_seen=now,
-            created_at=now,
-        ))
+        storage.save_anti_pattern(
+            AntiPattern(
+                id="ap_agent_a",
+                agent="agent_a",
+                project_id="test-project",
+                pattern="using sleep",
+                why_bad="flaky tests",
+                better_alternative="use waits",
+                occurrence_count=5,
+                last_seen=now,
+                created_at=now,
+            )
+        )
 
         return storage
 

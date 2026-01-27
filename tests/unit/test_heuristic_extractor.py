@@ -99,28 +99,44 @@ class TestHeuristicExtractor:
         return [
             # Pattern 1: successful testing strategy
             Outcome(
-                id="o1", agent="helena", project_id="test",
-                task_type="form_testing", task_description="Test login",
-                success=True, strategy_used="test validation first",
+                id="o1",
+                agent="helena",
+                project_id="test",
+                task_type="form_testing",
+                task_description="Test login",
+                success=True,
+                strategy_used="test validation first",
                 timestamp=now,
             ),
             Outcome(
-                id="o2", agent="helena", project_id="test",
-                task_type="form_testing", task_description="Test signup",
-                success=True, strategy_used="test validation first, then submit",
+                id="o2",
+                agent="helena",
+                project_id="test",
+                task_type="form_testing",
+                task_description="Test signup",
+                success=True,
+                strategy_used="test validation first, then submit",
                 timestamp=now,
             ),
             Outcome(
-                id="o3", agent="helena", project_id="test",
-                task_type="form_testing", task_description="Test profile",
-                success=True, strategy_used="test validation then submit",
+                id="o3",
+                agent="helena",
+                project_id="test",
+                task_type="form_testing",
+                task_description="Test profile",
+                success=True,
+                strategy_used="test validation then submit",
                 timestamp=now,
             ),
             # Pattern 2: failed strategy
             Outcome(
-                id="o4", agent="helena", project_id="test",
-                task_type="form_testing", task_description="Test payment",
-                success=False, strategy_used="submit immediately",
+                id="o4",
+                agent="helena",
+                project_id="test",
+                task_type="form_testing",
+                task_description="Test payment",
+                success=False,
+                strategy_used="submit immediately",
                 timestamp=now,
             ),
         ]
@@ -146,15 +162,23 @@ class TestHeuristicExtractor:
         # Only 2 similar outcomes, below threshold of 3
         outcomes = [
             Outcome(
-                id="o1", agent="helena", project_id="test",
-                task_type="testing", task_description="Test 1",
-                success=True, strategy_used="unique strategy",
+                id="o1",
+                agent="helena",
+                project_id="test",
+                task_type="testing",
+                task_description="Test 1",
+                success=True,
+                strategy_used="unique strategy",
                 timestamp=datetime.now(timezone.utc),
             ),
             Outcome(
-                id="o2", agent="helena", project_id="test",
-                task_type="testing", task_description="Test 2",
-                success=True, strategy_used="unique strategy too",
+                id="o2",
+                agent="helena",
+                project_id="test",
+                task_type="testing",
+                task_description="Test 2",
+                success=True,
+                strategy_used="unique strategy too",
                 timestamp=datetime.now(timezone.utc),
             ),
         ]
@@ -176,21 +200,33 @@ class TestHeuristicExtractor:
         # Mixed results = low confidence
         outcomes = [
             Outcome(
-                id="o1", agent="helena", project_id="test",
-                task_type="testing", task_description="Test 1",
-                success=True, strategy_used="same strategy",
+                id="o1",
+                agent="helena",
+                project_id="test",
+                task_type="testing",
+                task_description="Test 1",
+                success=True,
+                strategy_used="same strategy",
                 timestamp=datetime.now(timezone.utc),
             ),
             Outcome(
-                id="o2", agent="helena", project_id="test",
-                task_type="testing", task_description="Test 2",
-                success=False, strategy_used="same strategy",
+                id="o2",
+                agent="helena",
+                project_id="test",
+                task_type="testing",
+                task_description="Test 2",
+                success=False,
+                strategy_used="same strategy",
                 timestamp=datetime.now(timezone.utc),
             ),
             Outcome(
-                id="o3", agent="helena", project_id="test",
-                task_type="testing", task_description="Test 3",
-                success=False, strategy_used="same strategy",
+                id="o3",
+                agent="helena",
+                project_id="test",
+                task_type="testing",
+                task_description="Test 3",
+                success=False,
+                strategy_used="same strategy",
                 timestamp=datetime.now(timezone.utc),
             ),
         ]
@@ -218,14 +254,12 @@ class TestHeuristicExtractor:
 
         # Similar strategies
         assert extractor._strategies_similar(
-            "test validation first then submit",
-            "test validation, then submit form"
+            "test validation first then submit", "test validation, then submit form"
         )
 
         # Different strategies
         assert not extractor._strategies_similar(
-            "use database query",
-            "click the button"
+            "use database query", "click the button"
         )
 
     def test_normalize_strategy(self, mock_storage, scopes):
@@ -278,15 +312,21 @@ class TestConvenienceFunction:
     def test_matches_existing_heuristic(self):
         """Test matching an outcome to existing heuristic."""
         outcome = Outcome(
-            id="o1", agent="helena", project_id="test",
-            task_type="form_testing", task_description="Test",
-            success=True, strategy_used="test first",
+            id="o1",
+            agent="helena",
+            project_id="test",
+            task_type="form_testing",
+            task_description="Test",
+            success=True,
+            strategy_used="test first",
             timestamp=datetime.now(timezone.utc),
         )
 
         heuristics = [
             Heuristic(
-                id="h1", agent="helena", project_id="test",
+                id="h1",
+                agent="helena",
+                project_id="test",
                 condition="task type: form_testing",
                 strategy="test first",
                 confidence=0.8,
@@ -306,15 +346,21 @@ class TestConvenienceFunction:
     def test_no_match(self):
         """Test when no heuristic matches."""
         outcome = Outcome(
-            id="o1", agent="helena", project_id="test",
-            task_type="api_testing", task_description="Test",
-            success=True, strategy_used="test first",
+            id="o1",
+            agent="helena",
+            project_id="test",
+            task_type="api_testing",
+            task_description="Test",
+            success=True,
+            strategy_used="test first",
             timestamp=datetime.now(timezone.utc),
         )
 
         heuristics = [
             Heuristic(
-                id="h1", agent="victor", project_id="test",  # Different agent
+                id="h1",
+                agent="victor",
+                project_id="test",  # Different agent
                 condition="task type: api_testing",
                 strategy="test first",
                 confidence=0.8,

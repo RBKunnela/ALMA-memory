@@ -2,7 +2,6 @@
 Tests for the Progress Tracking module.
 """
 
-
 import pytest
 
 from alma.progress import (
@@ -62,6 +61,7 @@ class TestWorkItem:
     def test_complete(self):
         """Test completing a work item."""
         import time
+
         item = WorkItem.create("proj-1", "Test", "Description")
         item.start()
         time.sleep(0.01)  # Ensure measurable time passes

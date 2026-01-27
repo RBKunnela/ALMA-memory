@@ -27,7 +27,9 @@ class RiskSignal:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     # Type of risk
-    signal_type: str = ""  # "similar_to_failure", "untested_context", "high_complexity", etc.
+    signal_type: str = (
+        ""  # "similar_to_failure", "untested_context", "high_complexity", etc.
+    )
 
     # Human-readable description
     description: str = ""
@@ -139,7 +141,9 @@ class ConfidenceSignal:
 
     # Forward-looking predictions (computed for current context)
     predicted_success: float = 0.5  # Expected success in THIS context
-    uncertainty: float = 0.5  # How uncertain is the prediction (0=certain, 1=very uncertain)
+    uncertainty: float = (
+        0.5  # How uncertain is the prediction (0=certain, 1=very uncertain)
+    )
     context_similarity: float = 0.0  # How similar is current context to past successes
 
     # Risk signals
@@ -225,26 +229,28 @@ class ConfidenceSignal:
         # Aggregate opportunity
         if self.opportunity_signals:
             # Use max opportunity as the dominant signal
-            self.total_opportunity_score = max(o.strength for o in self.opportunity_signals)
+            self.total_opportunity_score = max(
+                o.strength for o in self.opportunity_signals
+            )
         else:
             self.total_opportunity_score = 0.0
 
         # Combined confidence score
         # Weighs historical success, predicted success, and risk/opportunity balance
         base_confidence = (
-            0.3 * self.historical_success_rate +
-            0.4 * self.predicted_success +
-            0.15 * self.context_similarity +
-            0.15 * (1.0 - self.uncertainty)
+            0.3 * self.historical_success_rate
+            + 0.4 * self.predicted_success
+            + 0.15 * self.context_similarity
+            + 0.15 * (1.0 - self.uncertainty)
         )
 
         # Adjust for risk/opportunity
         risk_adjustment = -0.2 * self.total_risk_score
         opportunity_adjustment = 0.2 * self.total_opportunity_score
 
-        self.confidence_score = max(0.0, min(1.0,
-            base_confidence + risk_adjustment + opportunity_adjustment
-        ))
+        self.confidence_score = max(
+            0.0, min(1.0, base_confidence + risk_adjustment + opportunity_adjustment)
+        )
 
         # Determine recommendation
         self._update_recommendation()
@@ -277,7 +283,9 @@ class ConfidenceSignal:
 
         # Metrics
         lines.append("### Metrics")
-        lines.append(f"- Historical success: {self.historical_success_rate:.0%} ({self.occurrence_count} uses)")
+        lines.append(
+            f"- Historical success: {self.historical_success_rate:.0%} ({self.occurrence_count} uses)"
+        )
         lines.append(f"- Predicted success: {self.predicted_success:.0%}")
         lines.append(f"- Context similarity: {self.context_similarity:.0%}")
         lines.append(f"- Uncertainty: {self.uncertainty:.0%}")
@@ -287,7 +295,13 @@ class ConfidenceSignal:
         if self.risk_signals:
             lines.append("### Risks")
             for risk in self.risk_signals:
-                severity_label = "HIGH" if risk.severity >= 0.7 else "MEDIUM" if risk.severity >= 0.4 else "LOW"
+                severity_label = (
+                    "HIGH"
+                    if risk.severity >= 0.7
+                    else "MEDIUM"
+                    if risk.severity >= 0.4
+                    else "LOW"
+                )
                 lines.append(f"- [{severity_label}] {risk.description}")
             lines.append("")
 
@@ -295,7 +309,13 @@ class ConfidenceSignal:
         if self.opportunity_signals:
             lines.append("### Opportunities")
             for opp in self.opportunity_signals:
-                strength_label = "STRONG" if opp.strength >= 0.7 else "MODERATE" if opp.strength >= 0.4 else "WEAK"
+                strength_label = (
+                    "STRONG"
+                    if opp.strength >= 0.7
+                    else "MODERATE"
+                    if opp.strength >= 0.4
+                    else "WEAK"
+                )
                 lines.append(f"- [{strength_label}] {opp.description}")
             lines.append("")
 

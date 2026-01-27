@@ -27,12 +27,13 @@ from alma.types import MemoryScope, MemorySlice
 
 class ToolType(Enum):
     """Categories of tools available to agents."""
-    SEARCH = "search"           # Web search, semantic search
-    DATA_ACCESS = "data_access" # APIs, databases
-    EXECUTION = "execution"     # Code execution, automation
+
+    SEARCH = "search"  # Web search, semantic search
+    DATA_ACCESS = "data_access"  # APIs, databases
+    EXECUTION = "execution"  # Code execution, automation
     COMMUNICATION = "communication"  # Email, messaging
-    ANALYSIS = "analysis"       # Data processing, synthesis
-    CREATION = "creation"       # Content generation, design
+    ANALYSIS = "analysis"  # Data processing, synthesis
+    CREATION = "creation"  # Content generation, design
 
 
 @dataclass
@@ -42,6 +43,7 @@ class Tool:
 
     Tools are the building blocks agents use to accomplish tasks.
     """
+
     name: str
     description: str
     tool_type: ToolType
@@ -65,6 +67,7 @@ class Setting:
     Includes available tools and immutable constraints that don't change
     between runs. The setting defines WHAT the agent CAN do.
     """
+
     name: str
     description: str
     tools: List[Tool] = field(default_factory=list)
@@ -99,6 +102,7 @@ class Context:
     This is injected fresh each time and contains task-specific information.
     The context defines WHAT the agent should do THIS run.
     """
+
     task: str
     user_id: Optional[str] = None
     project_id: Optional[str] = None
@@ -136,6 +140,7 @@ class MemorySchema:
     This defines WHAT gets remembered and HOW, ensuring relevance
     and preventing scope creep. Each domain has its own schema.
     """
+
     domain: str
     description: str
 
@@ -194,6 +199,7 @@ class Agent:
     Agents start "dumb" but get smarter via memory injections.
     They use tools to accomplish tasks and log reflections post-run.
     """
+
     name: str
     role: str
     description: str
@@ -226,6 +232,7 @@ class Agent:
 @dataclass
 class RunResult:
     """Result of a harness run."""
+
     success: bool
     output: Any
     reflections: List[str] = field(default_factory=list)
@@ -318,7 +325,9 @@ class Harness:
             agent=self.agent.name,
             task=context.task,
             outcome="success" if result.success else "failure",
-            strategy_used=", ".join(result.tools_used) if result.tools_used else "direct",
+            strategy_used=", ".join(result.tools_used)
+            if result.tools_used
+            else "direct",
             duration_ms=result.duration_ms,
             error_message=result.error,
             feedback="; ".join(result.reflections) if result.reflections else None,
@@ -346,6 +355,7 @@ class Harness:
             RunResult with output or prompt
         """
         import time
+
         start_time = time.time()
 
         # 1. Pre-run: Get relevant memories

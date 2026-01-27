@@ -98,9 +98,9 @@ class TestHeuristicOperations:
             ]:
                 mock_containers[name] = MagicMock()
 
-            mock_database.create_container_if_not_exists.side_effect = lambda **kwargs: mock_containers[
-                kwargs["id"]
-            ]
+            mock_database.create_container_if_not_exists.side_effect = (
+                lambda **kwargs: mock_containers[kwargs["id"]]
+            )
 
             storage = AzureCosmosStorage(
                 endpoint="https://test.documents.azure.com:443/",
@@ -247,9 +247,9 @@ class TestOutcomeOperations:
             ]:
                 mock_containers[name] = MagicMock()
 
-            mock_database.create_container_if_not_exists.side_effect = lambda **kwargs: mock_containers[
-                kwargs["id"]
-            ]
+            mock_database.create_container_if_not_exists.side_effect = (
+                lambda **kwargs: mock_containers[kwargs["id"]]
+            )
 
             storage = AzureCosmosStorage(
                 endpoint="https://test.documents.azure.com:443/",
@@ -336,9 +336,9 @@ class TestUserPreferenceOperations:
             ]:
                 mock_containers[name] = MagicMock()
 
-            mock_database.create_container_if_not_exists.side_effect = lambda **kwargs: mock_containers[
-                kwargs["id"]
-            ]
+            mock_database.create_container_if_not_exists.side_effect = (
+                lambda **kwargs: mock_containers[kwargs["id"]]
+            )
 
             storage = AzureCosmosStorage(
                 endpoint="https://test.documents.azure.com:443/",
@@ -419,9 +419,9 @@ class TestDomainKnowledgeOperations:
             ]:
                 mock_containers[name] = MagicMock()
 
-            mock_database.create_container_if_not_exists.side_effect = lambda **kwargs: mock_containers[
-                kwargs["id"]
-            ]
+            mock_database.create_container_if_not_exists.side_effect = (
+                lambda **kwargs: mock_containers[kwargs["id"]]
+            )
 
             storage = AzureCosmosStorage(
                 endpoint="https://test.documents.azure.com:443/",
@@ -480,9 +480,9 @@ class TestAntiPatternOperations:
             ]:
                 mock_containers[name] = MagicMock()
 
-            mock_database.create_container_if_not_exists.side_effect = lambda **kwargs: mock_containers[
-                kwargs["id"]
-            ]
+            mock_database.create_container_if_not_exists.side_effect = (
+                lambda **kwargs: mock_containers[kwargs["id"]]
+            )
 
             storage = AzureCosmosStorage(
                 endpoint="https://test.documents.azure.com:443/",
@@ -543,9 +543,9 @@ class TestVectorSearch:
             ]:
                 mock_containers[name] = MagicMock()
 
-            mock_database.create_container_if_not_exists.side_effect = lambda **kwargs: mock_containers[
-                kwargs["id"]
-            ]
+            mock_database.create_container_if_not_exists.side_effect = (
+                lambda **kwargs: mock_containers[kwargs["id"]]
+            )
 
             storage = AzureCosmosStorage(
                 endpoint="https://test.documents.azure.com:443/",

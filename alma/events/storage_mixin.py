@@ -129,9 +129,7 @@ class EventAwareStorageMixin:
         emitter = self._get_emitter()
         emitter.emit(event)
 
-        logger.debug(
-            f"Emitted {event_type.value} for {memory_type}/{memory_id}"
-        )
+        logger.debug(f"Emitted {event_type.value} for {memory_type}/{memory_id}")
 
     def _emit_created_event(
         self,
@@ -187,7 +185,9 @@ class EventAwareStorageMixin:
         )
 
 
-def emit_on_save(memory_type: str, event_type: MemoryEventType = MemoryEventType.CREATED):
+def emit_on_save(
+    memory_type: str, event_type: MemoryEventType = MemoryEventType.CREATED
+):
     """
     Decorator to emit events when save methods are called.
 
@@ -204,6 +204,7 @@ def emit_on_save(memory_type: str, event_type: MemoryEventType = MemoryEventType
             # Original implementation
             ...
     """
+
     def decorator(func):
         def wrapper(self, memory_item):
             # Call the original method
@@ -220,7 +221,8 @@ def emit_on_save(memory_type: str, event_type: MemoryEventType = MemoryEventType
                     try:
                         if hasattr(memory_item, "__dataclass_fields__"):
                             payload = {
-                                k: v for k, v in asdict(memory_item).items()
+                                k: v
+                                for k, v in asdict(memory_item).items()
                                 if k != "embedding"  # Exclude large embedding vectors
                             }
                         else:
@@ -240,4 +242,5 @@ def emit_on_save(memory_type: str, event_type: MemoryEventType = MemoryEventType
             return result_id
 
         return wrapper
+
     return decorator

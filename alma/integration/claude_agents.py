@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class AgentType(Enum):
     """Supported Claude Code agent types."""
+
     HELENA = "helena"
     VICTOR = "victor"
     CLARA = "clara"
@@ -37,6 +38,7 @@ class TaskContext:
 
     Captures all relevant information for memory retrieval and learning.
     """
+
     task_description: str
     task_type: str
     agent_name: str
@@ -67,6 +69,7 @@ class TaskOutcome:
 
     Used for learning from task results.
     """
+
     success: bool
     strategy_used: str
     output: Any = None
@@ -391,10 +394,7 @@ class AgentIntegration:
 
     def get_all_stats(self) -> Dict[str, Dict[str, Any]]:
         """Get memory statistics for all registered agents."""
-        return {
-            name: hooks.get_agent_stats()
-            for name, hooks in self._agents.items()
-        }
+        return {name: hooks.get_agent_stats() for name, hooks in self._agents.items()}
 
 
 def create_integration(

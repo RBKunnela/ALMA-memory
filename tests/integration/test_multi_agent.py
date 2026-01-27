@@ -5,7 +5,6 @@ Tests for scenarios involving multiple agents working together,
 including scope enforcement and cross-agent isolation.
 """
 
-
 from alma import ALMA, MemoryScope
 from alma.integration.helena import HELENA_CATEGORIES
 from alma.integration.victor import VICTOR_CATEGORIES
@@ -67,9 +66,7 @@ class TestScopeEnforcement:
 class TestAgentIsolation:
     """Tests for memory isolation between agents."""
 
-    def test_helena_retrieval_excludes_victor_memories(
-        self, seeded_alma: ALMA
-    ):
+    def test_helena_retrieval_excludes_victor_memories(self, seeded_alma: ALMA):
         """Helena should only retrieve Helena-owned memories."""
         # Add Victor-specific knowledge
         seeded_alma.add_domain_knowledge(
@@ -90,9 +87,7 @@ class TestAgentIsolation:
         for dk in memories.domain_knowledge:
             assert dk.agent != "victor" or dk.domain in HELENA_CATEGORIES
 
-    def test_victor_retrieval_excludes_helena_memories(
-        self, seeded_alma: ALMA
-    ):
+    def test_victor_retrieval_excludes_helena_memories(self, seeded_alma: ALMA):
         """Victor should only retrieve Victor-owned memories."""
         # Add Helena-specific knowledge
         seeded_alma.add_domain_knowledge(
@@ -114,9 +109,7 @@ class TestAgentIsolation:
             if dk.domain == "selector_patterns":
                 assert dk.agent != "helena" or dk.domain in VICTOR_CATEGORIES
 
-    def test_shared_project_different_agents(
-        self, temp_storage_dir, scopes
-    ):
+    def test_shared_project_different_agents(self, temp_storage_dir, scopes):
         """Two agents in same project should have isolated memories."""
         storage = FileBasedStorage(storage_dir=temp_storage_dir)
         retrieval = RetrievalEngine(storage=storage, embedding_provider="local")
@@ -218,9 +211,7 @@ class TestConcurrentAgentOperations:
 class TestHeuristicGeneration:
     """Tests for heuristic creation across agents."""
 
-    def test_heuristic_created_after_min_occurrences(
-        self, temp_storage_dir, scopes
-    ):
+    def test_heuristic_created_after_min_occurrences(self, temp_storage_dir, scopes):
         """Heuristic should be created after min_occurrences threshold."""
         storage = FileBasedStorage(storage_dir=temp_storage_dir)
         retrieval = RetrievalEngine(storage=storage, embedding_provider="local")

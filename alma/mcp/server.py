@@ -247,7 +247,12 @@ class ALMAMCPServer:
                         },
                         "memory_type": {
                             "type": "string",
-                            "enum": ["heuristics", "outcomes", "domain_knowledge", "anti_patterns"],
+                            "enum": [
+                                "heuristics",
+                                "outcomes",
+                                "domain_knowledge",
+                                "anti_patterns",
+                            ],
                             "description": "Type of memory to consolidate (default: heuristics)",
                             "default": "heuristics",
                         },
@@ -311,17 +316,20 @@ class ALMAMCPServer:
         params: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Handle initialize request."""
-        return self._success_response(request_id, {
-            "protocolVersion": "2024-11-05",
-            "serverInfo": {
-                "name": self.server_name,
-                "version": self.server_version,
+        return self._success_response(
+            request_id,
+            {
+                "protocolVersion": "2024-11-05",
+                "serverInfo": {
+                    "name": self.server_name,
+                    "version": self.server_version,
+                },
+                "capabilities": {
+                    "tools": {},
+                    "resources": {},
+                },
             },
-            "capabilities": {
-                "tools": {},
-                "resources": {},
-            },
-        })
+        )
 
     def _handle_tools_list(self, request_id: Optional[int]) -> Dict[str, Any]:
         """Handle tools/list request."""
@@ -403,14 +411,17 @@ class ALMAMCPServer:
         if asyncio.iscoroutine(result):
             result = await result
 
-        return self._success_response(request_id, {
-            "content": [
-                {
-                    "type": "text",
-                    "text": json.dumps(result, indent=2),
-                }
-            ],
-        })
+        return self._success_response(
+            request_id,
+            {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": json.dumps(result, indent=2),
+                    }
+                ],
+            },
+        )
 
     def _handle_resources_list(
         self,
@@ -438,15 +449,18 @@ class ALMAMCPServer:
                 f"Unknown resource: {uri}",
             )
 
-        return self._success_response(request_id, {
-            "contents": [
-                {
-                    "uri": resource["uri"],
-                    "mimeType": resource["mimeType"],
-                    "text": json.dumps(resource["content"], indent=2),
-                }
-            ],
-        })
+        return self._success_response(
+            request_id,
+            {
+                "contents": [
+                    {
+                        "uri": resource["uri"],
+                        "mimeType": resource["mimeType"],
+                        "text": json.dumps(resource["content"], indent=2),
+                    }
+                ],
+            },
+        )
 
     def _success_response(
         self,
@@ -482,11 +496,12 @@ class ALMAMCPServer:
 
         reader = asyncio.StreamReader()
         protocol = asyncio.StreamReaderProtocol(reader)
-        await asyncio.get_event_loop().connect_read_pipe(
-            lambda: protocol, sys.stdin
-        )
+        await asyncio.get_event_loop().connect_read_pipe(lambda: protocol, sys.stdin)
 
-        writer_transport, writer_protocol = await asyncio.get_event_loop().connect_write_pipe(
+        (
+            writer_transport,
+            writer_protocol,
+        ) = await asyncio.get_event_loop().connect_write_pipe(
             asyncio.streams.FlowControlMixin, sys.stdout
         )
         writer = asyncio.StreamWriter(
@@ -538,7 +553,9 @@ class ALMAMCPServer:
         try:
             from aiohttp import web
         except ImportError:
-            logger.error("aiohttp required for HTTP mode. Install with: pip install aiohttp")
+            logger.error(
+                "aiohttp required for HTTP mode. Install with: pip install aiohttp"
+            )
             return
 
         async def handle_post(request: web.Request) -> web.Response:

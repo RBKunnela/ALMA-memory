@@ -30,47 +30,57 @@ def _serialize_memory_slice(memory_slice: MemorySlice) -> Dict[str, Any]:
     }
 
     for h in memory_slice.heuristics:
-        result["heuristics"].append({
-            "id": h.id,
-            "condition": h.condition,
-            "strategy": h.strategy,
-            "confidence": h.confidence,
-            "occurrence_count": h.occurrence_count,
-            "success_rate": h.success_rate,
-        })
+        result["heuristics"].append(
+            {
+                "id": h.id,
+                "condition": h.condition,
+                "strategy": h.strategy,
+                "confidence": h.confidence,
+                "occurrence_count": h.occurrence_count,
+                "success_rate": h.success_rate,
+            }
+        )
 
     for o in memory_slice.outcomes:
-        result["outcomes"].append({
-            "id": o.id,
-            "task_type": o.task_type,
-            "task_description": o.task_description,
-            "success": o.success,
-            "strategy_used": o.strategy_used,
-            "duration_ms": o.duration_ms,
-        })
+        result["outcomes"].append(
+            {
+                "id": o.id,
+                "task_type": o.task_type,
+                "task_description": o.task_description,
+                "success": o.success,
+                "strategy_used": o.strategy_used,
+                "duration_ms": o.duration_ms,
+            }
+        )
 
     for dk in memory_slice.domain_knowledge:
-        result["domain_knowledge"].append({
-            "id": dk.id,
-            "domain": dk.domain,
-            "fact": dk.fact,
-            "confidence": dk.confidence,
-        })
+        result["domain_knowledge"].append(
+            {
+                "id": dk.id,
+                "domain": dk.domain,
+                "fact": dk.fact,
+                "confidence": dk.confidence,
+            }
+        )
 
     for ap in memory_slice.anti_patterns:
-        result["anti_patterns"].append({
-            "id": ap.id,
-            "pattern": ap.pattern,
-            "why_bad": ap.why_bad,
-            "better_alternative": ap.better_alternative,
-        })
+        result["anti_patterns"].append(
+            {
+                "id": ap.id,
+                "pattern": ap.pattern,
+                "why_bad": ap.why_bad,
+                "better_alternative": ap.better_alternative,
+            }
+        )
 
     for p in memory_slice.preferences:
-        result["preferences"].append({
-            "id": p.id,
-            "category": p.category,
-            "preference": p.preference,
-        })
+        result["preferences"].append(
+            {
+                "id": p.id,
+                "category": p.category,
+                "preference": p.preference,
+            }
+        )
 
     return result
 
@@ -176,7 +186,9 @@ def alma_learn(
         return {
             "success": True,
             "learned": result,
-            "message": "Outcome recorded" if result else "Learning rejected (scope violation)",
+            "message": "Outcome recorded"
+            if result
+            else "Learning rejected (scope violation)",
         }
 
     except Exception as e:

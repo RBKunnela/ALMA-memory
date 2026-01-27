@@ -201,6 +201,7 @@ class TestEventEmitter:
 
         # Wait for async execution
         import time
+
         time.sleep(0.1)
 
         callback.assert_called_once_with(sample_event)
@@ -213,6 +214,7 @@ class TestEventEmitter:
         emitter.emit(sample_event)
 
         import time
+
         time.sleep(0.1)
 
         callback.assert_called_once_with(sample_event)
@@ -225,6 +227,7 @@ class TestEventEmitter:
         emitter.emit(sample_event)  # CREATED event
 
         import time
+
         time.sleep(0.1)
 
         callback.assert_not_called()
@@ -238,6 +241,7 @@ class TestEventEmitter:
         emitter.emit(sample_event)
 
         import time
+
         time.sleep(0.1)
 
         callback.assert_not_called()
@@ -252,6 +256,7 @@ class TestEventEmitter:
         emitter.emit(sample_event)
 
         import time
+
         time.sleep(0.1)
 
         callback.assert_called_once()
@@ -294,6 +299,7 @@ class TestEventEmitter:
 
     def test_callback_exception_handled(self, emitter, sample_event):
         """Test that exceptions in callbacks are handled gracefully."""
+
         def bad_callback(event):
             raise ValueError("Test error")
 
@@ -306,6 +312,7 @@ class TestEventEmitter:
         emitter.emit(sample_event)
 
         import time
+
         time.sleep(0.1)
 
         # Good callback should still be called
@@ -435,7 +442,9 @@ class TestWebhookDelivery:
 
         delivery = WebhookDelivery([config1, config2])
 
-        with patch.object(delivery, "_send_webhook", new_callable=AsyncMock) as mock_send:
+        with patch.object(
+            delivery, "_send_webhook", new_callable=AsyncMock
+        ) as mock_send:
             mock_send.return_value = MagicMock(status=WebhookDeliveryStatus.SUCCESS)
 
             await delivery.deliver(sample_event)
@@ -453,7 +462,9 @@ class TestWebhookDelivery:
 
         delivery = WebhookDelivery([config1, config2])
 
-        with patch.object(delivery, "_send_webhook", new_callable=AsyncMock) as mock_send:
+        with patch.object(
+            delivery, "_send_webhook", new_callable=AsyncMock
+        ) as mock_send:
             mock_send.return_value = MagicMock(status=WebhookDeliveryStatus.SUCCESS)
 
             results = await delivery.deliver(sample_event)
@@ -696,6 +707,7 @@ class TestEventAwareStorageMixin:
         )
 
         import time
+
         time.sleep(0.1)
 
         assert len(received_events) == 1
@@ -729,6 +741,7 @@ class TestEventAwareStorageMixin:
         )
 
         import time
+
         time.sleep(0.1)
 
         assert len(received_events) == 0
@@ -871,6 +884,7 @@ class TestEventIntegration:
 
         # Wait for async execution
         import time
+
         time.sleep(0.1)
 
         assert len(received_events) == 1
@@ -902,6 +916,7 @@ class TestEventIntegration:
         emitter.emit(event)
 
         import time
+
         time.sleep(0.1)
 
         assert results["count"] == 11

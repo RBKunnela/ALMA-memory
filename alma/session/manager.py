@@ -281,7 +281,7 @@ class SessionManager:
 
         # Trim to max
         if len(self._handoffs[agent]) > self.max_handoffs:
-            self._handoffs[agent] = self._handoffs[agent][-self.max_handoffs:]
+            self._handoffs[agent] = self._handoffs[agent][-self.max_handoffs :]
 
         # TODO: Persist to storage backend when integrated
 

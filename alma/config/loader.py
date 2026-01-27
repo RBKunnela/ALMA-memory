@@ -78,6 +78,7 @@ class ConfigLoader:
 
         # Handle ${VAR} patterns
         import re
+
         pattern = r"\$\{([^}]+)\}"
 
         def replace(match):

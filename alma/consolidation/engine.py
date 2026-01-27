@@ -175,11 +175,15 @@ class ConsolidationEngine:
                             self._delete_memory(original_id, memory_type)
 
                     result.merged_count += len(original_ids) - 1  # N merged into 1
-                    result.merge_details.append({
-                        "merged_from": original_ids,
-                        "merged_into": merged.id if hasattr(merged, 'id') else str(merged),
-                        "count": len(original_ids),
-                    })
+                    result.merge_details.append(
+                        {
+                            "merged_from": original_ids,
+                            "merged_into": merged.id
+                            if hasattr(merged, "id")
+                            else str(merged),
+                            "count": len(original_ids),
+                        }
+                    )
 
                 except Exception as e:
                     error_msg = f"Failed to merge group: {str(e)}"
@@ -237,7 +241,7 @@ class ConsolidationEngine:
         needs_embedding_indices = []
 
         for i, memory in enumerate(memories):
-            if not hasattr(memory, 'embedding') or memory.embedding is None:
+            if not hasattr(memory, "embedding") or memory.embedding is None:
                 needs_embedding.append(self._get_embedding_text(memory, memory_type))
                 needs_embedding_indices.append(i)
 
@@ -375,7 +379,9 @@ class ConsolidationEngine:
         if memory_type == "heuristics":
             merged = await self._merge_heuristics(group, use_llm, project_id, agent)
         elif memory_type == "domain_knowledge":
-            merged = await self._merge_domain_knowledge(group, use_llm, project_id, agent)
+            merged = await self._merge_domain_knowledge(
+                group, use_llm, project_id, agent
+            )
         elif memory_type == "anti_patterns":
             merged = await self._merge_anti_patterns(group, use_llm, project_id, agent)
         elif memory_type == "outcomes":
@@ -521,7 +527,9 @@ class ConsolidationEngine:
                 merged_data = await self._llm_merge_anti_patterns(group)
                 pattern = merged_data.get("pattern", base.pattern)
                 why_bad = merged_data.get("why_bad", base.why_bad)
-                better_alternative = merged_data.get("better_alternative", base.better_alternative)
+                better_alternative = merged_data.get(
+                    "better_alternative", base.better_alternative
+                )
             except Exception as e:
                 logger.warning(f"LLM merge failed, using base: {e}")
                 pattern = base.pattern
@@ -557,49 +565,64 @@ class ConsolidationEngine:
 
     def _keep_most_recent(self, group: List[Any]) -> Any:
         """Keep the most recent memory from a group."""
-        return max(group, key=lambda m: getattr(m, 'timestamp', getattr(m, 'created_at', datetime.min)))
+        return max(
+            group,
+            key=lambda m: getattr(
+                m, "timestamp", getattr(m, "created_at", datetime.min)
+            ),
+        )
 
     async def _llm_merge_heuristics(self, group: List[Heuristic]) -> Dict[str, Any]:
         """Use LLM to intelligently merge heuristics."""
-        heuristics_text = "\n\n".join([
-            f"Heuristic {i+1}:\n"
-            f"  Condition: {h.condition}\n"
-            f"  Strategy: {h.strategy}\n"
-            f"  Confidence: {h.confidence:.2f}\n"
-            f"  Occurrences: {h.occurrence_count}"
-            for i, h in enumerate(group)
-        ])
+        heuristics_text = "\n\n".join(
+            [
+                f"Heuristic {i + 1}:\n"
+                f"  Condition: {h.condition}\n"
+                f"  Strategy: {h.strategy}\n"
+                f"  Confidence: {h.confidence:.2f}\n"
+                f"  Occurrences: {h.occurrence_count}"
+                for i, h in enumerate(group)
+            ]
+        )
 
         prompt = MERGE_HEURISTICS_PROMPT.format(heuristics=heuristics_text)
 
         response = await self._call_llm(prompt)
         return json.loads(response)
 
-    async def _llm_merge_domain_knowledge(self, group: List[DomainKnowledge]) -> Dict[str, Any]:
+    async def _llm_merge_domain_knowledge(
+        self, group: List[DomainKnowledge]
+    ) -> Dict[str, Any]:
         """Use LLM to intelligently merge domain knowledge."""
-        knowledge_text = "\n\n".join([
-            f"Knowledge {i+1}:\n"
-            f"  Domain: {dk.domain}\n"
-            f"  Fact: {dk.fact}\n"
-            f"  Confidence: {dk.confidence:.2f}"
-            for i, dk in enumerate(group)
-        ])
+        knowledge_text = "\n\n".join(
+            [
+                f"Knowledge {i + 1}:\n"
+                f"  Domain: {dk.domain}\n"
+                f"  Fact: {dk.fact}\n"
+                f"  Confidence: {dk.confidence:.2f}"
+                for i, dk in enumerate(group)
+            ]
+        )
 
         prompt = MERGE_DOMAIN_KNOWLEDGE_PROMPT.format(knowledge_items=knowledge_text)
 
         response = await self._call_llm(prompt)
         return json.loads(response)
 
-    async def _llm_merge_anti_patterns(self, group: List[AntiPattern]) -> Dict[str, Any]:
+    async def _llm_merge_anti_patterns(
+        self, group: List[AntiPattern]
+    ) -> Dict[str, Any]:
         """Use LLM to intelligently merge anti-patterns."""
-        patterns_text = "\n\n".join([
-            f"Anti-Pattern {i+1}:\n"
-            f"  Pattern: {ap.pattern}\n"
-            f"  Why Bad: {ap.why_bad}\n"
-            f"  Alternative: {ap.better_alternative}\n"
-            f"  Occurrences: {ap.occurrence_count}"
-            for i, ap in enumerate(group)
-        ])
+        patterns_text = "\n\n".join(
+            [
+                f"Anti-Pattern {i + 1}:\n"
+                f"  Pattern: {ap.pattern}\n"
+                f"  Why Bad: {ap.why_bad}\n"
+                f"  Alternative: {ap.better_alternative}\n"
+                f"  Occurrences: {ap.occurrence_count}"
+                for i, ap in enumerate(group)
+            ]
+        )
 
         prompt = MERGE_ANTI_PATTERNS_PROMPT.format(anti_patterns=patterns_text)
 
@@ -612,12 +635,12 @@ class ConsolidationEngine:
             raise ValueError("LLM client not configured")
 
         # Support different LLM client interfaces
-        if hasattr(self.llm_client, 'complete'):
+        if hasattr(self.llm_client, "complete"):
             result = self.llm_client.complete(prompt)
             if asyncio.iscoroutine(result):
                 return await result
             return result
-        elif hasattr(self.llm_client, 'chat'):
+        elif hasattr(self.llm_client, "chat"):
             result = self.llm_client.chat([{"role": "user", "content": prompt}])
             if asyncio.iscoroutine(result):
                 return await result
@@ -628,7 +651,9 @@ class ConsolidationEngine:
                 return await result
             return result
         else:
-            raise ValueError("LLM client must have 'complete', 'chat', or '__call__' method")
+            raise ValueError(
+                "LLM client must have 'complete', 'chat', or '__call__' method"
+            )
 
     def _save_merged(self, memory: Any, memory_type: str) -> None:
         """Save a merged memory to storage."""

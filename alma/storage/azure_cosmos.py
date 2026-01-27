@@ -37,6 +37,7 @@ try:
     from azure.cosmos import CosmosClient, PartitionKey, exceptions
     from azure.cosmos.container import ContainerProxy
     from azure.cosmos.database import DatabaseProxy
+
     AZURE_COSMOS_AVAILABLE = True
 except ImportError:
     AZURE_COSMOS_AVAILABLE = False
@@ -47,8 +48,7 @@ except ImportError:
     ContainerProxy = Any  # type: ignore
     DatabaseProxy = Any  # type: ignore
     logger.warning(
-        "azure-cosmos package not installed. "
-        "Install with: pip install azure-cosmos"
+        "azure-cosmos package not installed. Install with: pip install azure-cosmos"
     )
 
 
@@ -109,9 +109,7 @@ class AzureCosmosStorage(StorageBackend):
 
         # Get or create database
         if create_if_not_exists:
-            self.database = self.client.create_database_if_not_exists(
-                id=database_name
-            )
+            self.database = self.client.create_database_if_not_exists(id=database_name)
             self._init_containers()
         else:
             self.database = self.client.get_database_client(database_name)
@@ -193,7 +191,7 @@ class AzureCosmosStorage(StorageBackend):
             if cfg["vector_indexes"] and cfg["vector_path"]:
                 # Exclude vector path from regular indexing
                 indexing_policy["excludedPaths"].append(
-                    {"path": f'{cfg["vector_path"]}/*'}
+                    {"path": f"{cfg['vector_path']}/*"}
                 )
 
                 # Vector embedding policy for DiskANN
@@ -739,7 +737,9 @@ class AzureCosmosStorage(StorageBackend):
         doc["confidence"] = new_confidence
 
         container.replace_item(item=heuristic_id, body=doc)
-        logger.debug(f"Updated heuristic confidence: {heuristic_id} -> {new_confidence}")
+        logger.debug(
+            f"Updated heuristic confidence: {heuristic_id} -> {new_confidence}"
+        )
         return True
 
     def update_knowledge_confidence(
@@ -773,7 +773,9 @@ class AzureCosmosStorage(StorageBackend):
         doc["confidence"] = new_confidence
 
         container.replace_item(item=knowledge_id, body=doc)
-        logger.debug(f"Updated knowledge confidence: {knowledge_id} -> {new_confidence}")
+        logger.debug(
+            f"Updated knowledge confidence: {knowledge_id} -> {new_confidence}"
+        )
         return True
 
     # ==================== DELETE OPERATIONS ====================

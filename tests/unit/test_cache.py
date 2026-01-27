@@ -52,7 +52,9 @@ class TestCacheStats:
 
     def test_to_dict(self):
         """Test stats serialization."""
-        stats = CacheStats(hits=10, misses=5, evictions=2, current_size=100, max_size=1000)
+        stats = CacheStats(
+            hits=10, misses=5, evictions=2, current_size=100, max_size=1000
+        )
         d = stats.to_dict()
 
         assert d["hits"] == 10

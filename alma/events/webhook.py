@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 # Try to import aiohttp, provide fallback warning
 try:
     import aiohttp
+
     AIOHTTP_AVAILABLE = True
 except ImportError:
     AIOHTTP_AVAILABLE = False
@@ -36,6 +37,7 @@ except ImportError:
 
 class WebhookDeliveryStatus(Enum):
     """Status of webhook delivery attempt."""
+
     SUCCESS = "success"
     FAILED = "failed"
     RETRYING = "retrying"
@@ -55,6 +57,7 @@ class WebhookConfig:
         timeout_seconds: Request timeout in seconds
         headers: Optional additional headers to include
     """
+
     url: str
     events: List[MemoryEventType] = field(default_factory=list)
     secret: Optional[str] = None
@@ -72,6 +75,7 @@ class WebhookConfig:
 @dataclass
 class WebhookDeliveryResult:
     """Result of a webhook delivery attempt."""
+
     config: WebhookConfig
     event: MemoryEvent
     status: WebhookDeliveryStatus
@@ -130,18 +134,14 @@ class WebhookDelivery:
 
         # Filter to matching webhooks
         matching_configs = [
-            config for config in self.configs
-            if config.matches_event(event.event_type)
+            config for config in self.configs if config.matches_event(event.event_type)
         ]
 
         if not matching_configs:
             return []
 
         # Deliver to all matching webhooks concurrently
-        tasks = [
-            self._send_webhook(config, event)
-            for config in matching_configs
-        ]
+        tasks = [self._send_webhook(config, event) for config in matching_configs]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -288,7 +288,7 @@ class WebhookDelivery:
 
                 # Calculate backoff for next attempt
                 if attempt < config.max_retries:
-                    backoff = 2 ** attempt  # 1, 2, 4 seconds
+                    backoff = 2**attempt  # 1, 2, 4 seconds
                     await asyncio.sleep(backoff)
 
         # All retries exhausted

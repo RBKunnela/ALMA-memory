@@ -48,10 +48,13 @@ class MemoryEvent:
         payload: Event-specific data (e.g., the created memory)
         metadata: Optional additional context
     """
+
     event_type: MemoryEventType
     agent: str
     project_id: str
-    memory_type: str  # heuristics, outcomes, preferences, domain_knowledge, anti_patterns
+    memory_type: (
+        str  # heuristics, outcomes, preferences, domain_knowledge, anti_patterns
+    )
     memory_id: str
     timestamp: datetime
     payload: Dict[str, Any]

@@ -15,13 +15,14 @@ import pytest
 psycopg_available = False
 try:
     from psycopg_pool import ConnectionPool  # noqa: F401
+
     psycopg_available = True
 except ImportError:
     pass
 
 pytestmark = pytest.mark.skipif(
     not psycopg_available,
-    reason="psycopg not installed. Install with: pip install 'alma-memory[postgres]'"
+    reason="psycopg not installed. Install with: pip install 'alma-memory[postgres]'",
 )
 
 
@@ -48,7 +49,7 @@ def storage_with_mock_pool(mock_pool):
     """Create PostgreSQLStorage with mocked pool."""
     from alma.storage.postgresql import PostgreSQLStorage
 
-    with patch.object(PostgreSQLStorage, '__init__', lambda self, **kwargs: None):
+    with patch.object(PostgreSQLStorage, "__init__", lambda self, **kwargs: None):
         storage = PostgreSQLStorage()
         storage._pool = mock_pool
         storage._pgvector_available = True
@@ -76,7 +77,9 @@ class TestPostgreSQLStorageInit:
             "embedding_dim": 384,
         }
 
-        with patch.object(PostgreSQLStorage, '__init__', return_value=None) as mock_init:
+        with patch.object(
+            PostgreSQLStorage, "__init__", return_value=None
+        ) as mock_init:
             PostgreSQLStorage.from_config(config)
             # Verify from_config calls __init__ with correct params
             mock_init.assert_called_once()
@@ -105,7 +108,9 @@ class TestPostgreSQLStorageInit:
             },
         }
 
-        with patch.object(PostgreSQLStorage, '__init__', return_value=None) as mock_init:
+        with patch.object(
+            PostgreSQLStorage, "__init__", return_value=None
+        ) as mock_init:
             PostgreSQLStorage.from_config(config)
             call_kwargs = mock_init.call_args[1]
             assert call_kwargs["host"] == "db.example.com"

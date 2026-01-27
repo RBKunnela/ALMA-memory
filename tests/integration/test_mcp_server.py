@@ -411,9 +411,7 @@ class TestMCPFullWorkflow:
         return ALMAMCPServer(alma=workflow_alma)
 
     @pytest.mark.asyncio
-    async def test_learn_then_retrieve_workflow(
-        self, workflow_server: ALMAMCPServer
-    ):
+    async def test_learn_then_retrieve_workflow(self, workflow_server: ALMAMCPServer):
         """Test complete learn -> retrieve workflow."""
         # Step 1: Learn something
         learn_request = {
@@ -433,9 +431,7 @@ class TestMCPFullWorkflow:
         }
 
         learn_response = await workflow_server.handle_request(learn_request)
-        learn_result = json.loads(
-            learn_response["result"]["content"][0]["text"]
-        )
+        learn_result = json.loads(learn_response["result"]["content"][0]["text"])
         assert learn_result["success"] is True
 
         # Step 2: Add knowledge
@@ -453,9 +449,7 @@ class TestMCPFullWorkflow:
             },
         }
 
-        knowledge_response = await workflow_server.handle_request(
-            knowledge_request
-        )
+        knowledge_response = await workflow_server.handle_request(knowledge_request)
         knowledge_result = json.loads(
             knowledge_response["result"]["content"][0]["text"]
         )
@@ -475,12 +469,8 @@ class TestMCPFullWorkflow:
             },
         }
 
-        retrieve_response = await workflow_server.handle_request(
-            retrieve_request
-        )
-        retrieve_result = json.loads(
-            retrieve_response["result"]["content"][0]["text"]
-        )
+        retrieve_response = await workflow_server.handle_request(retrieve_request)
+        retrieve_result = json.loads(retrieve_response["result"]["content"][0]["text"])
         assert retrieve_result["success"] is True
 
         # Should have domain knowledge
@@ -498,9 +488,7 @@ class TestMCPFullWorkflow:
         }
 
         stats_response = await workflow_server.handle_request(stats_request)
-        stats_result = json.loads(
-            stats_response["result"]["content"][0]["text"]
-        )
+        stats_result = json.loads(stats_response["result"]["content"][0]["text"])
         assert stats_result["success"] is True
         assert stats_result["stats"]["outcomes_count"] >= 1
         assert stats_result["stats"]["domain_knowledge_count"] >= 1

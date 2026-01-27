@@ -120,7 +120,9 @@ class RetrievalEngine:
         agents_to_query = [agent]
         if include_shared and scope and scope.inherit_from:
             agents_to_query = scope.get_readable_agents()
-            logger.debug(f"Multi-agent retrieval for {agent}: querying {agents_to_query}")
+            logger.debug(
+                f"Multi-agent retrieval for {agent}: querying {agents_to_query}"
+            )
 
         # Retrieve raw items from storage (with vector search)
         if len(agents_to_query) > 1:
@@ -155,7 +157,9 @@ class RetrievalEngine:
             # Mark shared memories with origin tracking
             raw_heuristics = self._mark_shared_memories(raw_heuristics, agent)
             raw_outcomes = self._mark_shared_memories(raw_outcomes, agent)
-            raw_domain_knowledge = self._mark_shared_memories(raw_domain_knowledge, agent)
+            raw_domain_knowledge = self._mark_shared_memories(
+                raw_domain_knowledge, agent
+            )
             raw_anti_patterns = self._mark_shared_memories(raw_anti_patterns, agent)
         else:
             # Single agent query (original behavior)
@@ -246,10 +250,10 @@ class RetrievalEngine:
             Same memories with shared_from metadata added where applicable
         """
         for memory in memories:
-            if hasattr(memory, 'agent') and memory.agent != requesting_agent:
-                if not hasattr(memory, 'metadata') or memory.metadata is None:
+            if hasattr(memory, "agent") and memory.agent != requesting_agent:
+                if not hasattr(memory, "metadata") or memory.metadata is None:
                     memory.metadata = {}
-                memory.metadata['shared_from'] = memory.agent
+                memory.metadata["shared_from"] = memory.agent
         return memories
 
     def _extract_top_k(
@@ -287,12 +291,15 @@ class RetrievalEngine:
         """Initialize the embedding model based on provider config."""
         if self.embedding_provider == "azure":
             from alma.retrieval.embeddings import AzureEmbedder
+
             return AzureEmbedder()
         elif self.embedding_provider == "mock":
             from alma.retrieval.embeddings import MockEmbedder
+
             return MockEmbedder()
         else:
             from alma.retrieval.embeddings import LocalEmbedder
+
             return LocalEmbedder()
 
     def invalidate_cache(
@@ -350,7 +357,9 @@ class RetrievalEngine:
         self.scorer.weights = ScoringWeights(
             similarity=similarity if similarity is not None else current.similarity,
             recency=recency if recency is not None else current.recency,
-            success_rate=success_rate if success_rate is not None else current.success_rate,
+            success_rate=success_rate
+            if success_rate is not None
+            else current.success_rate,
             confidence=confidence if confidence is not None else current.confidence,
         )
         # Clear cache since scoring changed

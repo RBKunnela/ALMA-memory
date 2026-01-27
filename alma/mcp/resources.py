@@ -69,20 +69,22 @@ def get_agents_resource(alma: ALMA) -> Dict[str, Any]:
         except Exception:
             stats = {}
 
-        agents.append({
-            "name": name,
-            "scope": {
-                "can_learn": scope.can_learn,
-                "cannot_learn": scope.cannot_learn,
-                "min_occurrences_for_heuristic": scope.min_occurrences_for_heuristic,
-            },
-            "stats": {
-                "heuristics_count": stats.get("heuristics_count", 0),
-                "outcomes_count": stats.get("outcomes_count", 0),
-                "domain_knowledge_count": stats.get("domain_knowledge_count", 0),
-                "anti_patterns_count": stats.get("anti_patterns_count", 0),
-            },
-        })
+        agents.append(
+            {
+                "name": name,
+                "scope": {
+                    "can_learn": scope.can_learn,
+                    "cannot_learn": scope.cannot_learn,
+                    "min_occurrences_for_heuristic": scope.min_occurrences_for_heuristic,
+                },
+                "stats": {
+                    "heuristics_count": stats.get("heuristics_count", 0),
+                    "outcomes_count": stats.get("outcomes_count", 0),
+                    "domain_knowledge_count": stats.get("domain_knowledge_count", 0),
+                    "anti_patterns_count": stats.get("anti_patterns_count", 0),
+                },
+            }
+        )
 
     return {
         "uri": "alma://agents",

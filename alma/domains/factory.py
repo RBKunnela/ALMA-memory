@@ -124,7 +124,9 @@ class DomainMemoryFactory:
             description=config.get("description", f"Custom schema: {name}"),
             learning_categories=config.get("learning_categories", []),
             excluded_categories=config.get("excluded_categories", []),
-            min_occurrences_for_heuristic=config.get("min_occurrences_for_heuristic", 3),
+            min_occurrences_for_heuristic=config.get(
+                "min_occurrences_for_heuristic", 3
+            ),
             confidence_decay_days=config.get("confidence_decay_days", 30.0),
         )
 
@@ -210,6 +212,7 @@ class DomainMemoryFactory:
         if storage is None:
             import tempfile
             from pathlib import Path
+
             storage_dir = Path(tempfile.mkdtemp()) / ".alma" / project_id
             storage = FileBasedStorage(storage_dir)
 

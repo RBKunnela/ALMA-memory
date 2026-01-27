@@ -296,7 +296,9 @@ class TestMergeHeuristics:
         )
 
         # Should use highest confidence heuristic as base
-        assert merged.condition == sample_heuristics[1].condition  # h2 has 0.90 confidence
+        assert (
+            merged.condition == sample_heuristics[1].condition
+        )  # h2 has 0.90 confidence
         assert merged.strategy == sample_heuristics[1].strategy
 
     @pytest.mark.asyncio
@@ -335,7 +337,9 @@ class TestMergeHeuristics:
             agent="test-agent",
         )
 
-        expected_avg = sum(h.confidence for h in sample_heuristics) / len(sample_heuristics)
+        expected_avg = sum(h.confidence for h in sample_heuristics) / len(
+            sample_heuristics
+        )
         assert abs(merged.confidence - expected_avg) < 0.001
 
     @pytest.mark.asyncio
@@ -834,7 +838,7 @@ class TestMCPConsolidateTool:
         from alma.mcp.tools import alma_consolidate
 
         # Patch the ConsolidationEngine at the module where it's imported
-        with patch('alma.consolidation.engine.ConsolidationEngine') as MockEngineClass:
+        with patch("alma.consolidation.engine.ConsolidationEngine") as MockEngineClass:
             # Create a mock engine instance
             mock_engine_instance = MagicMock()
             mock_result = ConsolidationResult(
@@ -842,14 +846,16 @@ class TestMCPConsolidateTool:
                 groups_found=1,
                 memories_processed=2,
                 errors=[],
-                merge_details=[{"merged_from": ["h1", "h2"], "merged_into": "h3", "count": 2}],
+                merge_details=[
+                    {"merged_from": ["h1", "h2"], "merged_into": "h3", "count": 2}
+                ],
             )
             mock_engine_instance.consolidate = AsyncMock(return_value=mock_result)
             MockEngineClass.return_value = mock_engine_instance
 
             # Also patch in the consolidation module since it's imported dynamically
-            with patch.dict('sys.modules', {'alma.consolidation': MagicMock()}):
-                with patch('alma.consolidation.ConsolidationEngine', MockEngineClass):
+            with patch.dict("sys.modules", {"alma.consolidation": MagicMock()}):
+                with patch("alma.consolidation.ConsolidationEngine", MockEngineClass):
                     result = await alma_consolidate(
                         alma=mock_alma,
                         agent="test-agent",
@@ -870,7 +876,7 @@ class TestMCPConsolidateTool:
         from alma.mcp.tools import alma_consolidate
 
         # Patch the ConsolidationEngine at the module where it's imported
-        with patch('alma.consolidation.engine.ConsolidationEngine') as MockEngineClass:
+        with patch("alma.consolidation.engine.ConsolidationEngine") as MockEngineClass:
             mock_engine_instance = MagicMock()
             mock_result = ConsolidationResult(
                 merged_count=1,
@@ -881,8 +887,8 @@ class TestMCPConsolidateTool:
             mock_engine_instance.consolidate = AsyncMock(return_value=mock_result)
             MockEngineClass.return_value = mock_engine_instance
 
-            with patch.dict('sys.modules', {'alma.consolidation': MagicMock()}):
-                with patch('alma.consolidation.ConsolidationEngine', MockEngineClass):
+            with patch.dict("sys.modules", {"alma.consolidation": MagicMock()}):
+                with patch("alma.consolidation.ConsolidationEngine", MockEngineClass):
                     result = await alma_consolidate(
                         alma=mock_alma,
                         agent="test-agent",

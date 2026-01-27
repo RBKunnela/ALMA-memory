@@ -28,6 +28,7 @@ from alma.harness.base import (
 # CODING DOMAIN
 # =============================================================================
 
+
 class CodingDomain:
     """Pre-built configurations for coding/development agents."""
 
@@ -112,13 +113,19 @@ class CodingDomain:
                     name="playwright",
                     description="Browser automation for UI testing",
                     tool_type=ToolType.EXECUTION,
-                    constraints=["Use explicit waits, not sleep()", "Prefer role-based selectors"],
+                    constraints=[
+                        "Use explicit waits, not sleep()",
+                        "Prefer role-based selectors",
+                    ],
                 ),
                 Tool(
                     name="api_client",
                     description="HTTP client for API testing",
                     tool_type=ToolType.DATA_ACCESS,
-                    constraints=["Log all requests/responses", "Handle timeouts gracefully"],
+                    constraints=[
+                        "Log all requests/responses",
+                        "Handle timeouts gracefully",
+                    ],
                 ),
                 Tool(
                     name="database_query",
@@ -199,6 +206,7 @@ class CodingDomain:
 # RESEARCH DOMAIN
 # =============================================================================
 
+
 class ResearchDomain:
     """Pre-built configurations for research and analysis agents."""
 
@@ -266,7 +274,10 @@ class ResearchDomain:
                     name="synthesis",
                     description="Combine multiple sources into insights",
                     tool_type=ToolType.ANALYSIS,
-                    constraints=["Note conflicting information", "Confidence levels required"],
+                    constraints=[
+                        "Note conflicting information",
+                        "Confidence levels required",
+                    ],
                 ),
             ],
             global_constraints=[
@@ -311,6 +322,7 @@ class ResearchDomain:
 # =============================================================================
 # CONTENT DOMAIN
 # =============================================================================
+
 
 class ContentDomain:
     """Pre-built configurations for content creation agents."""
@@ -488,6 +500,7 @@ class ContentDomain:
 # OPERATIONS DOMAIN
 # =============================================================================
 
+
 class OperationsDomain:
     """Pre-built configurations for operations and support agents."""
 
@@ -634,6 +647,7 @@ class OperationsDomain:
 # FACTORY FUNCTION
 # =============================================================================
 
+
 def create_harness(
     domain: str,
     agent_type: str,
@@ -664,7 +678,9 @@ def create_harness(
             "victor": CodingDomain.create_victor,
         },
         "research": {
-            "researcher": lambda a: ResearchDomain.create_researcher(a, kwargs.get("focus", "general")),
+            "researcher": lambda a: ResearchDomain.create_researcher(
+                a, kwargs.get("focus", "general")
+            ),
         },
         "content": {
             "copywriter": ContentDomain.create_copywriter,
@@ -676,7 +692,9 @@ def create_harness(
     }
 
     if domain not in factories:
-        raise ValueError(f"Unknown domain: {domain}. Available: {list(factories.keys())}")
+        raise ValueError(
+            f"Unknown domain: {domain}. Available: {list(factories.keys())}"
+        )
 
     if agent_type not in factories[domain]:
         raise ValueError(

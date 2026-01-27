@@ -335,7 +335,9 @@ class TestForgetMechanism:
         stats_after = forget_alma.get_stats(agent="helena")
 
         # With older_than_days=0, nothing should be pruned (all are recent)
-        assert stats_after.get("outcomes_count", 0) <= stats_before.get("outcomes_count", 5)
+        assert stats_after.get("outcomes_count", 0) <= stats_before.get(
+            "outcomes_count", 5
+        )
 
 
 class TestCacheInvalidation:

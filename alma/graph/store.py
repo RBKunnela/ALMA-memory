@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Entity:
     """A node in the knowledge graph."""
+
     id: str
     name: str
     entity_type: str  # person, organization, concept, tool, etc.
@@ -28,6 +29,7 @@ class Entity:
 @dataclass
 class Relationship:
     """An edge in the knowledge graph."""
+
     id: str
     source_id: str
     target_id: str
@@ -40,6 +42,7 @@ class Relationship:
 @dataclass
 class GraphQuery:
     """A query against the knowledge graph."""
+
     entities: List[str]  # Entity names or IDs to search for
     relation_types: Optional[List[str]] = None  # Filter by relation types
     max_hops: int = 2  # Maximum traversal depth
@@ -49,6 +52,7 @@ class GraphQuery:
 @dataclass
 class GraphResult:
     """Result from a graph query."""
+
     entities: List[Entity]
     relationships: List[Relationship]
     paths: List[List[str]]  # Paths through the graph
@@ -148,6 +152,7 @@ class Neo4jGraphStore(GraphStore):
         if self._driver is None:
             try:
                 from neo4j import GraphDatabase
+
                 self._driver = GraphDatabase.driver(
                     self.uri,
                     auth=(self.username, self.password),
@@ -176,13 +181,16 @@ class Neo4jGraphStore(GraphStore):
             e.created_at = $created_at
         RETURN e.id as id
         """
-        result = self._run_query(query, {
-            "id": entity.id,
-            "name": entity.name,
-            "entity_type": entity.entity_type,
-            "properties": str(entity.properties),
-            "created_at": entity.created_at.isoformat(),
-        })
+        result = self._run_query(
+            query,
+            {
+                "id": entity.id,
+                "name": entity.name,
+                "entity_type": entity.entity_type,
+                "properties": str(entity.properties),
+                "created_at": entity.created_at.isoformat(),
+            },
+        )
         return result[0]["id"] if result else entity.id
 
     def add_relationship(self, relationship: Relationship) -> str:
@@ -197,14 +205,17 @@ class Neo4jGraphStore(GraphStore):
             r.created_at = $created_at
         RETURN r.id as id
         """
-        result = self._run_query(query, {
-            "id": relationship.id,
-            "source_id": relationship.source_id,
-            "target_id": relationship.target_id,
-            "properties": str(relationship.properties),
-            "confidence": relationship.confidence,
-            "created_at": relationship.created_at.isoformat(),
-        })
+        result = self._run_query(
+            query,
+            {
+                "id": relationship.id,
+                "source_id": relationship.source_id,
+                "target_id": relationship.target_id,
+                "properties": str(relationship.properties),
+                "confidence": relationship.confidence,
+                "created_at": relationship.created_at.isoformat(),
+            },
+        )
         return result[0]["id"] if result else relationship.id
 
     def get_entity(self, entity_id: str) -> Optional[Entity]:
@@ -223,7 +234,9 @@ class Neo4jGraphStore(GraphStore):
             name=r["name"],
             entity_type=r["entity_type"],
             properties=json.loads(r["properties"]) if r["properties"] else {},
-            created_at=datetime.fromisoformat(r["created_at"]) if r["created_at"] else datetime.now(timezone.utc),
+            created_at=datetime.fromisoformat(r["created_at"])
+            if r["created_at"]
+            else datetime.now(timezone.utc),
         )
 
     def find_entities(
@@ -281,7 +294,7 @@ class Neo4jGraphStore(GraphStore):
         type_filter = f":{relation_type}" if relation_type else ""
 
         query = f"""
-        MATCH (e:Entity {{id: $entity_id}}){pattern.replace('[r]', f'[r{type_filter}]')}
+        MATCH (e:Entity {{id: $entity_id}}){pattern.replace("[r]", f"[r{type_filter}]")}
         RETURN r.id as id, e.id as source_id, other.id as target_id,
                type(r) as relation_type, r.properties as properties,
                r.confidence as confidence, r.created_at as created_at
@@ -308,6 +321,7 @@ class Neo4jGraphStore(GraphStore):
     ) -> GraphResult:
         """Traverse the graph from a starting entity."""
         import time
+
         start_time = time.time()
 
         type_filter = ""
@@ -380,9 +394,9 @@ class Neo4jGraphStore(GraphStore):
                 all_paths.extend(result.paths)
 
         return GraphResult(
-            entities=list(all_entities.values())[:query.limit],
+            entities=list(all_entities.values())[: query.limit],
             relationships=list(all_relationships.values()),
-            paths=all_paths[:query.limit],
+            paths=all_paths[: query.limit],
             query_time_ms=0,
         )
 
@@ -486,6 +500,7 @@ class InMemoryGraphStore(GraphStore):
         relation_types: Optional[List[str]] = None,
     ) -> GraphResult:
         import time
+
         start_time = time.time()
 
         visited_entities = {start_entity_id}
@@ -502,7 +517,9 @@ class InMemoryGraphStore(GraphStore):
 
                 visited_relationships.add(rel.id)
 
-                next_id = rel.target_id if rel.source_id == current_id else rel.source_id
+                next_id = (
+                    rel.target_id if rel.source_id == current_id else rel.source_id
+                )
 
                 if next_id not in visited_entities:
                     visited_entities.add(next_id)
@@ -512,8 +529,14 @@ class InMemoryGraphStore(GraphStore):
 
         _traverse(start_entity_id, 0, [start_entity_id])
 
-        entities = [self._entities[eid] for eid in visited_entities if eid in self._entities]
-        relationships = [self._relationships[rid] for rid in visited_relationships if rid in self._relationships]
+        entities = [
+            self._entities[eid] for eid in visited_entities if eid in self._entities
+        ]
+        relationships = [
+            self._relationships[rid]
+            for rid in visited_relationships
+            if rid in self._relationships
+        ]
 
         query_time_ms = int((time.time() - start_time) * 1000)
 
@@ -545,9 +568,9 @@ class InMemoryGraphStore(GraphStore):
                 all_paths.extend(result.paths)
 
         return GraphResult(
-            entities=list(all_entities.values())[:query.limit],
+            entities=list(all_entities.values())[: query.limit],
             relationships=list(all_relationships.values()),
-            paths=all_paths[:query.limit],
+            paths=all_paths[: query.limit],
             query_time_ms=0,
         )
 
