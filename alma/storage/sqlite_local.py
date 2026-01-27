@@ -390,9 +390,11 @@ class SQLiteStorage(StorageBackend):
                     heuristic.confidence,
                     heuristic.occurrence_count,
                     heuristic.success_count,
-                    heuristic.last_validated.isoformat()
-                    if heuristic.last_validated
-                    else None,
+                    (
+                        heuristic.last_validated.isoformat()
+                        if heuristic.last_validated
+                        else None
+                    ),
                     heuristic.created_at.isoformat() if heuristic.created_at else None,
                     json.dumps(heuristic.metadata) if heuristic.metadata else None,
                 ),
@@ -477,9 +479,11 @@ class SQLiteStorage(StorageBackend):
                     knowledge.fact,
                     knowledge.source,
                     knowledge.confidence,
-                    knowledge.last_verified.isoformat()
-                    if knowledge.last_verified
-                    else None,
+                    (
+                        knowledge.last_verified.isoformat()
+                        if knowledge.last_verified
+                        else None
+                    ),
                     json.dumps(knowledge.metadata) if knowledge.metadata else None,
                 ),
             )
@@ -508,15 +512,21 @@ class SQLiteStorage(StorageBackend):
                     anti_pattern.why_bad,
                     anti_pattern.better_alternative,
                     anti_pattern.occurrence_count,
-                    anti_pattern.last_seen.isoformat()
-                    if anti_pattern.last_seen
-                    else None,
-                    anti_pattern.created_at.isoformat()
-                    if anti_pattern.created_at
-                    else None,
-                    json.dumps(anti_pattern.metadata)
-                    if anti_pattern.metadata
-                    else None,
+                    (
+                        anti_pattern.last_seen.isoformat()
+                        if anti_pattern.last_seen
+                        else None
+                    ),
+                    (
+                        anti_pattern.created_at.isoformat()
+                        if anti_pattern.created_at
+                        else None
+                    ),
+                    (
+                        json.dumps(anti_pattern.metadata)
+                        if anti_pattern.metadata
+                        else None
+                    ),
                 ),
             )
 

@@ -186,9 +186,9 @@ def alma_learn(
         return {
             "success": True,
             "learned": result,
-            "message": "Outcome recorded"
-            if result
-            else "Learning rejected (scope violation)",
+            "message": (
+                "Outcome recorded" if result else "Learning rejected (scope violation)"
+            ),
         }
 
     except Exception as e:

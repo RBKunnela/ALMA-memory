@@ -325,9 +325,9 @@ class Harness:
             agent=self.agent.name,
             task=context.task,
             outcome="success" if result.success else "failure",
-            strategy_used=", ".join(result.tools_used)
-            if result.tools_used
-            else "direct",
+            strategy_used=(
+                ", ".join(result.tools_used) if result.tools_used else "direct"
+            ),
             duration_ms=result.duration_ms,
             error_message=result.error,
             feedback="; ".join(result.reflections) if result.reflections else None,

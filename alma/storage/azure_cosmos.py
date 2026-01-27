@@ -246,12 +246,14 @@ class AzureCosmosStorage(StorageBackend):
             "confidence": heuristic.confidence,
             "occurrence_count": heuristic.occurrence_count,
             "success_count": heuristic.success_count,
-            "last_validated": heuristic.last_validated.isoformat()
-            if heuristic.last_validated
-            else None,
-            "created_at": heuristic.created_at.isoformat()
-            if heuristic.created_at
-            else None,
+            "last_validated": (
+                heuristic.last_validated.isoformat()
+                if heuristic.last_validated
+                else None
+            ),
+            "created_at": (
+                heuristic.created_at.isoformat() if heuristic.created_at else None
+            ),
             "metadata": heuristic.metadata or {},
             "embedding": heuristic.embedding,
             "type": "heuristic",
@@ -297,9 +299,9 @@ class AzureCosmosStorage(StorageBackend):
             "preference": preference.preference,
             "source": preference.source,
             "confidence": preference.confidence,
-            "timestamp": preference.timestamp.isoformat()
-            if preference.timestamp
-            else None,
+            "timestamp": (
+                preference.timestamp.isoformat() if preference.timestamp else None
+            ),
             "metadata": preference.metadata or {},
             "type": "preference",
         }
@@ -320,9 +322,9 @@ class AzureCosmosStorage(StorageBackend):
             "fact": knowledge.fact,
             "source": knowledge.source,
             "confidence": knowledge.confidence,
-            "last_verified": knowledge.last_verified.isoformat()
-            if knowledge.last_verified
-            else None,
+            "last_verified": (
+                knowledge.last_verified.isoformat() if knowledge.last_verified else None
+            ),
             "metadata": knowledge.metadata or {},
             "embedding": knowledge.embedding,
             "type": "domain_knowledge",
@@ -344,12 +346,12 @@ class AzureCosmosStorage(StorageBackend):
             "why_bad": anti_pattern.why_bad,
             "better_alternative": anti_pattern.better_alternative,
             "occurrence_count": anti_pattern.occurrence_count,
-            "last_seen": anti_pattern.last_seen.isoformat()
-            if anti_pattern.last_seen
-            else None,
-            "created_at": anti_pattern.created_at.isoformat()
-            if anti_pattern.created_at
-            else None,
+            "last_seen": (
+                anti_pattern.last_seen.isoformat() if anti_pattern.last_seen else None
+            ),
+            "created_at": (
+                anti_pattern.created_at.isoformat() if anti_pattern.created_at else None
+            ),
             "metadata": anti_pattern.metadata or {},
             "embedding": anti_pattern.embedding,
             "type": "anti_pattern",

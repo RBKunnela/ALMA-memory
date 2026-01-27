@@ -234,9 +234,11 @@ class Neo4jGraphStore(GraphStore):
             name=r["name"],
             entity_type=r["entity_type"],
             properties=json.loads(r["properties"]) if r["properties"] else {},
-            created_at=datetime.fromisoformat(r["created_at"])
-            if r["created_at"]
-            else datetime.now(timezone.utc),
+            created_at=(
+                datetime.fromisoformat(r["created_at"])
+                if r["created_at"]
+                else datetime.now(timezone.utc)
+            ),
         )
 
     def find_entities(

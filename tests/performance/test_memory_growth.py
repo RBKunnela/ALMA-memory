@@ -62,9 +62,9 @@ class TestMemoryGrowth:
 
         # Average learning time should be < 50ms
         avg_time = sum(times) / len(times)
-        assert avg_time < 50, (
-            f"Average learning time: {avg_time:.1f}ms, expected < 50ms"
-        )
+        assert (
+            avg_time < 50
+        ), f"Average learning time: {avg_time:.1f}ms, expected < 50ms"
 
         # Last 10 should not be significantly slower than first 10
         first_10_avg = sum(times[:10]) / 10

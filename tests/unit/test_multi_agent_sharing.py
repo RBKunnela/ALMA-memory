@@ -476,9 +476,9 @@ class TestRetrievalEngineMultiAgentSharing:
 
         # Should only see agent_c's own memories
         for h in result.heuristics:
-            assert h.agent == "agent_c", (
-                f"Agent C should only see its own memories, got {h.agent}"
-            )
+            assert (
+                h.agent == "agent_c"
+            ), f"Agent C should only see its own memories, got {h.agent}"
 
     def test_agent_a_cannot_see_agent_b_without_inheritance(
         self,
@@ -503,9 +503,9 @@ class TestRetrievalEngineMultiAgentSharing:
 
         # Should NOT see agent_b's memories
         for h in result.heuristics:
-            assert h.agent == "agent_a", (
-                f"Agent A should not see Agent B's memories, got {h.agent}"
-            )
+            assert (
+                h.agent == "agent_a"
+            ), f"Agent A should not see Agent B's memories, got {h.agent}"
 
     def test_bidirectional_sharing(
         self,
@@ -570,16 +570,16 @@ class TestRetrievalEngineMultiAgentSharing:
         for h in result.heuristics:
             if h.agent == "agent_a":
                 # Shared memory should have shared_from metadata
-                assert "shared_from" in h.metadata, (
-                    "Shared memory should have shared_from metadata"
-                )
+                assert (
+                    "shared_from" in h.metadata
+                ), "Shared memory should have shared_from metadata"
                 assert h.metadata["shared_from"] == "agent_a"
             elif h.agent == "agent_b":
                 # Own memory should NOT have shared_from (or it should be absent)
                 shared_from = h.metadata.get("shared_from")
-                assert shared_from is None, (
-                    "Own memory should not have shared_from metadata"
-                )
+                assert (
+                    shared_from is None
+                ), "Own memory should not have shared_from metadata"
 
     def test_include_shared_false_disables_sharing(
         self,
@@ -604,9 +604,9 @@ class TestRetrievalEngineMultiAgentSharing:
 
         # Should only see agent_b's own memories
         for h in result.heuristics:
-            assert h.agent == "agent_b", (
-                "With include_shared=False, should only see own memories"
-            )
+            assert (
+                h.agent == "agent_b"
+            ), "With include_shared=False, should only see own memories"
 
     def test_backward_compatibility_no_scope(
         self,

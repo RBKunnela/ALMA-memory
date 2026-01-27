@@ -1433,12 +1433,12 @@ class CleanupScheduler:
                         (r.completed_at - r.started_at).total_seconds() * 1000
                     ),
                     "success": r.success,
-                    "items_pruned": r.prune_summary.total_pruned
-                    if r.prune_summary
-                    else 0,
-                    "items_decayed": r.decay_result.items_updated
-                    if r.decay_result
-                    else 0,
+                    "items_pruned": (
+                        r.prune_summary.total_pruned if r.prune_summary else 0
+                    ),
+                    "items_decayed": (
+                        r.decay_result.items_updated if r.decay_result else 0
+                    ),
                     "alerts": len(r.alerts),
                     "error": r.error,
                 }

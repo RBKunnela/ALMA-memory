@@ -178,9 +178,9 @@ class ConsolidationEngine:
                     result.merge_details.append(
                         {
                             "merged_from": original_ids,
-                            "merged_into": merged.id
-                            if hasattr(merged, "id")
-                            else str(merged),
+                            "merged_into": (
+                                merged.id if hasattr(merged, "id") else str(merged)
+                            ),
                             "count": len(original_ids),
                         }
                     )

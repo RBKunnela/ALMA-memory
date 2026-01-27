@@ -525,9 +525,11 @@ class PostgreSQLStorage(StorageBackend):
                     anti_pattern.occurrence_count,
                     anti_pattern.last_seen,
                     anti_pattern.created_at,
-                    json.dumps(anti_pattern.metadata)
-                    if anti_pattern.metadata
-                    else None,
+                    (
+                        json.dumps(anti_pattern.metadata)
+                        if anti_pattern.metadata
+                        else None
+                    ),
                     self._embedding_to_db(anti_pattern.embedding),
                 ),
             )

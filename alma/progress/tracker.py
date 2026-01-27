@@ -532,12 +532,12 @@ class ProgressTracker:
                     "attempt_count": item.attempt_count,
                     "created_at": item.created_at.isoformat(),
                     "updated_at": item.updated_at.isoformat(),
-                    "started_at": item.started_at.isoformat()
-                    if item.started_at
-                    else None,
-                    "completed_at": item.completed_at.isoformat()
-                    if item.completed_at
-                    else None,
+                    "started_at": (
+                        item.started_at.isoformat() if item.started_at else None
+                    ),
+                    "completed_at": (
+                        item.completed_at.isoformat() if item.completed_at else None
+                    ),
                     "metadata": item.metadata,
                 }
                 for item in self._work_items.values()

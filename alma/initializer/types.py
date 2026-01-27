@@ -219,17 +219,19 @@ class InitializationResult:
                 item.to_dict() if hasattr(item, "to_dict") else str(item)
                 for item in self.work_items
             ],
-            "orientation": {
-                "current_branch": self.orientation.current_branch,
-                "has_uncommitted_changes": self.orientation.has_uncommitted_changes,
-                "recent_commits": self.orientation.recent_commits,
-                "root_path": self.orientation.root_path,
-                "key_directories": self.orientation.key_directories,
-                "config_files": self.orientation.config_files,
-                "summary": self.orientation.summary,
-            }
-            if self.orientation
-            else None,
+            "orientation": (
+                {
+                    "current_branch": self.orientation.current_branch,
+                    "has_uncommitted_changes": self.orientation.has_uncommitted_changes,
+                    "recent_commits": self.orientation.recent_commits,
+                    "root_path": self.orientation.root_path,
+                    "key_directories": self.orientation.key_directories,
+                    "config_files": self.orientation.config_files,
+                    "summary": self.orientation.summary,
+                }
+                if self.orientation
+                else None
+            ),
             "recent_activity": self.recent_activity,
             "rules": {
                 "scope_rules": self.rules.scope_rules,
@@ -239,9 +241,7 @@ class InitializationResult:
             "recommended_start": (
                 self.recommended_start.to_dict()
                 if self.recommended_start and hasattr(self.recommended_start, "to_dict")
-                else str(self.recommended_start)
-                if self.recommended_start
-                else None
+                else str(self.recommended_start) if self.recommended_start else None
             ),
             "initialized_at": self.initialized_at.isoformat(),
             "metadata": self.metadata,

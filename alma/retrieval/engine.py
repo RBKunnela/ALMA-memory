@@ -357,9 +357,9 @@ class RetrievalEngine:
         self.scorer.weights = ScoringWeights(
             similarity=similarity if similarity is not None else current.similarity,
             recency=recency if recency is not None else current.recency,
-            success_rate=success_rate
-            if success_rate is not None
-            else current.success_rate,
+            success_rate=(
+                success_rate if success_rate is not None else current.success_rate
+            ),
             confidence=confidence if confidence is not None else current.confidence,
         )
         # Clear cache since scoring changed

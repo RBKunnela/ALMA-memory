@@ -640,9 +640,9 @@ class RedisCache(CacheBackend):
                     "confidence": h.confidence,
                     "occurrence_count": h.occurrence_count,
                     "success_count": h.success_count,
-                    "last_validated": h.last_validated.isoformat()
-                    if h.last_validated
-                    else None,
+                    "last_validated": (
+                        h.last_validated.isoformat() if h.last_validated else None
+                    ),
                     "created_at": h.created_at.isoformat() if h.created_at else None,
                 }
                 for h in result.heuristics

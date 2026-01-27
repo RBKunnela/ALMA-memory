@@ -298,9 +298,7 @@ class ConfidenceSignal:
                 severity_label = (
                     "HIGH"
                     if risk.severity >= 0.7
-                    else "MEDIUM"
-                    if risk.severity >= 0.4
-                    else "LOW"
+                    else "MEDIUM" if risk.severity >= 0.4 else "LOW"
                 )
                 lines.append(f"- [{severity_label}] {risk.description}")
             lines.append("")
@@ -312,9 +310,7 @@ class ConfidenceSignal:
                 strength_label = (
                     "STRONG"
                     if opp.strength >= 0.7
-                    else "MODERATE"
-                    if opp.strength >= 0.4
-                    else "WEAK"
+                    else "MODERATE" if opp.strength >= 0.4 else "WEAK"
                 )
                 lines.append(f"- [{strength_label}] {opp.description}")
             lines.append("")
