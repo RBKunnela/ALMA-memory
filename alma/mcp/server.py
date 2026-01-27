@@ -21,6 +21,7 @@ from alma.mcp.tools import (
     alma_forget,
     alma_stats,
     alma_health,
+    alma_consolidate,
 )
 from alma.mcp.resources import (
     get_config_resource,
@@ -235,6 +236,36 @@ class ALMAMCPServer:
                     "properties": {},
                 },
             },
+            {
+                "name": "alma_consolidate",
+                "description": "Consolidate similar memories to reduce redundancy. Merges near-duplicate memories based on semantic similarity. Use dry_run=true first to preview what would be merged.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent": {
+                            "type": "string",
+                            "description": "Agent whose memories to consolidate",
+                        },
+                        "memory_type": {
+                            "type": "string",
+                            "enum": ["heuristics", "outcomes", "domain_knowledge", "anti_patterns"],
+                            "description": "Type of memory to consolidate (default: heuristics)",
+                            "default": "heuristics",
+                        },
+                        "similarity_threshold": {
+                            "type": "number",
+                            "description": "Minimum cosine similarity to group memories (0.0-1.0, default: 0.85). Higher values are more conservative.",
+                            "default": 0.85,
+                        },
+                        "dry_run": {
+                            "type": "boolean",
+                            "description": "If true, preview what would be merged without modifying storage (default: true)",
+                            "default": True,
+                        },
+                    },
+                    "required": ["agent"],
+                },
+            },
         ]
 
     async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -351,6 +382,13 @@ class ALMAMCPServer:
                 agent=arguments.get("agent"),
             ),
             "alma_health": lambda: alma_health(self.alma),
+            "alma_consolidate": lambda: alma_consolidate(
+                self.alma,
+                agent=arguments.get("agent", ""),
+                memory_type=arguments.get("memory_type", "heuristics"),
+                similarity_threshold=arguments.get("similarity_threshold", 0.85),
+                dry_run=arguments.get("dry_run", True),
+            ),
         }
 
         if tool_name not in tool_handlers:
@@ -361,6 +399,10 @@ class ALMAMCPServer:
             )
 
         result = tool_handlers[tool_name]()
+
+        # Handle async functions (like alma_consolidate)
+        if asyncio.iscoroutine(result):
+            result = await result
 
         return self._success_response(request_id, {
             "content": [

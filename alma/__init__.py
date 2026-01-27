@@ -92,6 +92,22 @@ from alma.confidence import (
     RiskSignal,
 )
 
+# Consolidation Engine (Phase 13)
+from alma.consolidation import (
+    ConsolidationEngine,
+    ConsolidationResult,
+)
+
+# Event System (Phase 19)
+from alma.events import (
+    MemoryEvent,
+    MemoryEventType,
+    EventEmitter,
+    get_emitter,
+    WebhookConfig,
+    WebhookManager,
+)
+
 # Exceptions
 from alma.exceptions import (
     ALMAError,
@@ -158,6 +174,16 @@ __all__ = [
     "ConfidenceSignal",
     "OpportunitySignal",
     "RiskSignal",
+    # Consolidation Engine
+    "ConsolidationEngine",
+    "ConsolidationResult",
+    # Event System
+    "MemoryEvent",
+    "MemoryEventType",
+    "EventEmitter",
+    "get_emitter",
+    "WebhookConfig",
+    "WebhookManager",
     # Exceptions
     "ALMAError",
     "ConfigurationError",

@@ -404,3 +404,98 @@ def alma_health(alma: ALMA) -> Dict[str, Any]:
             "status": "unhealthy",
             "error": str(e),
         }
+
+
+async def alma_consolidate(
+    alma: ALMA,
+    agent: str,
+    memory_type: str = "heuristics",
+    similarity_threshold: float = 0.85,
+    dry_run: bool = True,
+) -> Dict[str, Any]:
+    """
+    Consolidate similar memories to reduce redundancy.
+
+    This is ALMA's implementation of Mem0's core innovation - LLM-powered
+    deduplication that merges similar memories intelligently.
+
+    Args:
+        alma: ALMA instance
+        agent: Agent whose memories to consolidate
+        memory_type: Type of memory to consolidate
+                    ("heuristics", "outcomes", "domain_knowledge", "anti_patterns")
+        similarity_threshold: Minimum cosine similarity to group (0.0 to 1.0)
+                             Higher values are more conservative (fewer merges)
+        dry_run: If True, report what would be merged without actually modifying storage
+                 Recommended for first run to preview changes
+
+    Returns:
+        Dict with consolidation results including:
+        - merged_count: Number of memories merged
+        - groups_found: Number of similar memory groups identified
+        - memories_processed: Total memories analyzed
+        - merge_details: List of merge operations (or planned operations if dry_run)
+        - errors: Any errors encountered
+    """
+    # Input validation
+    if not agent or not agent.strip():
+        return {"success": False, "error": "agent cannot be empty"}
+
+    valid_types = ["heuristics", "outcomes", "domain_knowledge", "anti_patterns"]
+    if memory_type not in valid_types:
+        return {
+            "success": False,
+            "error": f"memory_type must be one of: {', '.join(valid_types)}",
+        }
+
+    if not 0.0 <= similarity_threshold <= 1.0:
+        return {
+            "success": False,
+            "error": "similarity_threshold must be between 0.0 and 1.0",
+        }
+
+    try:
+        from alma.consolidation import ConsolidationEngine
+
+        # Create consolidation engine
+        engine = ConsolidationEngine(
+            storage=alma.storage,
+            embedder=None,  # Will use default LocalEmbedder
+            llm_client=None,  # LLM merging disabled by default
+        )
+
+        # Run consolidation
+        result = await engine.consolidate(
+            agent=agent,
+            project_id=alma.project_id,
+            memory_type=memory_type,
+            similarity_threshold=similarity_threshold,
+            use_llm=False,  # LLM disabled - uses highest confidence merge
+            dry_run=dry_run,
+        )
+
+        # Invalidate cache after consolidation (if not dry run)
+        if not dry_run and result.merged_count > 0:
+            alma.retrieval.invalidate_cache(agent=agent, project_id=alma.project_id)
+
+        return {
+            "success": result.success,
+            "dry_run": dry_run,
+            "merged_count": result.merged_count,
+            "groups_found": result.groups_found,
+            "memories_processed": result.memories_processed,
+            "merge_details": result.merge_details,
+            "errors": result.errors,
+            "message": (
+                f"{'Would merge' if dry_run else 'Merged'} {result.merged_count} memories "
+                f"from {result.groups_found} similar groups "
+                f"(processed {result.memories_processed} total)"
+            ),
+        }
+
+    except Exception as e:
+        logger.exception(f"Error in alma_consolidate: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+        }

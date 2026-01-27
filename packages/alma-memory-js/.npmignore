@@ -1,0 +1,24 @@
+# Source files (only ship dist/)
+src/
+tests/
+
+# Config files
+tsconfig*.json
+.eslintrc.js
+jest.config.js
+.gitignore
+
+# Dev/CI files
+.github/
+.vscode/
+.idea/
+
+# Coverage
+coverage/
+
+# Test artifacts
+*.test.ts
+*.spec.ts
+
+# Documentation source (README.md is included)
+docs/
