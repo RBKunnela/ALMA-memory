@@ -241,7 +241,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,mcp]"
+          pip install -e ".[dev,mcp,local]"
+        # Note: 'local' includes sentence-transformers for multi-agent tests
 
       - name: Run integration tests
         run: |
