@@ -4,14 +4,14 @@ Session Manager.
 Manages session continuity, handoffs, and quick context reload.
 """
 
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Callable
-import uuid
 import logging
+import uuid
+from datetime import datetime, timezone
+from typing import Any, Callable, Dict, List, Optional
 
 from alma.session.types import (
-    SessionHandoff,
     SessionContext,
+    SessionHandoff,
     SessionOutcome,
 )
 

@@ -6,21 +6,19 @@ No vector search - uses basic text matching for retrieval.
 """
 
 import json
-import uuid
 import logging
-from pathlib import Path
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
-from dataclasses import asdict
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+from alma.storage.base import StorageBackend
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
 )
-from alma.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
 

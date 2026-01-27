@@ -29,9 +29,9 @@ from typing import Optional
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from alma.storage.sqlite_local import SQLiteStorage
-from alma.storage.azure_cosmos import AzureCosmosStorage
 from alma.config.loader import ConfigLoader
+from alma.storage.azure_cosmos import AzureCosmosStorage
+from alma.storage.sqlite_local import SQLiteStorage
 
 logging.basicConfig(
     level=logging.INFO,

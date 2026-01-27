@@ -4,15 +4,15 @@ ALMA Heuristic Extraction.
 Analyzes outcomes to identify patterns and create heuristics.
 """
 
-import uuid
 import logging
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Tuple
-from dataclasses import dataclass, field
+import uuid
 from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple
 
-from alma.types import Heuristic, Outcome, MemoryScope
 from alma.storage.base import StorageBackend
+from alma.types import Heuristic, MemoryScope, Outcome
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +137,7 @@ class HeuristicExtractor:
         # Group outcomes by agent and task type
         grouped = self._group_outcomes(outcomes)
 
-        for (ag, task_type), type_outcomes in grouped.items():
+        for (ag, _task_type), type_outcomes in grouped.items():
             # Find patterns within this group
             patterns = self._identify_patterns(type_outcomes)
             result.patterns_analyzed += len(patterns)

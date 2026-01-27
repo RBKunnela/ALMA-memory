@@ -6,8 +6,8 @@ Defines the core data structures for all memory types.
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class MemoryType(Enum):

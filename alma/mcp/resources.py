@@ -6,10 +6,9 @@ Resources represent configuration and metadata about the ALMA instance.
 """
 
 import logging
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from alma import ALMA
-from alma.types import MemoryScope
 
 logger = logging.getLogger(__name__)
 

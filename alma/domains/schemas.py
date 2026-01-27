@@ -4,7 +4,7 @@ Pre-built Domain Schemas.
 Standard domain schemas for common use cases.
 """
 
-from alma.domains.types import DomainSchema, EntityType, RelationshipType
+from alma.domains.types import DomainSchema
 
 
 def get_coding_schema() -> DomainSchema:

@@ -2,17 +2,17 @@
 Unit tests for ALMA Memory Scoring.
 """
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
-import math
-from datetime import datetime, timezone, timedelta
 
 from alma.retrieval.scoring import (
     MemoryScorer,
-    ScoringWeights,
     ScoredItem,
+    ScoringWeights,
     compute_composite_score,
 )
-from alma.types import Heuristic, Outcome, DomainKnowledge, AntiPattern
+from alma.types import AntiPattern, Heuristic, Outcome
 
 
 class TestScoringWeights:

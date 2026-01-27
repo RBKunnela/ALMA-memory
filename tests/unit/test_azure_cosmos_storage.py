@@ -4,10 +4,10 @@ Unit tests for Azure Cosmos DB storage backend.
 Uses mocking since we don't have a real Cosmos DB instance in CI.
 """
 
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
+import pytest
 
 # Skip all tests if azure-cosmos is not installed
 pytest.importorskip("azure.cosmos")
@@ -15,11 +15,11 @@ pytest.importorskip("azure.cosmos")
 
 from alma.storage.azure_cosmos import AzureCosmosStorage
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
 )
 
 
@@ -54,7 +54,7 @@ class TestAzureCosmosStorageInit:
         mock_database = MagicMock()
         mock_client.create_database_if_not_exists.return_value = mock_database
 
-        storage = AzureCosmosStorage(
+        AzureCosmosStorage(
             endpoint="https://test.documents.azure.com:443/",
             key="test-key",
             create_if_not_exists=True,

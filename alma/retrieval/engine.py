@@ -4,14 +4,14 @@ ALMA Retrieval Engine.
 Handles semantic search and memory retrieval with scoring and caching.
 """
 
-import time
 import logging
-from typing import Optional, List, Dict, Any
+import time
+from typing import Any, Dict, List, Optional
 
-from alma.types import MemorySlice, MemoryScope
+from alma.retrieval.cache import NullCache, RetrievalCache
+from alma.retrieval.scoring import MemoryScorer, ScoredItem, ScoringWeights
 from alma.storage.base import StorageBackend
-from alma.retrieval.scoring import MemoryScorer, ScoringWeights, ScoredItem
-from alma.retrieval.cache import RetrievalCache, NullCache
+from alma.types import MemoryScope, MemorySlice
 
 logger = logging.getLogger(__name__)
 

@@ -4,28 +4,28 @@ ALMA Retrieval Engine.
 Provides semantic search, scoring, and caching for memory retrieval.
 """
 
-from alma.retrieval.engine import RetrievalEngine
-from alma.retrieval.scoring import (
-    MemoryScorer,
-    ScoringWeights,
-    ScoredItem,
-    compute_composite_score,
-)
 from alma.retrieval.cache import (
     CacheBackend,
-    RetrievalCache,
-    RedisCache,
-    NullCache,
     CacheEntry,
     CacheStats,
+    NullCache,
     PerformanceMetrics,
+    RedisCache,
+    RetrievalCache,
     create_cache,
 )
 from alma.retrieval.embeddings import (
+    AzureEmbedder,
     EmbeddingProvider,
     LocalEmbedder,
-    AzureEmbedder,
     MockEmbedder,
+)
+from alma.retrieval.engine import RetrievalEngine
+from alma.retrieval.scoring import (
+    MemoryScorer,
+    ScoredItem,
+    ScoringWeights,
+    compute_composite_score,
 )
 
 __all__ = [

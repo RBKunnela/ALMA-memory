@@ -2,13 +2,12 @@
 Tests for the Session Management module.
 """
 
+
 import pytest
-from datetime import datetime, timezone
 
 from alma.session import (
-    SessionHandoff,
     SessionContext,
-    SessionOutcome,
+    SessionHandoff,
     SessionManager,
 )
 

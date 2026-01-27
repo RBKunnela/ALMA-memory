@@ -4,19 +4,20 @@ End-to-end integration tests for Claude Code agents with ALMA.
 Tests the full flow from agent initialization through memory operations.
 """
 
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from alma.integration import (
+    AgentIntegration,
     AgentType,
+    ClaudeAgentHooks,
     TaskContext,
     TaskOutcome,
-    ClaudeAgentHooks,
-    AgentIntegration,
     create_integration,
 )
-from alma.types import MemorySlice, Heuristic, Outcome
+from alma.types import Heuristic, MemorySlice
 
 
 class TestAgentIntegration:

@@ -32,29 +32,26 @@ Example - Webhook delivery:
     ```
 """
 
-from alma.events.types import (
-    MemoryEvent,
-    MemoryEventType,
-    create_memory_event,
-)
-
 from alma.events.emitter import (
     EventEmitter,
     get_emitter,
     reset_emitter,
 )
-
+from alma.events.storage_mixin import (
+    EventAwareStorageMixin,
+    emit_on_save,
+)
+from alma.events.types import (
+    MemoryEvent,
+    MemoryEventType,
+    create_memory_event,
+)
 from alma.events.webhook import (
     WebhookConfig,
     WebhookDelivery,
     WebhookDeliveryResult,
     WebhookDeliveryStatus,
     WebhookManager,
-)
-
-from alma.events.storage_mixin import (
-    EventAwareStorageMixin,
-    emit_on_save,
 )
 
 __all__ = [

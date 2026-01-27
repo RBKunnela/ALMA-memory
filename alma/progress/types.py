@@ -4,11 +4,10 @@ Progress Tracking Types.
 Data models for tracking work items and progress.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Literal
-import uuid
-
+from typing import Any, Dict, List, Literal, Optional
 
 WorkItemStatus = Literal[
     "pending",      # Not started

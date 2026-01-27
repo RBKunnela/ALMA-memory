@@ -14,41 +14,41 @@ The fixtures follow a layered approach:
 4. Memory fixtures (pre-seeded data)
 """
 
-import pytest
-import tempfile
 import shutil
-from pathlib import Path
-from datetime import datetime, timezone, timedelta
-from typing import Generator, Dict, Any, List
-from unittest.mock import MagicMock, patch
+import tempfile
 import uuid
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any, Dict, Generator, List
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from alma import (
     ALMA,
-    MemorySlice,
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
+    MemoryScope,
+    MemorySlice,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-    MemoryScope,
 )
-from alma.storage.file_based import FileBasedStorage
-from alma.retrieval.engine import RetrievalEngine
-from alma.learning.protocols import LearningProtocol
 from alma.integration.helena import (
+    HELENA_CATEGORIES,
     HelenaHooks,
     UITestContext,
     UITestOutcome,
-    HELENA_CATEGORIES,
 )
 from alma.integration.victor import (
-    VictorHooks,
+    VICTOR_CATEGORIES,
     APITestContext,
     APITestOutcome,
-    VICTOR_CATEGORIES,
+    VictorHooks,
 )
-
+from alma.learning.protocols import LearningProtocol
+from alma.retrieval.engine import RetrievalEngine
+from alma.storage.file_based import FileBasedStorage
 
 # =============================================================================
 # Base Fixtures - Storage and Configuration

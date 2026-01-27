@@ -4,10 +4,10 @@ Domain Memory Types.
 Data models for domain-specific memory schemas.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
-import uuid
+from typing import Any, Dict, List, Optional
 
 
 @dataclass

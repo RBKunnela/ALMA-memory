@@ -4,18 +4,18 @@ Memory Growth Performance Tests.
 Tests for how the system handles increasing memory volume.
 """
 
-import pytest
 import time
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, Any
+
+import pytest
 
 from alma import ALMA, MemoryScope
-from alma.storage.file_based import FileBasedStorage
-from alma.retrieval.engine import RetrievalEngine
 from alma.learning.protocols import LearningProtocol
-from alma.types import Heuristic, DomainKnowledge, Outcome
+from alma.retrieval.engine import RetrievalEngine
+from alma.storage.file_based import FileBasedStorage
+from alma.types import DomainKnowledge, Outcome
 
 
 class TestMemoryGrowth:
@@ -106,11 +106,11 @@ class TestMemoryGrowth:
                 task_type="testing",
             )
 
-        stats_before = growth_alma.get_stats(agent="helena")
+        growth_alma.get_stats(agent="helena")
 
         # Forget with criteria that won't match anything (recent data)
         start = time.perf_counter()
-        pruned = growth_alma.forget(
+        growth_alma.forget(
             agent="helena",
             older_than_days=1,  # Nothing is older than 1 day
             below_confidence=0.0,
@@ -165,7 +165,7 @@ class TestLargeVolumePerformance:
         )
 
         start = time.perf_counter()
-        memories = alma.retrieve(task="Test pattern", agent="helena", top_k=10)
+        alma.retrieve(task="Test pattern", agent="helena", top_k=10)
         elapsed = (time.perf_counter() - start) * 1000
 
         # Should handle 1000 outcomes in under 1 second
@@ -211,7 +211,7 @@ class TestLargeVolumePerformance:
 
         # Retrieval should find relevant knowledge quickly
         start = time.perf_counter()
-        memories = alma.retrieve(task="domain_5 knowledge", agent="helena", top_k=10)
+        alma.retrieve(task="domain_5 knowledge", agent="helena", top_k=10)
         elapsed = (time.perf_counter() - start) * 1000
 
         assert elapsed < 500, f"Knowledge retrieval took {elapsed:.1f}ms"

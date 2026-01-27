@@ -5,11 +5,9 @@ Provides the tool functions that can be called via MCP protocol.
 Each tool corresponds to an ALMA operation.
 """
 
-import json
 import logging
-from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
-from dataclasses import asdict
+from typing import Any, Dict, Optional
 
 from alma import ALMA
 from alma.types import MemorySlice

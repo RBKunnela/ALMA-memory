@@ -17,20 +17,18 @@ Configuration (config.yaml):
         embedding_dim: 384
 """
 
-import json
 import logging
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Tuple
-from dataclasses import asdict
+from typing import Any, Dict, List, Optional
 
+from alma.storage.base import StorageBackend
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
 )
-from alma.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
 
@@ -668,7 +666,7 @@ class AzureCosmosStorage(StorageBackend):
             return False
 
         doc = items[0]
-        project_id = doc["project_id"]
+        doc["project_id"]
 
         # Apply updates
         for key, value in updates.items():

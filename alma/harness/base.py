@@ -17,13 +17,12 @@ Flow:
     Repeat   -> Agent appears to "learn" without weight changes
 """
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Callable
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
-from alma.types import MemorySlice, MemoryScope
+from alma.types import MemoryScope, MemorySlice
 
 
 class ToolType(Enum):

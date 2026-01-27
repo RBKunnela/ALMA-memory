@@ -2,24 +2,19 @@
 ALMA Core - Main interface for the Agent Learning Memory Architecture.
 """
 
-from typing import Optional, Dict, Any, List
-from pathlib import Path
-import yaml
 import logging
+from typing import Any, Dict, Optional
 
-from alma.types import (
-    MemorySlice,
-    MemoryScope,
-    Heuristic,
-    Outcome,
-    UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-)
-from alma.storage.base import StorageBackend
-from alma.retrieval.engine import RetrievalEngine
-from alma.learning.protocols import LearningProtocol
 from alma.config.loader import ConfigLoader
+from alma.learning.protocols import LearningProtocol
+from alma.retrieval.engine import RetrievalEngine
+from alma.storage.base import StorageBackend
+from alma.types import (
+    DomainKnowledge,
+    MemoryScope,
+    MemorySlice,
+    UserPreference,
+)
 
 logger = logging.getLogger(__name__)
 

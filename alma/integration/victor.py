@@ -14,18 +14,18 @@ This module provides Victor-specific memory categories, prompts, and utilities.
 """
 
 import logging
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
 from alma.core import ALMA
-from alma.types import MemorySlice
 from alma.harness.domains import CodingDomain
 from alma.integration.claude_agents import (
+    AgentType,
     ClaudeAgentHooks,
     TaskContext,
     TaskOutcome,
-    AgentType,
 )
+from alma.types import MemorySlice
 
 logger = logging.getLogger(__name__)
 

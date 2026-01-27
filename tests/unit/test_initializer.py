@@ -2,10 +2,11 @@
 Tests for the Session Initializer module.
 """
 
-import pytest
-import tempfile
 import subprocess
+import tempfile
 from pathlib import Path
+
+import pytest
 
 from alma.initializer import (
     CodebaseOrientation,

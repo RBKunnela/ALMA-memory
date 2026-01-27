@@ -6,16 +6,15 @@ an actual PostgreSQL database. For integration tests with a real database,
 see tests/integration/test_postgresql_integration.py
 """
 
-import pytest
 from datetime import datetime, timezone
-from unittest.mock import Mock, patch, MagicMock
-import json
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Skip all tests if psycopg is not installed
 psycopg_available = False
 try:
-    import psycopg
-    from psycopg_pool import ConnectionPool
+    from psycopg_pool import ConnectionPool  # noqa: F401
     psycopg_available = True
 except ImportError:
     pass
@@ -89,8 +88,9 @@ class TestPostgreSQLStorageInit:
 
     def test_from_config_with_env_vars(self):
         """Test from_config with environment variable expansion."""
-        from alma.storage.postgresql import PostgreSQLStorage
         import os
+
+        from alma.storage.postgresql import PostgreSQLStorage
 
         os.environ["TEST_PG_HOST"] = "db.example.com"
         os.environ["TEST_PG_PASS"] = "secret123"
@@ -278,7 +278,7 @@ class TestPostgreSQLStorageStats:
 
         assert stats["project_id"] == "test-project"
         assert stats["storage_type"] == "postgresql"
-        assert stats["pgvector_available"] == True
+        assert stats["pgvector_available"]
 
 
 class TestPostgreSQLStorageRowConversion:
@@ -334,5 +334,5 @@ class TestPostgreSQLStorageRowConversion:
 
         assert outcome.id == "o-123"
         assert outcome.agent == "Victor"
-        assert outcome.success == True
+        assert outcome.success
         assert outcome.duration_ms == 100

@@ -4,29 +4,27 @@ Integration tests for ALMA Retrieval Engine.
 Tests the full retrieval pipeline including scoring, caching, and embeddings.
 """
 
-import pytest
 import time
-from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, patch
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
+
+import pytest
 
 from alma.retrieval import (
-    RetrievalEngine,
     MemoryScorer,
-    ScoringWeights,
-    RetrievalCache,
     NullCache,
-    MockEmbedder,
+    RetrievalCache,
+    RetrievalEngine,
+    ScoringWeights,
 )
-from alma.retrieval.scoring import compute_composite_score, ScoredItem
-from alma.retrieval.cache import CacheStats
+from alma.retrieval.scoring import compute_composite_score
 from alma.types import (
-    Heuristic,
-    Outcome,
-    DomainKnowledge,
     AntiPattern,
+    DomainKnowledge,
+    Heuristic,
     MemorySlice,
+    Outcome,
 )
-
 
 # ============================================================================
 # Fixtures

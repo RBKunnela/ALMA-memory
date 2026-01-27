@@ -13,9 +13,9 @@ Recommended for:
 import json
 import logging
 import os
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 # numpy is optional - only needed for fallback similarity when pgvector unavailable
 try:
@@ -25,20 +25,19 @@ except ImportError:
     np = None  # type: ignore
     NUMPY_AVAILABLE = False
 
+from alma.storage.base import StorageBackend
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
 )
-from alma.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
 
 # Try to import psycopg (v3) with connection pooling
 try:
-    import psycopg
     from psycopg.rows import dict_row
     from psycopg_pool import ConnectionPool
     PSYCOPG_AVAILABLE = True
@@ -330,7 +329,7 @@ class PostgreSQLStorage(StorageBackend):
         """Compute cosine similarity between two vectors."""
         if not NUMPY_AVAILABLE or np is None:
             # Fallback to pure Python
-            dot = sum(x * y for x, y in zip(a, b))
+            dot = sum(x * y for x, y in zip(a, b, strict=False))
             norm_a = sum(x * x for x in a) ** 0.5
             norm_b = sum(x * x for x in b) ** 0.5
             return dot / (norm_a * norm_b) if norm_a and norm_b else 0.0

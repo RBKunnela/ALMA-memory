@@ -4,11 +4,10 @@ Session Management Types.
 Data models for session continuity and handoffs.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Literal
-import uuid
-
+from typing import Any, Dict, List, Literal, Optional
 
 SessionOutcome = Literal["success", "failure", "interrupted", "unknown"]
 

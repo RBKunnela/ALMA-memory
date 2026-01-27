@@ -8,8 +8,8 @@ memory changes.
 
 import asyncio
 import logging
-from typing import Callable, List, Dict, Optional, Union, Awaitable
 from concurrent.futures import ThreadPoolExecutor
+from typing import Awaitable, Callable, Dict, List, Optional, Union
 
 from alma.events.types import MemoryEvent, MemoryEventType
 

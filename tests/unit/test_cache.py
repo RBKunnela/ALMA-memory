@@ -2,15 +2,13 @@
 Unit tests for ALMA Retrieval Cache.
 """
 
-import pytest
 import time
-from unittest.mock import MagicMock
 
 from alma.retrieval.cache import (
-    RetrievalCache,
-    NullCache,
     CacheEntry,
     CacheStats,
+    NullCache,
+    RetrievalCache,
 )
 from alma.types import MemorySlice
 

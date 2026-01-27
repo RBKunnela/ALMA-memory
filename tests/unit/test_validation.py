@@ -6,9 +6,9 @@ import pytest
 
 from alma.learning.validation import (
     ScopeValidator,
-    ValidationResult,
-    ValidationReport,
     TaskTypeValidator,
+    ValidationReport,
+    ValidationResult,
     validate_learning_request,
 )
 from alma.types import MemoryScope

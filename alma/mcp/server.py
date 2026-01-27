@@ -9,24 +9,23 @@ import asyncio
 import json
 import logging
 import sys
-from typing import Dict, Any, Optional, List, Callable
-from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from alma import ALMA
-from alma.mcp.tools import (
-    alma_retrieve,
-    alma_learn,
-    alma_add_preference,
-    alma_add_knowledge,
-    alma_forget,
-    alma_stats,
-    alma_health,
-    alma_consolidate,
-)
 from alma.mcp.resources import (
-    get_config_resource,
     get_agents_resource,
+    get_config_resource,
     list_resources,
+)
+from alma.mcp.tools import (
+    alma_add_knowledge,
+    alma_add_preference,
+    alma_consolidate,
+    alma_forget,
+    alma_health,
+    alma_learn,
+    alma_retrieve,
+    alma_stats,
 )
 
 logger = logging.getLogger(__name__)
@@ -479,7 +478,7 @@ class ALMAMCPServer:
 
     async def run_stdio(self):
         """Run the server in stdio mode for Claude Code integration."""
-        logger.info(f"Starting ALMA MCP Server (stdio mode)")
+        logger.info("Starting ALMA MCP Server (stdio mode)")
 
         reader = asyncio.StreamReader()
         protocol = asyncio.StreamReaderProtocol(reader)

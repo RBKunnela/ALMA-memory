@@ -2,17 +2,16 @@
 Tests for the Domain Memory Factory module.
 """
 
-import pytest
 
 from alma.domains import (
+    DomainMemoryFactory,
     DomainSchema,
     EntityType,
     RelationshipType,
-    DomainMemoryFactory,
     get_coding_schema,
+    get_general_schema,
     get_research_schema,
     get_sales_schema,
-    get_general_schema,
 )
 
 
@@ -85,7 +84,7 @@ class TestDomainSchema:
         """Test adding entity types."""
         schema = DomainSchema.create("test", "Test domain")
 
-        entity = schema.add_entity_type(
+        schema.add_entity_type(
             name="task",
             description="A task",
             attributes=["status", "priority"],
@@ -100,7 +99,7 @@ class TestDomainSchema:
         schema.add_entity_type("task", "A task")
         schema.add_entity_type("goal", "A goal")
 
-        rel = schema.add_relationship_type(
+        schema.add_relationship_type(
             name="achieves",
             description="Task achieves goal",
             source_type="task",
@@ -324,8 +323,8 @@ class TestDomainMemoryFactory:
         """Test convenience factory functions."""
         from alma.domains.factory import (
             create_coding_alma,
-            create_research_alma,
             create_general_alma,
+            create_research_alma,
         )
 
         coding = create_coding_alma("proj", agent="dev", embedding_provider="mock")

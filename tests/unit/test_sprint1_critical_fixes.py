@@ -7,28 +7,27 @@ Tests cover:
 3. Datetime: Timezone-aware timestamps on all memory objects
 """
 
-import pytest
 import json
-import tempfile
 import shutil
-from pathlib import Path
+import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 
-from alma.types import (
-    Outcome,
-    UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-    Heuristic,
-)
+import pytest
+
 from alma.graph.store import (
     Entity,
-    Relationship,
     InMemoryGraphStore,
-    Neo4jGraphStore,
+    Relationship,
 )
 from alma.storage.sqlite_local import SQLiteStorage
-
+from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
+    Heuristic,
+    Outcome,
+    UserPreference,
+)
 
 # =============================================================================
 # Test 1: Security - JSON parsing in graph store

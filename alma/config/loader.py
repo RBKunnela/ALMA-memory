@@ -5,10 +5,10 @@ Handles loading configuration from files and environment variables,
 with support for Azure Key Vault secret resolution.
 """
 
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict
 
 import yaml
 

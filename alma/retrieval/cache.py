@@ -5,16 +5,15 @@ Multi-backend caching layer for retrieval results with TTL-based expiration.
 Supports in-memory and Redis backends with performance monitoring.
 """
 
-import time
-import json
 import hashlib
-import threading
+import json
 import logging
+import threading
+import time
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, List, Callable, Tuple
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from contextlib import contextmanager
+from typing import Any, Callable, Dict, List, Optional
 
 from alma.types import MemorySlice
 
@@ -587,13 +586,13 @@ class RedisCache(CacheBackend):
             # Test connection
             self._redis.ping()
             logger.info(f"Connected to Redis at {host}:{port}")
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "redis package required for RedisCache. "
                 "Install with: pip install redis"
-            )
+            ) from err
         except Exception as e:
-            raise ConnectionError(f"Failed to connect to Redis: {e}")
+            raise ConnectionError(f"Failed to connect to Redis: {e}") from e
 
     def set_hooks(
         self,
@@ -703,11 +702,11 @@ class RedisCache(CacheBackend):
     def _deserialize_result(self, data: bytes) -> MemorySlice:
         """Deserialize bytes to MemorySlice."""
         from alma.types import (
+            AntiPattern,
+            DomainKnowledge,
             Heuristic,
             Outcome,
             UserPreference,
-            DomainKnowledge,
-            AntiPattern,
         )
 
         obj = json.loads(data.decode("utf-8"))

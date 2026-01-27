@@ -5,11 +5,11 @@ Combines semantic similarity, recency, and success rate for optimal retrieval.
 """
 
 import math
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, TypeVar, Callable
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Any, List, Optional
 
-from alma.types import Heuristic, Outcome, DomainKnowledge, AntiPattern
+from alma.types import AntiPattern, DomainKnowledge, Heuristic, Outcome
 
 
 @dataclass
@@ -93,7 +93,7 @@ class MemoryScorer:
         similarities = similarities or [1.0] * len(heuristics)
         scored = []
 
-        for h, sim in zip(heuristics, similarities):
+        for h, sim in zip(heuristics, similarities, strict=False):
             recency = self._compute_recency_score(h.last_validated)
             success = h.success_rate
             confidence = h.confidence
@@ -140,7 +140,7 @@ class MemoryScorer:
         similarities = similarities or [1.0] * len(outcomes)
         scored = []
 
-        for o, sim in zip(outcomes, similarities):
+        for o, sim in zip(outcomes, similarities, strict=False):
             recency = self._compute_recency_score(o.timestamp)
             # Success gets full score, failure gets partial (still useful to learn from)
             success = 1.0 if o.success else 0.3
@@ -186,7 +186,7 @@ class MemoryScorer:
         similarities = similarities or [1.0] * len(knowledge)
         scored = []
 
-        for dk, sim in zip(knowledge, similarities):
+        for dk, sim in zip(knowledge, similarities, strict=False):
             recency = self._compute_recency_score(dk.last_verified)
             # Knowledge doesn't have success rate, use 1.0
             success = 1.0
@@ -233,7 +233,7 @@ class MemoryScorer:
         similarities = similarities or [1.0] * len(anti_patterns)
         scored = []
 
-        for ap, sim in zip(anti_patterns, similarities):
+        for ap, sim in zip(anti_patterns, similarities, strict=False):
             recency = self._compute_recency_score(ap.last_seen)
             # More occurrences = more important to avoid
             # Normalize occurrence count (cap at 10 for scoring)

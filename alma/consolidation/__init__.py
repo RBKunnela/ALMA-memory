@@ -7,9 +7,9 @@ similar memories, inspired by Mem0's core innovation.
 
 from alma.consolidation.engine import ConsolidationEngine, ConsolidationResult
 from alma.consolidation.prompts import (
-    MERGE_HEURISTICS_PROMPT,
-    MERGE_DOMAIN_KNOWLEDGE_PROMPT,
     MERGE_ANTI_PATTERNS_PROMPT,
+    MERGE_DOMAIN_KNOWLEDGE_PROMPT,
+    MERGE_HEURISTICS_PROMPT,
     MERGE_OUTCOMES_PROMPT,
 )
 

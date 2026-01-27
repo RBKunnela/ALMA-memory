@@ -10,28 +10,26 @@ Tests cover:
 """
 
 import time
-import pytest
 from datetime import datetime, timezone
-from unittest.mock import Mock, patch
 
-from alma.types import (
-    MemorySlice,
-    Heuristic,
-    Outcome,
-    UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-)
+import pytest
+
 from alma.retrieval.cache import (
     CacheBackend,
-    RetrievalCache,
-    NullCache,
-    CacheEntry,
     CacheStats,
+    NullCache,
     PerformanceMetrics,
+    RetrievalCache,
     create_cache,
 )
-
+from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
+    Heuristic,
+    MemorySlice,
+    Outcome,
+    UserPreference,
+)
 
 # ==================== FIXTURES ====================
 

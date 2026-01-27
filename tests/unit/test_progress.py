@@ -2,15 +2,13 @@
 Tests for the Progress Tracking module.
 """
 
+
 import pytest
-from datetime import datetime, timezone
 
 from alma.progress import (
-    WorkItem,
-    WorkItemStatus,
-    ProgressLog,
     ProgressSummary,
     ProgressTracker,
+    WorkItem,
 )
 
 

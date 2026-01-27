@@ -4,26 +4,26 @@ Unit tests for ALMA Event System.
 Tests the event emitter, webhook delivery, and event types.
 """
 
-import pytest
-import asyncio
-import json
-import hmac
 import hashlib
+import hmac
+import json
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, AsyncMock, patch
 from typing import List
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from alma.events import (
+    EventEmitter,
     MemoryEvent,
     MemoryEventType,
-    create_memory_event,
-    EventEmitter,
-    get_emitter,
-    reset_emitter,
     WebhookConfig,
     WebhookDelivery,
     WebhookDeliveryStatus,
     WebhookManager,
+    create_memory_event,
+    get_emitter,
+    reset_emitter,
 )
 
 

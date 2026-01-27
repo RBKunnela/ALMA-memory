@@ -2,17 +2,18 @@
 Unit tests for ALMA Heuristic Extraction.
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
+import pytest
+
 from alma.learning.heuristic_extractor import (
+    ExtractionResult,
     HeuristicExtractor,
     PatternCandidate,
-    ExtractionResult,
     extract_heuristics_from_outcome,
 )
-from alma.types import Heuristic, Outcome, MemoryScope
+from alma.types import Heuristic, MemoryScope, Outcome
 
 
 class TestPatternCandidate:

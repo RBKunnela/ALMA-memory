@@ -5,16 +5,15 @@ Abstract base class that all storage backends must implement.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-    MemoryType,
 )
 
 

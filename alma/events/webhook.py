@@ -13,10 +13,15 @@ import json
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
 from enum import Enum
 
+# TYPE_CHECKING import for forward references
+from typing import TYPE_CHECKING, Dict, List, Optional
+
 from alma.events.types import MemoryEvent, MemoryEventType
+
+if TYPE_CHECKING:
+    from alma.events.emitter import EventEmitter
 
 logger = logging.getLogger(__name__)
 
@@ -372,7 +377,6 @@ class WebhookManager:
         Args:
             emitter: The event emitter to subscribe to
         """
-        from alma.events.emitter import EventEmitter
 
         if self._running:
             return
@@ -389,7 +393,6 @@ class WebhookManager:
         Args:
             emitter: The event emitter to unsubscribe from
         """
-        from alma.events.emitter import EventEmitter
 
         if not self._running:
             return
@@ -405,7 +408,7 @@ class WebhookManager:
 
         # Run async delivery in a new event loop if needed
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             asyncio.create_task(self._delivery.deliver(event))
         except RuntimeError:
             # No running event loop, create one

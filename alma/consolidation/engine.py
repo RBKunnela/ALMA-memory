@@ -5,27 +5,26 @@ Implements LLM-powered deduplication that merges similar memories,
 inspired by Mem0's core innovation.
 """
 
+import asyncio
 import json
 import logging
 import math
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import List, Optional, Dict, Any, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-from alma.storage.base import StorageBackend
-from alma.retrieval.embeddings import EmbeddingProvider, LocalEmbedder
-from alma.types import (
-    Heuristic,
-    Outcome,
-    DomainKnowledge,
-    AntiPattern,
-    MemoryType,
-)
 from alma.consolidation.prompts import (
-    MERGE_HEURISTICS_PROMPT,
-    MERGE_DOMAIN_KNOWLEDGE_PROMPT,
     MERGE_ANTI_PATTERNS_PROMPT,
+    MERGE_DOMAIN_KNOWLEDGE_PROMPT,
+    MERGE_HEURISTICS_PROMPT,
+)
+from alma.retrieval.embeddings import EmbeddingProvider, LocalEmbedder
+from alma.storage.base import StorageBackend
+from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
+    Heuristic,
 )
 
 logger = logging.getLogger(__name__)
@@ -246,7 +245,7 @@ class ConsolidationEngine:
             logger.info(f"Computing embeddings for {len(needs_embedding)} memories")
             embeddings = self.embedder.encode_batch(needs_embedding)
 
-            for i, embedding in zip(needs_embedding_indices, embeddings):
+            for i, embedding in zip(needs_embedding_indices, embeddings, strict=False):
                 memories[i].embedding = embedding
 
         return memories
@@ -341,7 +340,7 @@ class ConsolidationEngine:
         if len(emb1) != len(emb2):
             return 0.0
 
-        dot_product = sum(a * b for a, b in zip(emb1, emb2))
+        dot_product = sum(a * b for a, b in zip(emb1, emb2, strict=False))
         norm1 = math.sqrt(sum(a * a for a in emb1))
         norm2 = math.sqrt(sum(b * b for b in emb2))
 
@@ -623,7 +622,7 @@ class ConsolidationEngine:
             if asyncio.iscoroutine(result):
                 return await result
             return result
-        elif hasattr(self.llm_client, '__call__'):
+        elif callable(self.llm_client):
             result = self.llm_client(prompt)
             if asyncio.iscoroutine(result):
                 return await result
@@ -652,7 +651,3 @@ class ConsolidationEngine:
             self.storage.delete_anti_pattern(memory_id)
         elif memory_type == "outcomes":
             self.storage.delete_outcome(memory_id)
-
-
-# Import asyncio for coroutine check
-import asyncio

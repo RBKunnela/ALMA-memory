@@ -6,28 +6,24 @@ Target: <200ms p95 for cache operations.
 Run with: pytest tests/benchmarks/test_cache_performance.py -v --benchmark
 """
 
-import time
 import statistics
-import pytest
-from typing import List
+import time
 from datetime import datetime, timezone
+from typing import List
 
-from alma.types import (
-    MemorySlice,
-    Heuristic,
-    Outcome,
-    UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-)
 from alma.retrieval.cache import (
-    RetrievalCache,
-    RedisCache,
     NullCache,
-    CacheStats,
+    RetrievalCache,
     create_cache,
 )
-
+from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
+    Heuristic,
+    MemorySlice,
+    Outcome,
+    UserPreference,
+)
 
 # ==================== FIXTURES ====================
 
@@ -173,7 +169,7 @@ def run_benchmark(
     for i in range(n_iterations):
         query = f"benchmark query {i % n_iterations}"  # Existing keys
         start = time.perf_counter()
-        result = cache.get(
+        cache.get(
             query=query,
             agent="test_agent",
             project_id="proj_1",
@@ -188,7 +184,7 @@ def run_benchmark(
     for i in range(n_iterations):
         query = f"nonexistent query {i}"
         start = time.perf_counter()
-        result = cache.get(
+        cache.get(
             query=query,
             agent="other_agent",
             project_id="proj_2",
@@ -243,7 +239,7 @@ class TestMemoryCachePerformance:
             f"GET MISS p95 ({results['get_miss']['p95']:.2f}ms) exceeds 200ms target"
         )
 
-        print(f"\nSmall payload benchmark results:")
+        print("\nSmall payload benchmark results:")
         print(f"  SET p95: {results['set']['p95']:.3f}ms")
         print(f"  GET HIT p95: {results['get_hit']['p95']:.3f}ms")
         print(f"  GET MISS p95: {results['get_miss']['p95']:.3f}ms")
@@ -260,7 +256,7 @@ class TestMemoryCachePerformance:
             f"GET HIT p95 ({results['get_hit']['p95']:.2f}ms) exceeds 200ms target"
         )
 
-        print(f"\nMedium payload benchmark results:")
+        print("\nMedium payload benchmark results:")
         print(f"  SET p95: {results['set']['p95']:.3f}ms")
         print(f"  GET HIT p95: {results['get_hit']['p95']:.3f}ms")
 
@@ -276,7 +272,7 @@ class TestMemoryCachePerformance:
             f"GET HIT p95 ({results['get_hit']['p95']:.2f}ms) exceeds 200ms target"
         )
 
-        print(f"\nLarge payload benchmark results:")
+        print("\nLarge payload benchmark results:")
         print(f"  SET p95: {results['set']['p95']:.3f}ms")
         print(f"  GET HIT p95: {results['get_hit']['p95']:.3f}ms")
 
@@ -293,7 +289,7 @@ class TestMemoryCachePerformance:
             f"High volume GET p95 ({results['get_hit']['p95']:.2f}ms) exceeds target"
         )
 
-        print(f"\nHigh volume (500 iterations) benchmark results:")
+        print("\nHigh volume (500 iterations) benchmark results:")
         print(f"  SET p95: {results['set']['p95']:.3f}ms")
         print(f"  GET HIT p95: {results['get_hit']['p95']:.3f}ms")
 
@@ -321,7 +317,7 @@ class TestMemoryCachePerformance:
 
         assert p95 < 200, f"Eviction p95 ({p95:.2f}ms) exceeds 200ms target"
 
-        print(f"\nEviction benchmark results:")
+        print("\nEviction benchmark results:")
         print(f"  SET with eviction p95: {p95:.3f}ms")
 
     def test_invalidation_performance(self):
@@ -351,7 +347,7 @@ class TestMemoryCachePerformance:
                 )
 
             start = time.perf_counter()
-            count = cache.invalidate(agent="agent_0", project_id="proj_0")
+            cache.invalidate(agent="agent_0", project_id="proj_0")
             elapsed_ms = (time.perf_counter() - start) * 1000
             invalidation_times.append(elapsed_ms)
 
@@ -360,7 +356,7 @@ class TestMemoryCachePerformance:
 
         assert p95 < 200, f"Invalidation p95 ({p95:.2f}ms) exceeds 200ms target"
 
-        print(f"\nInvalidation benchmark results:")
+        print("\nInvalidation benchmark results:")
         print(f"  Selective invalidation p95: {p95:.3f}ms")
 
 
@@ -399,7 +395,7 @@ class TestPerformanceMetrics:
         assert stats.p95_get_time_ms >= 0
         assert stats.p95_set_time_ms >= 0
 
-        print(f"\nPerformance metrics after 50 ops:")
+        print("\nPerformance metrics after 50 ops:")
         print(f"  Avg GET: {stats.avg_get_time_ms:.3f}ms")
         print(f"  Avg SET: {stats.avg_set_time_ms:.3f}ms")
         print(f"  P95 GET: {stats.p95_get_time_ms:.3f}ms")
@@ -443,7 +439,7 @@ class TestPerformanceMetrics:
         assert stats.misses == 10
         assert abs(stats.hit_rate - 0.5) < 0.01, f"Hit rate should be 50%, got {stats.hit_rate}"
 
-        print(f"\nHit rate tracking:")
+        print("\nHit rate tracking:")
         print(f"  Hits: {stats.hits}")
         print(f"  Misses: {stats.misses}")
         print(f"  Hit rate: {stats.hit_rate:.1%}")

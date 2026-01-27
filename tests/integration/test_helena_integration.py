@@ -2,21 +2,21 @@
 Integration tests for Helena with ALMA.
 """
 
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from alma.integration import (
+    HELENA_CATEGORIES,
+    HELENA_FORBIDDEN,
     HelenaHooks,
     UITestContext,
     UITestOutcome,
-    create_helena_hooks,
-    helena_pre_task,
     helena_post_task,
-    HELENA_CATEGORIES,
-    HELENA_FORBIDDEN,
+    helena_pre_task,
 )
-from alma.types import MemorySlice, Heuristic, DomainKnowledge
+from alma.types import DomainKnowledge, Heuristic, MemorySlice
 
 
 class TestHelenaHooks:

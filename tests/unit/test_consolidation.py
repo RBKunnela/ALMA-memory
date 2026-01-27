@@ -10,22 +10,20 @@ Tests cover:
 - Provenance preservation
 """
 
-import pytest
-import asyncio
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, AsyncMock, patch
-import uuid
-import math
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from alma.consolidation.engine import ConsolidationEngine, ConsolidationResult
 from alma.consolidation.prompts import (
-    MERGE_HEURISTICS_PROMPT,
-    MERGE_DOMAIN_KNOWLEDGE_PROMPT,
     MERGE_ANTI_PATTERNS_PROMPT,
+    MERGE_DOMAIN_KNOWLEDGE_PROMPT,
+    MERGE_HEURISTICS_PROMPT,
 )
-from alma.types import Heuristic, DomainKnowledge, AntiPattern, Outcome
-from alma.storage.base import StorageBackend
 from alma.retrieval.embeddings import MockEmbedder
+from alma.storage.base import StorageBackend
+from alma.types import DomainKnowledge, Heuristic
 
 
 class TestConsolidationResult:
@@ -428,7 +426,7 @@ class TestDryRunMode:
         """Test that dry run mode does not save merged memory."""
         engine = ConsolidationEngine(storage=mock_storage, embedder=MockEmbedder())
 
-        result = await engine.consolidate(
+        await engine.consolidate(
             agent="test-agent",
             project_id="test-project",
             memory_type="heuristics",
@@ -444,7 +442,7 @@ class TestDryRunMode:
         """Test that dry run mode does not delete originals."""
         engine = ConsolidationEngine(storage=mock_storage, embedder=MockEmbedder())
 
-        result = await engine.consolidate(
+        await engine.consolidate(
             agent="test-agent",
             project_id="test-project",
             memory_type="heuristics",
@@ -623,7 +621,7 @@ class TestConsolidateIntegration:
         """Test that consolidate saves merged memory when not dry run."""
         engine = ConsolidationEngine(storage=mock_storage, embedder=MockEmbedder())
 
-        result = await engine.consolidate(
+        await engine.consolidate(
             agent="test-agent",
             project_id="test-project",
             memory_type="heuristics",
@@ -639,7 +637,7 @@ class TestConsolidateIntegration:
         """Test that consolidate deletes original memories when not dry run."""
         engine = ConsolidationEngine(storage=mock_storage, embedder=MockEmbedder())
 
-        result = await engine.consolidate(
+        await engine.consolidate(
             agent="test-agent",
             project_id="test-project",
             memory_type="heuristics",

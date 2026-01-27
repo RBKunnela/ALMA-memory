@@ -9,17 +9,17 @@ A structured framework for creating learning agents across any domain:
 """
 
 from alma.harness.base import (
-    Setting,
-    Context,
     Agent,
-    MemorySchema,
+    Context,
     Harness,
+    MemorySchema,
+    Setting,
 )
 from alma.harness.domains import (
     CodingDomain,
-    ResearchDomain,
     ContentDomain,
     OperationsDomain,
+    ResearchDomain,
 )
 
 __all__ = [

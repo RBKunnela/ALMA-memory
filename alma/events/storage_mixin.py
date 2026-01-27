@@ -7,11 +7,11 @@ to emit events when memory operations occur.
 """
 
 import logging
-from typing import Dict, Any, Optional
 from dataclasses import asdict
+from typing import Any, Dict, Optional
 
-from alma.events.types import MemoryEvent, MemoryEventType, create_memory_event
-from alma.events.emitter import get_emitter, EventEmitter
+from alma.events.emitter import EventEmitter, get_emitter
+from alma.events.types import MemoryEventType, create_memory_event
 
 logger = logging.getLogger(__name__)
 

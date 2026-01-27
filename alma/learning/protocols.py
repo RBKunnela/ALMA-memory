@@ -4,22 +4,20 @@ ALMA Learning Protocols.
 Defines how agents learn from outcomes while respecting scope constraints.
 """
 
-import uuid
 import logging
-from datetime import datetime, timezone, timedelta
-from typing import Optional, Dict, Any
+import uuid
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Dict, Optional
 
-from typing import TYPE_CHECKING
-
+from alma.storage.base import StorageBackend
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
+    MemoryScope,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-    MemoryScope,
 )
-from alma.storage.base import StorageBackend
 
 if TYPE_CHECKING:
     from alma.retrieval.embeddings import EmbeddingProvider
@@ -354,7 +352,7 @@ class LearningProtocol:
         """Compute cosine similarity between two vectors."""
         import math
 
-        dot_product = sum(a * b for a, b in zip(v1, v2))
+        dot_product = sum(a * b for a, b in zip(v1, v2, strict=False))
         norm1 = math.sqrt(sum(a * a for a in v1))
         norm2 = math.sqrt(sum(b * b for b in v2))
         if norm1 == 0 or norm2 == 0:

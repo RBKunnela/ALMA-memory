@@ -4,10 +4,10 @@ ALMA Event Types.
 Defines event types and the MemoryEvent dataclass for the event system.
 """
 
-from enum import Enum
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from enum import Enum
+from typing import Any, Dict, Optional
 
 
 class MemoryEventType(Enum):

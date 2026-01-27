@@ -13,18 +13,16 @@ Each domain includes:
 - Agent templates
 """
 
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 from alma.harness.base import (
+    Agent,
+    Harness,
+    MemorySchema,
     Setting,
     Tool,
     ToolType,
-    Agent,
-    MemorySchema,
-    Harness,
 )
-
 
 # =============================================================================
 # CODING DOMAIN

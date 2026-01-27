@@ -5,18 +5,16 @@ Manages work items and provides progress tracking functionality.
 """
 
 import logging
-import uuid
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 from alma.progress.types import (
-    WorkItem,
-    WorkItemStatus,
     ProgressLog,
     ProgressSummary,
+    WorkItem,
+    WorkItemStatus,
 )
 from alma.storage.base import StorageBackend
-
 
 logger = logging.getLogger(__name__)
 
@@ -439,9 +437,9 @@ class ProgressTracker:
         logs = self._progress_logs
 
         if agent:
-            logs = [l for l in logs if l.agent == agent]
+            logs = [log for log in logs if log.agent == agent]
         if session_id:
-            logs = [l for l in logs if l.session_id == session_id]
+            logs = [log for log in logs if log.session_id == session_id]
 
         # Sort by created_at descending and limit
         logs.sort(key=lambda x: x.created_at, reverse=True)

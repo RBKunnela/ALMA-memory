@@ -5,9 +5,9 @@ Enforces scope constraints and validates learning requests.
 """
 
 import logging
-from typing import Optional, List, Dict, Any, Set
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Dict, List, Optional, Set
 
 from alma.types import MemoryScope
 

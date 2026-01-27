@@ -10,39 +10,38 @@ Tests cover:
 - Prune Policy
 """
 
-import pytest
 import time
-import math
-from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, patch, call
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
+
+import pytest
 
 from alma.learning.forgetting import (
-    # Forgetting Engine
-    ForgettingEngine,
-    PrunePolicy,
-    PruneResult,
-    PruneSummary,
-    PruneReason,
-    # Decay Functions
-    DecayFunction,
-    ExponentialDecay,
-    LinearDecay,
-    StepDecay,
-    NoDecay,
-    # Confidence Decay
-    ConfidenceDecayer,
-    DecayResult,
-    # Memory Health Monitoring
-    MemoryHealthMonitor,
-    MemoryHealthMetrics,
-    HealthAlert,
-    HealthThresholds,
-    # Cleanup Scheduling
-    CleanupScheduler,
     CleanupJob,
     CleanupResult,
+    # Cleanup Scheduling
+    CleanupScheduler,
+    # Confidence Decay
+    ConfidenceDecayer,
+    # Decay Functions
+    DecayResult,
+    ExponentialDecay,
+    # Forgetting Engine
+    ForgettingEngine,
+    HealthAlert,
+    HealthThresholds,
+    LinearDecay,
+    MemoryHealthMetrics,
+    # Memory Health Monitoring
+    MemoryHealthMonitor,
+    NoDecay,
+    PrunePolicy,
+    PruneReason,
+    PruneResult,
+    PruneSummary,
+    StepDecay,
 )
-from alma.types import Heuristic, Outcome, DomainKnowledge, AntiPattern
+from alma.types import Heuristic, Outcome
 
 
 class TestPrunePolicy:
@@ -553,7 +552,7 @@ class TestConfidenceDecayer:
             decay_function=ExponentialDecay(half_life_days=30.0),
         )
 
-        result = decayer.apply_decay("test", agent="helena", dry_run=True)
+        decayer.apply_decay("test", agent="helena", dry_run=True)
 
         # Should only query helena's data
         mock_storage_for_decayer.get_heuristics.assert_called_with(
@@ -774,7 +773,7 @@ class TestCleanupScheduler:
     def mock_storage_for_scheduler(self):
         """Create mock storage for scheduler testing."""
         storage = MagicMock()
-        now = datetime.now(timezone.utc)
+        datetime.now(timezone.utc)
 
         storage.get_heuristics.return_value = []
         storage.get_outcomes.return_value = []

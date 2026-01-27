@@ -2,20 +2,19 @@
 Integration tests for ALMA MCP Server.
 """
 
-import pytest
-import asyncio
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+
+import pytest
 
 from alma import ALMA, MemoryScope
-from alma.storage.file_based import FileBasedStorage
-from alma.retrieval.engine import RetrievalEngine
-from alma.learning.protocols import LearningProtocol
-from alma.mcp.server import ALMAMCPServer
-from alma.mcp.resources import list_resources, get_config_resource, get_agents_resource
 from alma.integration.helena import HELENA_CATEGORIES
 from alma.integration.victor import VICTOR_CATEGORIES
+from alma.learning.protocols import LearningProtocol
+from alma.mcp.resources import get_agents_resource, get_config_resource, list_resources
+from alma.mcp.server import ALMAMCPServer
+from alma.retrieval.engine import RetrievalEngine
+from alma.storage.file_based import FileBasedStorage
 
 
 @pytest.mark.asyncio

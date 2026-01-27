@@ -5,10 +5,10 @@ Forward-looking confidence signals for strategies.
 Inspired by Ilya Sutskever's insight: emotions are forward-looking value functions.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional
-import uuid
 
 
 @dataclass

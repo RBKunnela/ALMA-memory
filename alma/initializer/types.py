@@ -4,10 +4,10 @@ Initializer Types.
 Data structures for the Session Initializer pattern.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-import uuid
 
 
 @dataclass

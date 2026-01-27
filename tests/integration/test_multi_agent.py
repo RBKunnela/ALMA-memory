@@ -5,18 +5,13 @@ Tests for scenarios involving multiple agents working together,
 including scope enforcement and cross-agent isolation.
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import patch
-import uuid
 
-from alma import ALMA, MemorySlice, MemoryScope
-from alma.storage.file_based import FileBasedStorage
-from alma.retrieval.engine import RetrievalEngine
+from alma import ALMA, MemoryScope
+from alma.integration.helena import HELENA_CATEGORIES
+from alma.integration.victor import VICTOR_CATEGORIES
 from alma.learning.protocols import LearningProtocol
-from alma.types import Heuristic, DomainKnowledge
-from alma.integration.helena import HELENA_CATEGORIES, HELENA_FORBIDDEN
-from alma.integration.victor import VICTOR_CATEGORIES, VICTOR_FORBIDDEN
+from alma.retrieval.engine import RetrievalEngine
+from alma.storage.file_based import FileBasedStorage
 
 
 class TestScopeEnforcement:
@@ -240,7 +235,7 @@ class TestHeuristicGeneration:
         )
 
         # Learn the same successful pattern 3 times (min_occurrences)
-        for i in range(3):
+        for _i in range(3):
             alma.learn(
                 agent="helena",
                 task="Test login form",
@@ -250,7 +245,7 @@ class TestHeuristicGeneration:
             )
 
         # Check that a heuristic was created
-        heuristics = storage.get_heuristics(
+        storage.get_heuristics(
             project_id="test-project",
             agent="helena",
         )

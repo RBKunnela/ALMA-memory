@@ -6,22 +6,23 @@ This is the recommended backend for local development and testing.
 """
 
 import json
-import sqlite3
 import logging
-import numpy as np
-from pathlib import Path
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Tuple
+import sqlite3
 from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
+
+from alma.storage.base import StorageBackend
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
 )
-from alma.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
 
@@ -334,7 +335,7 @@ class SQLiteStorage(StorageBackend):
             scores, indices = self._indices[memory_type].search(query, min(top_k, len(self._id_maps[memory_type])))
 
             results = []
-            for score, idx in zip(scores[0], indices[0]):
+            for score, idx in zip(scores[0], indices[0], strict=False):
                 if idx >= 0 and idx < len(self._id_maps[memory_type]):
                     results.append((self._id_maps[memory_type][idx], float(score)))
             return results

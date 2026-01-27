@@ -2,21 +2,21 @@
 Integration tests for Victor with ALMA.
 """
 
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from alma.integration import (
-    VictorHooks,
-    APITestContext,
-    APITestOutcome,
-    create_victor_hooks,
-    victor_pre_task,
-    victor_post_task,
     VICTOR_CATEGORIES,
     VICTOR_FORBIDDEN,
+    APITestContext,
+    APITestOutcome,
+    VictorHooks,
+    victor_post_task,
+    victor_pre_task,
 )
-from alma.types import MemorySlice, Heuristic, DomainKnowledge
+from alma.types import DomainKnowledge, Heuristic, MemorySlice
 
 
 class TestVictorHooks:
