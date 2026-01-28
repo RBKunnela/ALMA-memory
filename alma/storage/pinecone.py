@@ -233,9 +233,7 @@ class PineconeStorage(StorageBackend):
         except (ValueError, AttributeError):
             return None
 
-    def _metadata_to_heuristic(
-        self, id: str, metadata: Dict[str, Any]
-    ) -> Heuristic:
+    def _metadata_to_heuristic(self, id: str, metadata: Dict[str, Any]) -> Heuristic:
         """Convert Pinecone metadata to Heuristic."""
         return Heuristic(
             id=id,

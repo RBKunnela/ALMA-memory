@@ -214,7 +214,9 @@ class QdrantStorage(StorageBackend):
             "metadata": heuristic.metadata or {},
         }
 
-        vector = heuristic.embedding if heuristic.embedding else self._get_dummy_vector()
+        vector = (
+            heuristic.embedding if heuristic.embedding else self._get_dummy_vector()
+        )
 
         self._client.upsert(
             collection_name=collection,
@@ -314,7 +316,9 @@ class QdrantStorage(StorageBackend):
             "metadata": knowledge.metadata or {},
         }
 
-        vector = knowledge.embedding if knowledge.embedding else self._get_dummy_vector()
+        vector = (
+            knowledge.embedding if knowledge.embedding else self._get_dummy_vector()
+        )
 
         self._client.upsert(
             collection_name=collection,
@@ -347,7 +351,11 @@ class QdrantStorage(StorageBackend):
             "metadata": anti_pattern.metadata or {},
         }
 
-        vector = anti_pattern.embedding if anti_pattern.embedding else self._get_dummy_vector()
+        vector = (
+            anti_pattern.embedding
+            if anti_pattern.embedding
+            else self._get_dummy_vector()
+        )
 
         self._client.upsert(
             collection_name=collection,
@@ -388,9 +396,7 @@ class QdrantStorage(StorageBackend):
                 "metadata": h.metadata or {},
             }
             vector = h.embedding if h.embedding else self._get_dummy_vector()
-            points.append(
-                models.PointStruct(id=h.id, vector=vector, payload=payload)
-            )
+            points.append(models.PointStruct(id=h.id, vector=vector, payload=payload))
 
         self._client.upsert(collection_name=collection, points=points)
         logger.debug(f"Batch saved {len(heuristics)} heuristics")
@@ -421,9 +427,7 @@ class QdrantStorage(StorageBackend):
                 "metadata": o.metadata or {},
             }
             vector = o.embedding if o.embedding else self._get_dummy_vector()
-            points.append(
-                models.PointStruct(id=o.id, vector=vector, payload=payload)
-            )
+            points.append(models.PointStruct(id=o.id, vector=vector, payload=payload))
 
         self._client.upsert(collection_name=collection, points=points)
         logger.debug(f"Batch saved {len(outcomes)} outcomes")
@@ -452,9 +456,7 @@ class QdrantStorage(StorageBackend):
                 "metadata": k.metadata or {},
             }
             vector = k.embedding if k.embedding else self._get_dummy_vector()
-            points.append(
-                models.PointStruct(id=k.id, vector=vector, payload=payload)
-            )
+            points.append(models.PointStruct(id=k.id, vector=vector, payload=payload))
 
         self._client.upsert(collection_name=collection, points=points)
         logger.debug(f"Batch saved {len(knowledge_items)} domain knowledge items")

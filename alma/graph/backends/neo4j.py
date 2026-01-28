@@ -115,7 +115,9 @@ class Neo4jBackend(GraphBackend):
     def add_relationship(self, relationship: Relationship) -> str:
         """Add or update a relationship in Neo4j."""
         # Sanitize relationship type for Cypher (remove special characters)
-        rel_type = relationship.relation_type.replace("-", "_").replace(" ", "_").upper()
+        rel_type = (
+            relationship.relation_type.replace("-", "_").replace(" ", "_").upper()
+        )
 
         query = f"""
         MATCH (source:Entity {{id: $source_id}})
@@ -243,7 +245,9 @@ class Neo4jBackend(GraphBackend):
         results = self._run_query(query, {"entity_id": entity_id})
         relationships = []
         for r in results:
-            rel_id = r["id"] or f"{r['source_id']}-{r['relation_type']}-{r['target_id']}"
+            rel_id = (
+                r["id"] or f"{r['source_id']}-{r['relation_type']}-{r['target_id']}"
+            )
             relationships.append(
                 Relationship(
                     id=rel_id,
@@ -392,7 +396,9 @@ class Neo4jBackend(GraphBackend):
         results = self._run_query(query, {"entity_id": entity_id})
         relationships = []
         for r in results:
-            rel_id = r["id"] or f"{r['source_id']}-{r['relation_type']}-{r['target_id']}"
+            rel_id = (
+                r["id"] or f"{r['source_id']}-{r['relation_type']}-{r['target_id']}"
+            )
             relationships.append(
                 Relationship(
                     id=rel_id,

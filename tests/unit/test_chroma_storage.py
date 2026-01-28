@@ -89,9 +89,7 @@ class TestChromaStorageInit:
             "embedding_dim": 384,
         }
 
-        with patch.object(
-            ChromaStorage, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(ChromaStorage, "__init__", return_value=None) as mock_init:
             ChromaStorage.from_config(config)
             mock_init.assert_called_once()
             call_kwargs = mock_init.call_args[1]
@@ -111,9 +109,7 @@ class TestChromaStorageInit:
             "embedding_dim": 768,
         }
 
-        with patch.object(
-            ChromaStorage, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(ChromaStorage, "__init__", return_value=None) as mock_init:
             ChromaStorage.from_config(config)
             mock_init.assert_called_once()
             call_kwargs = mock_init.call_args[1]
@@ -137,9 +133,7 @@ class TestChromaStorageInit:
             },
         }
 
-        with patch.object(
-            ChromaStorage, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(ChromaStorage, "__init__", return_value=None) as mock_init:
             ChromaStorage.from_config(config)
             call_kwargs = mock_init.call_args[1]
             assert call_kwargs["host"] == "chroma.example.com"
@@ -178,7 +172,9 @@ class TestChromaStorageWriteOps:
         assert result == "test-h-1"
         mock_collection.upsert.assert_called_once()
 
-    def test_save_heuristic_without_embedding(self, storage_with_mock_client, mock_collection):
+    def test_save_heuristic_without_embedding(
+        self, storage_with_mock_client, mock_collection
+    ):
         """Test saving a heuristic without embedding."""
         from alma.types import Heuristic
 
@@ -402,26 +398,30 @@ class TestChromaStorageReadOps:
         assert results[0].confidence == 0.9
         mock_collection.get.assert_called_once()
 
-    def test_get_heuristics_with_embedding(self, storage_with_mock_client, mock_collection):
+    def test_get_heuristics_with_embedding(
+        self, storage_with_mock_client, mock_collection
+    ):
         """Test heuristic retrieval with vector search."""
         storage = storage_with_mock_client
 
         mock_collection.query.return_value = {
             "ids": [["h-1"]],
-            "metadatas": [[
-                {
-                    "agent": "Helena",
-                    "project_id": "test-project",
-                    "condition": "condition 1",
-                    "strategy": "strategy 1",
-                    "confidence": 0.9,
-                    "occurrence_count": 5,
-                    "success_count": 4,
-                    "last_validated": datetime.now(timezone.utc).isoformat(),
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                    "extra_metadata": "{}",
-                }
-            ]],
+            "metadatas": [
+                [
+                    {
+                        "agent": "Helena",
+                        "project_id": "test-project",
+                        "condition": "condition 1",
+                        "strategy": "strategy 1",
+                        "confidence": 0.9,
+                        "occurrence_count": 5,
+                        "success_count": 4,
+                        "last_validated": datetime.now(timezone.utc).isoformat(),
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "extra_metadata": "{}",
+                    }
+                ]
+            ],
             "documents": [["condition 1\nstrategy 1"]],
             "embeddings": [[[0.1] * 384]],
         }
@@ -445,18 +445,20 @@ class TestChromaStorageReadOps:
 
         mock_collection.get.return_value = {
             "ids": ["o-1"],
-            "metadatas": [{
-                "agent": "Victor",
-                "project_id": "test-project",
-                "task_type": "api_testing",
-                "success": True,
-                "strategy_used": "happy_path",
-                "duration_ms": 100,
-                "error_message": "",
-                "user_feedback": "",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "extra_metadata": "{}",
-            }],
+            "metadatas": [
+                {
+                    "agent": "Victor",
+                    "project_id": "test-project",
+                    "task_type": "api_testing",
+                    "success": True,
+                    "strategy_used": "happy_path",
+                    "duration_ms": 100,
+                    "error_message": "",
+                    "user_feedback": "",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "extra_metadata": "{}",
+                }
+            ],
             "documents": ["Test endpoint"],
             "embeddings": None,
         }
@@ -475,14 +477,16 @@ class TestChromaStorageReadOps:
 
         mock_collection.get.return_value = {
             "ids": ["p-1"],
-            "metadatas": [{
-                "user_id": "user123",
-                "category": "communication",
-                "source": "explicit",
-                "confidence": 1.0,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "extra_metadata": "{}",
-            }],
+            "metadatas": [
+                {
+                    "user_id": "user123",
+                    "category": "communication",
+                    "source": "explicit",
+                    "confidence": 1.0,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "extra_metadata": "{}",
+                }
+            ],
             "documents": ["No emojis"],
         }
 
@@ -497,15 +501,17 @@ class TestChromaStorageReadOps:
 
         mock_collection.get.return_value = {
             "ids": ["dk-1"],
-            "metadatas": [{
-                "agent": "Helena",
-                "project_id": "test-project",
-                "domain": "auth",
-                "source": "code_analysis",
-                "confidence": 0.95,
-                "last_verified": datetime.now(timezone.utc).isoformat(),
-                "extra_metadata": "{}",
-            }],
+            "metadatas": [
+                {
+                    "agent": "Helena",
+                    "project_id": "test-project",
+                    "domain": "auth",
+                    "source": "code_analysis",
+                    "confidence": 0.95,
+                    "last_verified": datetime.now(timezone.utc).isoformat(),
+                    "extra_metadata": "{}",
+                }
+            ],
             "documents": ["JWT uses 24h expiry"],
             "embeddings": None,
         }
@@ -524,16 +530,18 @@ class TestChromaStorageReadOps:
 
         mock_collection.get.return_value = {
             "ids": ["ap-1"],
-            "metadatas": [{
-                "agent": "Helena",
-                "project_id": "test-project",
-                "why_bad": "Causes flaky tests",
-                "better_alternative": "Use explicit waits",
-                "occurrence_count": 3,
-                "last_seen": datetime.now(timezone.utc).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "extra_metadata": "{}",
-            }],
+            "metadatas": [
+                {
+                    "agent": "Helena",
+                    "project_id": "test-project",
+                    "why_bad": "Causes flaky tests",
+                    "better_alternative": "Use explicit waits",
+                    "occurrence_count": 3,
+                    "last_seen": datetime.now(timezone.utc).isoformat(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "extra_metadata": "{}",
+                }
+            ],
             "documents": ["Using fixed sleep()"],
             "embeddings": None,
         }
@@ -611,18 +619,20 @@ class TestChromaStorageUpdateOps:
 
         mock_collection.get.return_value = {
             "ids": ["h-1"],
-            "metadatas": [{
-                "agent": "Helena",
-                "project_id": "test-project",
-                "condition": "old condition",
-                "strategy": "old strategy",
-                "confidence": 0.5,
-                "occurrence_count": 3,
-                "success_count": 2,
-                "last_validated": datetime.now(timezone.utc).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "extra_metadata": "{}",
-            }],
+            "metadatas": [
+                {
+                    "agent": "Helena",
+                    "project_id": "test-project",
+                    "condition": "old condition",
+                    "strategy": "old strategy",
+                    "confidence": 0.5,
+                    "occurrence_count": 3,
+                    "success_count": 2,
+                    "last_validated": datetime.now(timezone.utc).isoformat(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "extra_metadata": "{}",
+                }
+            ],
             "documents": ["old condition\nold strategy"],
             "embeddings": None,
         }
@@ -632,7 +642,9 @@ class TestChromaStorageUpdateOps:
         assert result
         mock_collection.upsert.assert_called_once()
 
-    def test_update_heuristic_not_found(self, storage_with_mock_client, mock_collection):
+    def test_update_heuristic_not_found(
+        self, storage_with_mock_client, mock_collection
+    ):
         """Test updating a non-existent heuristic."""
         storage = storage_with_mock_client
 
@@ -647,24 +659,28 @@ class TestChromaStorageUpdateOps:
 
         assert not result
 
-    def test_increment_heuristic_occurrence(self, storage_with_mock_client, mock_collection):
+    def test_increment_heuristic_occurrence(
+        self, storage_with_mock_client, mock_collection
+    ):
         """Test incrementing heuristic occurrence count."""
         storage = storage_with_mock_client
 
         mock_collection.get.return_value = {
             "ids": ["h-1"],
-            "metadatas": [{
-                "agent": "Helena",
-                "project_id": "test-project",
-                "condition": "condition",
-                "strategy": "strategy",
-                "confidence": 0.8,
-                "occurrence_count": 5,
-                "success_count": 4,
-                "last_validated": datetime.now(timezone.utc).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "extra_metadata": "{}",
-            }],
+            "metadatas": [
+                {
+                    "agent": "Helena",
+                    "project_id": "test-project",
+                    "condition": "condition",
+                    "strategy": "strategy",
+                    "confidence": 0.8,
+                    "occurrence_count": 5,
+                    "success_count": 4,
+                    "last_validated": datetime.now(timezone.utc).isoformat(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "extra_metadata": "{}",
+                }
+            ],
             "documents": ["condition\nstrategy"],
             "embeddings": None,
         }
@@ -677,24 +693,28 @@ class TestChromaStorageUpdateOps:
         assert meta["occurrence_count"] == 6
         assert meta["success_count"] == 5
 
-    def test_update_heuristic_confidence(self, storage_with_mock_client, mock_collection):
+    def test_update_heuristic_confidence(
+        self, storage_with_mock_client, mock_collection
+    ):
         """Test updating heuristic confidence."""
         storage = storage_with_mock_client
 
         mock_collection.get.return_value = {
             "ids": ["h-1"],
-            "metadatas": [{
-                "agent": "Helena",
-                "project_id": "test-project",
-                "condition": "condition",
-                "strategy": "strategy",
-                "confidence": 0.5,
-                "occurrence_count": 3,
-                "success_count": 2,
-                "last_validated": datetime.now(timezone.utc).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "extra_metadata": "{}",
-            }],
+            "metadatas": [
+                {
+                    "agent": "Helena",
+                    "project_id": "test-project",
+                    "condition": "condition",
+                    "strategy": "strategy",
+                    "confidence": 0.5,
+                    "occurrence_count": 3,
+                    "success_count": 2,
+                    "last_validated": datetime.now(timezone.utc).isoformat(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "extra_metadata": "{}",
+                }
+            ],
             "documents": ["condition\nstrategy"],
             "embeddings": None,
         }
@@ -703,21 +723,25 @@ class TestChromaStorageUpdateOps:
 
         assert result
 
-    def test_update_knowledge_confidence(self, storage_with_mock_client, mock_collection):
+    def test_update_knowledge_confidence(
+        self, storage_with_mock_client, mock_collection
+    ):
         """Test updating domain knowledge confidence."""
         storage = storage_with_mock_client
 
         mock_collection.get.return_value = {
             "ids": ["dk-1"],
-            "metadatas": [{
-                "agent": "Helena",
-                "project_id": "test-project",
-                "domain": "auth",
-                "source": "code_analysis",
-                "confidence": 0.5,
-                "last_verified": datetime.now(timezone.utc).isoformat(),
-                "extra_metadata": "{}",
-            }],
+            "metadatas": [
+                {
+                    "agent": "Helena",
+                    "project_id": "test-project",
+                    "domain": "auth",
+                    "source": "code_analysis",
+                    "confidence": 0.5,
+                    "last_verified": datetime.now(timezone.utc).isoformat(),
+                    "extra_metadata": "{}",
+                }
+            ],
             "documents": ["Some fact"],
             "embeddings": None,
         }
@@ -745,7 +769,9 @@ class TestChromaStorageDeleteOps:
         assert result
         mock_collection.delete.assert_called_once_with(ids=["h-1"])
 
-    def test_delete_heuristic_not_found(self, storage_with_mock_client, mock_collection):
+    def test_delete_heuristic_not_found(
+        self, storage_with_mock_client, mock_collection
+    ):
         """Test deleting a non-existent heuristic."""
         storage = storage_with_mock_client
 
@@ -802,7 +828,9 @@ class TestChromaStorageDeleteOps:
 
         assert result
 
-    def test_delete_outcomes_older_than(self, storage_with_mock_client, mock_collection):
+    def test_delete_outcomes_older_than(
+        self, storage_with_mock_client, mock_collection
+    ):
         """Test deleting old outcomes."""
         storage = storage_with_mock_client
 
@@ -827,7 +855,9 @@ class TestChromaStorageDeleteOps:
         assert result == 1
         mock_collection.delete.assert_called_once_with(ids=["o-1"])
 
-    def test_delete_low_confidence_heuristics(self, storage_with_mock_client, mock_collection):
+    def test_delete_low_confidence_heuristics(
+        self, storage_with_mock_client, mock_collection
+    ):
         """Test deleting low-confidence heuristics."""
         storage = storage_with_mock_client
 
@@ -998,18 +1028,22 @@ class TestChromaStorageResultConversion:
 
         results = {
             "ids": [["h-1"]],
-            "metadatas": [[{
-                "agent": "Helena",
-                "project_id": "test",
-                "condition": "cond",
-                "strategy": "strat",
-                "confidence": 0.9,
-                "occurrence_count": 5,
-                "success_count": 4,
-                "last_validated": datetime.now(timezone.utc).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "extra_metadata": '{"key": "value"}',
-            }]],
+            "metadatas": [
+                [
+                    {
+                        "agent": "Helena",
+                        "project_id": "test",
+                        "condition": "cond",
+                        "strategy": "strat",
+                        "confidence": 0.9,
+                        "occurrence_count": 5,
+                        "success_count": 4,
+                        "last_validated": datetime.now(timezone.utc).isoformat(),
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "extra_metadata": '{"key": "value"}',
+                    }
+                ]
+            ],
             "documents": [["cond\nstrat"]],
             "embeddings": None,
         }

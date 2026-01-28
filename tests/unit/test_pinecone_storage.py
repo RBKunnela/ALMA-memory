@@ -80,9 +80,7 @@ class TestPineconeStorageInit:
             "embedding_dim": 384,
         }
 
-        with patch.object(
-            PineconeStorage, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(PineconeStorage, "__init__", return_value=None) as mock_init:
             PineconeStorage.from_config(config)
             mock_init.assert_called_once()
             call_kwargs = mock_init.call_args[1]
@@ -106,9 +104,7 @@ class TestPineconeStorageInit:
             },
         }
 
-        with patch.object(
-            PineconeStorage, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(PineconeStorage, "__init__", return_value=None) as mock_init:
             PineconeStorage.from_config(config)
             call_kwargs = mock_init.call_args[1]
             assert call_kwargs["api_key"] == "env-api-key"
@@ -128,9 +124,7 @@ class TestPineconeStorageInit:
             },
         }
 
-        with patch.object(
-            PineconeStorage, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(PineconeStorage, "__init__", return_value=None) as mock_init:
             PineconeStorage.from_config(config)
             call_kwargs = mock_init.call_args[1]
             assert call_kwargs["index_name"] == "alma-memory"
@@ -676,9 +670,7 @@ class TestPineconeStorageMultiAgent:
         filter_dict = call_args["filter"]
         assert "$and" in filter_dict
         # Check that agent filter uses $in
-        agent_filter = next(
-            (f for f in filter_dict["$and"] if "agent" in f), None
-        )
+        agent_filter = next((f for f in filter_dict["$and"] if "agent" in f), None)
         assert agent_filter is not None
         assert "$in" in agent_filter["agent"]
 

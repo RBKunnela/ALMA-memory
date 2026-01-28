@@ -77,9 +77,7 @@ class TestQdrantStorageInit:
             "embedding_dim": 384,
         }
 
-        with patch.object(
-            QdrantStorage, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(QdrantStorage, "__init__", return_value=None) as mock_init:
             QdrantStorage.from_config(config)
             mock_init.assert_called_once()
             call_kwargs = mock_init.call_args[1]
@@ -103,9 +101,7 @@ class TestQdrantStorageInit:
             },
         }
 
-        with patch.object(
-            QdrantStorage, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(QdrantStorage, "__init__", return_value=None) as mock_init:
             QdrantStorage.from_config(config)
             call_kwargs = mock_init.call_args[1]
             assert call_kwargs["url"] == "http://qdrant.example.com:6333"
@@ -121,9 +117,7 @@ class TestQdrantStorageInit:
 
         config = {}
 
-        with patch.object(
-            QdrantStorage, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(QdrantStorage, "__init__", return_value=None) as mock_init:
             QdrantStorage.from_config(config)
             call_kwargs = mock_init.call_args[1]
             assert call_kwargs["url"] == "http://localhost:6333"
@@ -540,7 +534,9 @@ class TestQdrantStorageMultiAgent:
         assert results == []
         mock_client.scroll.assert_called_once()
 
-    def test_get_heuristics_for_agents_empty_list(self, storage_with_mock_client, mock_client):
+    def test_get_heuristics_for_agents_empty_list(
+        self, storage_with_mock_client, mock_client
+    ):
         """Test getting heuristics with empty agent list."""
         storage = storage_with_mock_client
 
@@ -568,7 +564,9 @@ class TestQdrantStorageMultiAgent:
 
         assert results == []
 
-    def test_get_domain_knowledge_for_agents(self, storage_with_mock_client, mock_client):
+    def test_get_domain_knowledge_for_agents(
+        self, storage_with_mock_client, mock_client
+    ):
         """Test getting domain knowledge from multiple agents."""
         storage = storage_with_mock_client
         mock_client.scroll.return_value = ([], None)
@@ -611,7 +609,9 @@ class TestQdrantStorageUpdateOps:
         assert result is True
         mock_client.set_payload.assert_called_once()
 
-    def test_update_heuristic_empty_updates(self, storage_with_mock_client, mock_client):
+    def test_update_heuristic_empty_updates(
+        self, storage_with_mock_client, mock_client
+    ):
         """Test updating with empty updates."""
         storage = storage_with_mock_client
 
@@ -623,7 +623,9 @@ class TestQdrantStorageUpdateOps:
         assert result is False
         mock_client.set_payload.assert_not_called()
 
-    def test_increment_heuristic_occurrence(self, storage_with_mock_client, mock_client):
+    def test_increment_heuristic_occurrence(
+        self, storage_with_mock_client, mock_client
+    ):
         """Test incrementing heuristic occurrence count."""
         storage = storage_with_mock_client
 
@@ -650,7 +652,9 @@ class TestQdrantStorageUpdateOps:
         assert payload["occurrence_count"] == 6
         assert payload["success_count"] == 5
 
-    def test_increment_heuristic_occurrence_not_found(self, storage_with_mock_client, mock_client):
+    def test_increment_heuristic_occurrence_not_found(
+        self, storage_with_mock_client, mock_client
+    ):
         """Test incrementing non-existent heuristic."""
         storage = storage_with_mock_client
         mock_client.retrieve.return_value = []
@@ -740,7 +744,9 @@ class TestQdrantStorageDeleteOps:
         assert result == 5
         mock_client.delete.assert_called_once()
 
-    def test_delete_low_confidence_heuristics(self, storage_with_mock_client, mock_client):
+    def test_delete_low_confidence_heuristics(
+        self, storage_with_mock_client, mock_client
+    ):
         """Test deleting low-confidence heuristics."""
         storage = storage_with_mock_client
         mock_client.count.return_value = MagicMock(count=3)

@@ -179,8 +179,8 @@ class ChromaStorage(StorageBackend):
         """Reformat get() results to match query() format."""
         emb = results.get("embeddings")
         has_embeddings = emb is not None and (
-            (hasattr(emb, "__len__") and len(emb) > 0) or
-            (hasattr(emb, "size") and emb.size > 0)
+            (hasattr(emb, "__len__") and len(emb) > 0)
+            or (hasattr(emb, "size") and emb.size > 0)
         )
         return {
             "ids": [results.get("ids", [])],
@@ -218,7 +218,9 @@ class ChromaStorage(StorageBackend):
             "success_count": heuristic.success_count,
             "last_validated": self._datetime_to_str(heuristic.last_validated),
             "created_at": self._datetime_to_str(heuristic.created_at),
-            "extra_metadata": json.dumps(heuristic.metadata) if heuristic.metadata else "{}",
+            "extra_metadata": json.dumps(heuristic.metadata)
+            if heuristic.metadata
+            else "{}",
         }
 
         # Chroma requires documents - use condition + strategy as document
@@ -253,7 +255,9 @@ class ChromaStorage(StorageBackend):
             "error_message": outcome.error_message or "",
             "user_feedback": outcome.user_feedback or "",
             "timestamp": self._datetime_to_str(outcome.timestamp),
-            "extra_metadata": json.dumps(outcome.metadata) if outcome.metadata else "{}",
+            "extra_metadata": json.dumps(outcome.metadata)
+            if outcome.metadata
+            else "{}",
         }
 
         document = outcome.task_description
@@ -283,7 +287,9 @@ class ChromaStorage(StorageBackend):
             "source": preference.source or "unknown",
             "confidence": preference.confidence,
             "timestamp": self._datetime_to_str(preference.timestamp),
-            "extra_metadata": json.dumps(preference.metadata) if preference.metadata else "{}",
+            "extra_metadata": json.dumps(preference.metadata)
+            if preference.metadata
+            else "{}",
         }
 
         document = preference.preference
@@ -306,7 +312,9 @@ class ChromaStorage(StorageBackend):
             "source": knowledge.source or "unknown",
             "confidence": knowledge.confidence,
             "last_verified": self._datetime_to_str(knowledge.last_verified),
-            "extra_metadata": json.dumps(knowledge.metadata) if knowledge.metadata else "{}",
+            "extra_metadata": json.dumps(knowledge.metadata)
+            if knowledge.metadata
+            else "{}",
         }
 
         document = knowledge.fact
@@ -338,7 +346,9 @@ class ChromaStorage(StorageBackend):
             "occurrence_count": anti_pattern.occurrence_count,
             "last_seen": self._datetime_to_str(anti_pattern.last_seen),
             "created_at": self._datetime_to_str(anti_pattern.created_at),
-            "extra_metadata": json.dumps(anti_pattern.metadata) if anti_pattern.metadata else "{}",
+            "extra_metadata": json.dumps(anti_pattern.metadata)
+            if anti_pattern.metadata
+            else "{}",
         }
 
         document = anti_pattern.pattern
@@ -375,18 +385,20 @@ class ChromaStorage(StorageBackend):
 
         for h in heuristics:
             ids.append(h.id)
-            metadatas.append({
-                "agent": h.agent,
-                "project_id": h.project_id,
-                "condition": h.condition,
-                "strategy": h.strategy,
-                "confidence": h.confidence,
-                "occurrence_count": h.occurrence_count,
-                "success_count": h.success_count,
-                "last_validated": self._datetime_to_str(h.last_validated),
-                "created_at": self._datetime_to_str(h.created_at),
-                "extra_metadata": json.dumps(h.metadata) if h.metadata else "{}",
-            })
+            metadatas.append(
+                {
+                    "agent": h.agent,
+                    "project_id": h.project_id,
+                    "condition": h.condition,
+                    "strategy": h.strategy,
+                    "confidence": h.confidence,
+                    "occurrence_count": h.occurrence_count,
+                    "success_count": h.success_count,
+                    "last_validated": self._datetime_to_str(h.last_validated),
+                    "created_at": self._datetime_to_str(h.created_at),
+                    "extra_metadata": json.dumps(h.metadata) if h.metadata else "{}",
+                }
+            )
             documents.append(f"{h.condition}\n{h.strategy}")
             if h.embedding:
                 embeddings.append(h.embedding)
@@ -424,18 +436,20 @@ class ChromaStorage(StorageBackend):
 
         for o in outcomes:
             ids.append(o.id)
-            metadatas.append({
-                "agent": o.agent,
-                "project_id": o.project_id,
-                "task_type": o.task_type or "general",
-                "success": o.success,
-                "strategy_used": o.strategy_used or "",
-                "duration_ms": o.duration_ms or 0,
-                "error_message": o.error_message or "",
-                "user_feedback": o.user_feedback or "",
-                "timestamp": self._datetime_to_str(o.timestamp),
-                "extra_metadata": json.dumps(o.metadata) if o.metadata else "{}",
-            })
+            metadatas.append(
+                {
+                    "agent": o.agent,
+                    "project_id": o.project_id,
+                    "task_type": o.task_type or "general",
+                    "success": o.success,
+                    "strategy_used": o.strategy_used or "",
+                    "duration_ms": o.duration_ms or 0,
+                    "error_message": o.error_message or "",
+                    "user_feedback": o.user_feedback or "",
+                    "timestamp": self._datetime_to_str(o.timestamp),
+                    "extra_metadata": json.dumps(o.metadata) if o.metadata else "{}",
+                }
+            )
             documents.append(o.task_description)
             if o.embedding:
                 embeddings.append(o.embedding)
@@ -475,15 +489,17 @@ class ChromaStorage(StorageBackend):
 
         for k in knowledge_items:
             ids.append(k.id)
-            metadatas.append({
-                "agent": k.agent,
-                "project_id": k.project_id,
-                "domain": k.domain or "general",
-                "source": k.source or "unknown",
-                "confidence": k.confidence,
-                "last_verified": self._datetime_to_str(k.last_verified),
-                "extra_metadata": json.dumps(k.metadata) if k.metadata else "{}",
-            })
+            metadatas.append(
+                {
+                    "agent": k.agent,
+                    "project_id": k.project_id,
+                    "domain": k.domain or "general",
+                    "source": k.source or "unknown",
+                    "confidence": k.confidence,
+                    "last_verified": self._datetime_to_str(k.last_verified),
+                    "extra_metadata": json.dumps(k.metadata) if k.metadata else "{}",
+                }
+            )
             documents.append(k.fact)
             if k.embedding:
                 embeddings.append(k.embedding)
@@ -548,12 +564,12 @@ class ChromaStorage(StorageBackend):
         """Safely check if embedding is not None/empty (handles numpy arrays)."""
         if emb is None:
             return False
-        if hasattr(emb, '__len__'):
+        if hasattr(emb, "__len__"):
             try:
                 return len(emb) > 0
             except (TypeError, ValueError):
                 pass
-        if hasattr(emb, 'size'):
+        if hasattr(emb, "size"):
             return emb.size > 0
         return True
 
@@ -566,10 +582,12 @@ class ChromaStorage(StorageBackend):
         if isinstance(emb_data, list) and len(emb_data) > 0:
             first = emb_data[0]
             # Check if it's a nested list (query format: [[emb1, emb2, ...]])
-            if isinstance(first, list) or (hasattr(first, '__iter__') and not isinstance(first, (str, bytes))):
+            if isinstance(first, list) or (
+                hasattr(first, "__iter__") and not isinstance(first, (str, bytes))
+            ):
                 # Could be list of embeddings or numpy array
                 try:
-                    if hasattr(first, 'tolist'):
+                    if hasattr(first, "tolist"):
                         # numpy array
                         return list(emb_data[0])
                     return list(first) if isinstance(first, list) else [first]
@@ -594,20 +612,26 @@ class ChromaStorage(StorageBackend):
 
             extra = json.loads(meta.get("extra_metadata", "{}"))
 
-            heuristics.append(Heuristic(
-                id=id_,
-                agent=meta.get("agent", ""),
-                project_id=meta.get("project_id", ""),
-                condition=meta.get("condition", ""),
-                strategy=meta.get("strategy", ""),
-                confidence=meta.get("confidence", 0.0),
-                occurrence_count=meta.get("occurrence_count", 0),
-                success_count=meta.get("success_count", 0),
-                last_validated=self._str_to_datetime(meta.get("last_validated")) or datetime.now(timezone.utc),
-                created_at=self._str_to_datetime(meta.get("created_at")) or datetime.now(timezone.utc),
-                embedding=list(emb) if emb is not None and hasattr(emb, '__iter__') else emb,
-                metadata=extra,
-            ))
+            heuristics.append(
+                Heuristic(
+                    id=id_,
+                    agent=meta.get("agent", ""),
+                    project_id=meta.get("project_id", ""),
+                    condition=meta.get("condition", ""),
+                    strategy=meta.get("strategy", ""),
+                    confidence=meta.get("confidence", 0.0),
+                    occurrence_count=meta.get("occurrence_count", 0),
+                    success_count=meta.get("success_count", 0),
+                    last_validated=self._str_to_datetime(meta.get("last_validated"))
+                    or datetime.now(timezone.utc),
+                    created_at=self._str_to_datetime(meta.get("created_at"))
+                    or datetime.now(timezone.utc),
+                    embedding=list(emb)
+                    if emb is not None and hasattr(emb, "__iter__")
+                    else emb,
+                    metadata=extra,
+                )
+            )
 
         return heuristics
 
@@ -629,21 +653,26 @@ class ChromaStorage(StorageBackend):
 
             extra = json.loads(meta.get("extra_metadata", "{}"))
 
-            outcomes.append(Outcome(
-                id=id_,
-                agent=meta.get("agent", ""),
-                project_id=meta.get("project_id", ""),
-                task_type=meta.get("task_type", "general"),
-                task_description=doc,
-                success=meta.get("success", False),
-                strategy_used=meta.get("strategy_used", ""),
-                duration_ms=meta.get("duration_ms"),
-                error_message=meta.get("error_message") or None,
-                user_feedback=meta.get("user_feedback") or None,
-                timestamp=self._str_to_datetime(meta.get("timestamp")) or datetime.now(timezone.utc),
-                embedding=list(emb) if emb is not None and hasattr(emb, '__iter__') else emb,
-                metadata=extra,
-            ))
+            outcomes.append(
+                Outcome(
+                    id=id_,
+                    agent=meta.get("agent", ""),
+                    project_id=meta.get("project_id", ""),
+                    task_type=meta.get("task_type", "general"),
+                    task_description=doc,
+                    success=meta.get("success", False),
+                    strategy_used=meta.get("strategy_used", ""),
+                    duration_ms=meta.get("duration_ms"),
+                    error_message=meta.get("error_message") or None,
+                    user_feedback=meta.get("user_feedback") or None,
+                    timestamp=self._str_to_datetime(meta.get("timestamp"))
+                    or datetime.now(timezone.utc),
+                    embedding=list(emb)
+                    if emb is not None and hasattr(emb, "__iter__")
+                    else emb,
+                    metadata=extra,
+                )
+            )
 
         return outcomes
 
@@ -663,20 +692,25 @@ class ChromaStorage(StorageBackend):
 
             extra = json.loads(meta.get("extra_metadata", "{}"))
 
-            preferences.append(UserPreference(
-                id=id_,
-                user_id=meta.get("user_id", ""),
-                category=meta.get("category", "general"),
-                preference=doc,
-                source=meta.get("source", "unknown"),
-                confidence=meta.get("confidence", 1.0),
-                timestamp=self._str_to_datetime(meta.get("timestamp")) or datetime.now(timezone.utc),
-                metadata=extra,
-            ))
+            preferences.append(
+                UserPreference(
+                    id=id_,
+                    user_id=meta.get("user_id", ""),
+                    category=meta.get("category", "general"),
+                    preference=doc,
+                    source=meta.get("source", "unknown"),
+                    confidence=meta.get("confidence", 1.0),
+                    timestamp=self._str_to_datetime(meta.get("timestamp"))
+                    or datetime.now(timezone.utc),
+                    metadata=extra,
+                )
+            )
 
         return preferences
 
-    def _results_to_domain_knowledge(self, results: Dict[str, Any]) -> List[DomainKnowledge]:
+    def _results_to_domain_knowledge(
+        self, results: Dict[str, Any]
+    ) -> List[DomainKnowledge]:
         """Convert Chroma query results to DomainKnowledge objects."""
         knowledge = []
         if not results or not results.get("ids") or not results["ids"][0]:
@@ -694,18 +728,23 @@ class ChromaStorage(StorageBackend):
 
             extra = json.loads(meta.get("extra_metadata", "{}"))
 
-            knowledge.append(DomainKnowledge(
-                id=id_,
-                agent=meta.get("agent", ""),
-                project_id=meta.get("project_id", ""),
-                domain=meta.get("domain", "general"),
-                fact=doc,
-                source=meta.get("source", "unknown"),
-                confidence=meta.get("confidence", 1.0),
-                last_verified=self._str_to_datetime(meta.get("last_verified")) or datetime.now(timezone.utc),
-                embedding=list(emb) if emb is not None and hasattr(emb, '__iter__') else emb,
-                metadata=extra,
-            ))
+            knowledge.append(
+                DomainKnowledge(
+                    id=id_,
+                    agent=meta.get("agent", ""),
+                    project_id=meta.get("project_id", ""),
+                    domain=meta.get("domain", "general"),
+                    fact=doc,
+                    source=meta.get("source", "unknown"),
+                    confidence=meta.get("confidence", 1.0),
+                    last_verified=self._str_to_datetime(meta.get("last_verified"))
+                    or datetime.now(timezone.utc),
+                    embedding=list(emb)
+                    if emb is not None and hasattr(emb, "__iter__")
+                    else emb,
+                    metadata=extra,
+                )
+            )
 
         return knowledge
 
@@ -727,19 +766,25 @@ class ChromaStorage(StorageBackend):
 
             extra = json.loads(meta.get("extra_metadata", "{}"))
 
-            patterns.append(AntiPattern(
-                id=id_,
-                agent=meta.get("agent", ""),
-                project_id=meta.get("project_id", ""),
-                pattern=doc,
-                why_bad=meta.get("why_bad", ""),
-                better_alternative=meta.get("better_alternative", ""),
-                occurrence_count=meta.get("occurrence_count", 1),
-                last_seen=self._str_to_datetime(meta.get("last_seen")) or datetime.now(timezone.utc),
-                created_at=self._str_to_datetime(meta.get("created_at")) or datetime.now(timezone.utc),
-                embedding=list(emb) if emb is not None and hasattr(emb, '__iter__') else emb,
-                metadata=extra,
-            ))
+            patterns.append(
+                AntiPattern(
+                    id=id_,
+                    agent=meta.get("agent", ""),
+                    project_id=meta.get("project_id", ""),
+                    pattern=doc,
+                    why_bad=meta.get("why_bad", ""),
+                    better_alternative=meta.get("better_alternative", ""),
+                    occurrence_count=meta.get("occurrence_count", 1),
+                    last_seen=self._str_to_datetime(meta.get("last_seen"))
+                    or datetime.now(timezone.utc),
+                    created_at=self._str_to_datetime(meta.get("created_at"))
+                    or datetime.now(timezone.utc),
+                    embedding=list(emb)
+                    if emb is not None and hasattr(emb, "__iter__")
+                    else emb,
+                    metadata=extra,
+                )
+            )
 
         return patterns
 
@@ -909,7 +954,11 @@ class ChromaStorage(StorageBackend):
             return None
 
         agent_conditions = [{"agent": {"$eq": a}} for a in agents]
-        agents_filter = {"$or": agent_conditions} if len(agent_conditions) > 1 else agent_conditions[0]
+        agents_filter = (
+            {"$or": agent_conditions}
+            if len(agent_conditions) > 1
+            else agent_conditions[0]
+        )
 
         base_filter = self._build_where_filter(project_id=project_id, **kwargs)
 
@@ -1070,14 +1119,18 @@ class ChromaStorage(StorageBackend):
 
         try:
             # Get existing heuristic
-            existing = self._heuristics.get(ids=[heuristic_id], include=["metadatas", "documents", "embeddings"])
+            existing = self._heuristics.get(
+                ids=[heuristic_id], include=["metadatas", "documents", "embeddings"]
+            )
             if not existing or not existing.get("ids"):
                 return False
 
             metadata = existing["metadatas"][0] if existing.get("metadatas") else {}
             document = existing["documents"][0] if existing.get("documents") else ""
             emb_list = existing.get("embeddings")
-            embedding = emb_list[0] if emb_list is not None and len(emb_list) > 0 else None
+            embedding = (
+                emb_list[0] if emb_list is not None and len(emb_list) > 0 else None
+            )
 
             # Apply updates
             for key, value in updates.items():
@@ -1092,7 +1145,9 @@ class ChromaStorage(StorageBackend):
                     document = f"{parts[0] if parts else ''}\n{value}"
                 elif key == "metadata":
                     metadata["extra_metadata"] = json.dumps(value)
-                elif key in ("last_validated", "created_at") and isinstance(value, datetime):
+                elif key in ("last_validated", "created_at") and isinstance(
+                    value, datetime
+                ):
                     metadata[key] = value.isoformat()
                 elif key in metadata:
                     metadata[key] = value
@@ -1101,7 +1156,9 @@ class ChromaStorage(StorageBackend):
             if self._has_embedding(embedding):
                 self._heuristics.upsert(
                     ids=[heuristic_id],
-                    embeddings=[list(embedding) if hasattr(embedding, '__iter__') else embedding],
+                    embeddings=[
+                        list(embedding) if hasattr(embedding, "__iter__") else embedding
+                    ],
                     metadatas=[metadata],
                     documents=[document],
                 )
@@ -1124,14 +1181,18 @@ class ChromaStorage(StorageBackend):
     ) -> bool:
         """Increment heuristic occurrence count."""
         try:
-            existing = self._heuristics.get(ids=[heuristic_id], include=["metadatas", "documents", "embeddings"])
+            existing = self._heuristics.get(
+                ids=[heuristic_id], include=["metadatas", "documents", "embeddings"]
+            )
             if not existing or not existing.get("ids"):
                 return False
 
             metadata = existing["metadatas"][0] if existing.get("metadatas") else {}
             document = existing["documents"][0] if existing.get("documents") else ""
             emb_list = existing.get("embeddings")
-            embedding = emb_list[0] if emb_list is not None and len(emb_list) > 0 else None
+            embedding = (
+                emb_list[0] if emb_list is not None and len(emb_list) > 0 else None
+            )
 
             metadata["occurrence_count"] = metadata.get("occurrence_count", 0) + 1
             if success:
@@ -1141,7 +1202,9 @@ class ChromaStorage(StorageBackend):
             if self._has_embedding(embedding):
                 self._heuristics.upsert(
                     ids=[heuristic_id],
-                    embeddings=[list(embedding) if hasattr(embedding, '__iter__') else embedding],
+                    embeddings=[
+                        list(embedding) if hasattr(embedding, "__iter__") else embedding
+                    ],
                     metadatas=[metadata],
                     documents=[document],
                 )
@@ -1172,21 +1235,27 @@ class ChromaStorage(StorageBackend):
     ) -> bool:
         """Update domain knowledge confidence value."""
         try:
-            existing = self._domain_knowledge.get(ids=[knowledge_id], include=["metadatas", "documents", "embeddings"])
+            existing = self._domain_knowledge.get(
+                ids=[knowledge_id], include=["metadatas", "documents", "embeddings"]
+            )
             if not existing or not existing.get("ids"):
                 return False
 
             metadata = existing["metadatas"][0] if existing.get("metadatas") else {}
             document = existing["documents"][0] if existing.get("documents") else ""
             emb_list = existing.get("embeddings")
-            embedding = emb_list[0] if emb_list is not None and len(emb_list) > 0 else None
+            embedding = (
+                emb_list[0] if emb_list is not None and len(emb_list) > 0 else None
+            )
 
             metadata["confidence"] = new_confidence
 
             if self._has_embedding(embedding):
                 self._domain_knowledge.upsert(
                     ids=[knowledge_id],
-                    embeddings=[list(embedding) if hasattr(embedding, '__iter__') else embedding],
+                    embeddings=[
+                        list(embedding) if hasattr(embedding, "__iter__") else embedding
+                    ],
                     metadatas=[metadata],
                     documents=[document],
                 )
@@ -1278,7 +1347,9 @@ class ChromaStorage(StorageBackend):
         ids_to_delete = []
 
         for i, id_ in enumerate(results["ids"]):
-            meta = results["metadatas"][i] if i < len(results.get("metadatas", [])) else {}
+            meta = (
+                results["metadatas"][i] if i < len(results.get("metadatas", [])) else {}
+            )
             timestamp_str = meta.get("timestamp", "")
             if timestamp_str and timestamp_str < older_than_str:
                 ids_to_delete.append(id_)
@@ -1310,7 +1381,9 @@ class ChromaStorage(StorageBackend):
         ids_to_delete = []
 
         for i, id_ in enumerate(results["ids"]):
-            meta = results["metadatas"][i] if i < len(results.get("metadatas", [])) else {}
+            meta = (
+                results["metadatas"][i] if i < len(results.get("metadatas", [])) else {}
+            )
             confidence = meta.get("confidence", 0.0)
             if confidence < below_confidence:
                 ids_to_delete.append(id_)
