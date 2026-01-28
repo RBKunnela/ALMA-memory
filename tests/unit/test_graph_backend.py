@@ -6,7 +6,6 @@ and BackendGraphStore adapter.
 """
 
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -20,7 +19,6 @@ from alma.graph import (
     create_graph_store,
 )
 from alma.graph.backends.memory import InMemoryBackend
-
 
 # =============================================================================
 # Fixtures
