@@ -450,9 +450,9 @@ class TestGraphBackendInterface:
 
         for method in required_methods:
             assert hasattr(memory_backend, method), f"Missing method: {method}"
-            assert callable(
-                getattr(memory_backend, method)
-            ), f"Method not callable: {method}"
+            assert callable(getattr(memory_backend, method)), (
+                f"Method not callable: {method}"
+            )
 
 
 # =============================================================================

@@ -87,9 +87,7 @@ class InMemoryBackend(GraphBackend):
         rel_ids.update(self._incoming.get(entity_id, []))
 
         return [
-            self._relationships[rid]
-            for rid in rel_ids
-            if rid in self._relationships
+            self._relationships[rid] for rid in rel_ids if rid in self._relationships
         ]
 
     def search_entities(

@@ -225,7 +225,9 @@ class Neo4jGraphStore(GraphStore):
     def add_relationship(self, relationship: Relationship) -> str:
         """Add or update a relationship in Neo4j."""
         # Sanitize relationship type for Cypher
-        rel_type = relationship.relation_type.replace("-", "_").replace(" ", "_").upper()
+        rel_type = (
+            relationship.relation_type.replace("-", "_").replace(" ", "_").upper()
+        )
         query = f"""
         MATCH (source:Entity {{id: $source_id}})
         MATCH (target:Entity {{id: $target_id}})
@@ -692,7 +694,9 @@ class BackendGraphStore(GraphStore):
     ) -> List[Entity]:
         """Find entities by name or type using the backend."""
         if hasattr(self._backend, "find_entities"):
-            return self._backend.find_entities(name=name, entity_type=entity_type, limit=limit)
+            return self._backend.find_entities(
+                name=name, entity_type=entity_type, limit=limit
+            )
         # Fallback to search_entities if find_entities not available
         if name:
             return self._backend.search_entities(query=name, top_k=limit)
