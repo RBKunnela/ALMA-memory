@@ -66,7 +66,9 @@ class NoOpSpan:
         """Set span status."""
         pass
 
-    def record_exception(self, exception: BaseException, attributes: Optional[Dict[str, Any]] = None):
+    def record_exception(
+        self, exception: BaseException, attributes: Optional[Dict[str, Any]] = None
+    ):
         """Record an exception."""
         self._logger.error(f"Exception in span {self.name}: {exception}", exc_info=True)
 

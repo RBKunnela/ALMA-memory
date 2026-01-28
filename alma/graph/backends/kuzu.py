@@ -375,7 +375,9 @@ class KuzuBackend(GraphBackend):
         relationships = []
 
         for r in outgoing + incoming:
-            rel_id = r["id"] or f"{r['source_id']}-{r['relation_type']}-{r['target_id']}"
+            rel_id = (
+                r["id"] or f"{r['source_id']}-{r['relation_type']}-{r['target_id']}"
+            )
             if rel_id in seen_ids:
                 continue
             seen_ids.add(rel_id)
@@ -596,7 +598,9 @@ class KuzuBackend(GraphBackend):
         relationships = []
 
         for r in results:
-            rel_id = r["id"] or f"{r['source_id']}-{r['relation_type']}-{r['target_id']}"
+            rel_id = (
+                r["id"] or f"{r['source_id']}-{r['relation_type']}-{r['target_id']}"
+            )
             if rel_id in seen_ids:
                 continue
             seen_ids.add(rel_id)

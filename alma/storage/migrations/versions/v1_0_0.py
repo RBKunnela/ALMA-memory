@@ -96,8 +96,7 @@ class SQLiteInitialSchema(Migration):
             )
         """)
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_preferences_user "
-            "ON preferences(user_id)"
+            "CREATE INDEX IF NOT EXISTS idx_preferences_user ON preferences(user_id)"
         )
 
         # Domain knowledge table
@@ -150,8 +149,7 @@ class SQLiteInitialSchema(Migration):
             )
         """)
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_embeddings_type "
-            "ON embeddings(memory_type)"
+            "CREATE INDEX IF NOT EXISTS idx_embeddings_type ON embeddings(memory_type)"
         )
 
         connection.commit()
@@ -372,6 +370,4 @@ class FileBasedInitialSchema(Migration):
 
     def downgrade(self, storage: Any) -> None:
         """Cannot roll back initial schema."""
-        raise NotImplementedError(
-            "Cannot roll back initial schema"
-        )
+        raise NotImplementedError("Cannot roll back initial schema")

@@ -495,7 +495,9 @@ class SQLiteStorage(StorageBackend):
             )
 
         # Add embedding to index
-        self._add_to_index(MemoryType.DOMAIN_KNOWLEDGE, knowledge.id, knowledge.embedding)
+        self._add_to_index(
+            MemoryType.DOMAIN_KNOWLEDGE, knowledge.id, knowledge.embedding
+        )
         logger.debug(f"Saved domain knowledge: {knowledge.id}")
         return knowledge.id
 
@@ -537,7 +539,9 @@ class SQLiteStorage(StorageBackend):
             )
 
         # Add embedding to index
-        self._add_to_index(MemoryType.ANTI_PATTERNS, anti_pattern.id, anti_pattern.embedding)
+        self._add_to_index(
+            MemoryType.ANTI_PATTERNS, anti_pattern.id, anti_pattern.embedding
+        )
         logger.debug(f"Saved anti-pattern: {anti_pattern.id}")
         return anti_pattern.id
 
@@ -674,7 +678,9 @@ class SQLiteStorage(StorageBackend):
         # If embedding provided, use vector search to get candidate IDs
         candidate_ids = None
         if embedding:
-            search_results = self._search_index(MemoryType.HEURISTICS, embedding, top_k * 2)
+            search_results = self._search_index(
+                MemoryType.HEURISTICS, embedding, top_k * 2
+            )
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -712,7 +718,9 @@ class SQLiteStorage(StorageBackend):
         """Get outcomes with optional vector search."""
         candidate_ids = None
         if embedding:
-            search_results = self._search_index(MemoryType.OUTCOMES, embedding, top_k * 2)
+            search_results = self._search_index(
+                MemoryType.OUTCOMES, embedding, top_k * 2
+            )
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -819,7 +827,9 @@ class SQLiteStorage(StorageBackend):
         """Get anti-patterns with optional vector search."""
         candidate_ids = None
         if embedding:
-            search_results = self._search_index(MemoryType.ANTI_PATTERNS, embedding, top_k * 2)
+            search_results = self._search_index(
+                MemoryType.ANTI_PATTERNS, embedding, top_k * 2
+            )
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:

@@ -168,7 +168,9 @@ class MigrationRegistry:
         """
         version = migration_class.version
         if not version:
-            raise ValueError(f"Migration {migration_class.__name__} must have a version")
+            raise ValueError(
+                f"Migration {migration_class.__name__} must have a version"
+            )
 
         if backend:
             if backend not in self._backend_migrations:

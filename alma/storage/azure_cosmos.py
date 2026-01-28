@@ -268,9 +268,7 @@ class AzureCosmosStorage(StorageBackend):
         """
         return self._partition_key_cache.get(container_key, {}).get(doc_id)
 
-    def _invalidate_partition_key_cache(
-        self, container_key: str, doc_id: str
-    ) -> None:
+    def _invalidate_partition_key_cache(self, container_key: str, doc_id: str) -> None:
         """Remove a document from the partition key cache."""
         cache = self._partition_key_cache.get(container_key, {})
         cache.pop(doc_id, None)
@@ -382,7 +380,9 @@ class AzureCosmosStorage(StorageBackend):
 
         container.upsert_item(doc)
         # Cache partition key for efficient future updates
-        self._cache_partition_key(MemoryType.HEURISTICS, heuristic.id, heuristic.project_id)
+        self._cache_partition_key(
+            MemoryType.HEURISTICS, heuristic.id, heuristic.project_id
+        )
         logger.debug(f"Saved heuristic: {heuristic.id}")
         return heuristic.id
 
@@ -433,7 +433,9 @@ class AzureCosmosStorage(StorageBackend):
 
         container.upsert_item(doc)
         # Cache partition key for efficient future updates
-        self._cache_partition_key(MemoryType.PREFERENCES, preference.id, preference.user_id)
+        self._cache_partition_key(
+            MemoryType.PREFERENCES, preference.id, preference.user_id
+        )
         logger.debug(f"Saved preference: {preference.id}")
         return preference.id
 
@@ -459,7 +461,9 @@ class AzureCosmosStorage(StorageBackend):
 
         container.upsert_item(doc)
         # Cache partition key for efficient future updates
-        self._cache_partition_key(MemoryType.DOMAIN_KNOWLEDGE, knowledge.id, knowledge.project_id)
+        self._cache_partition_key(
+            MemoryType.DOMAIN_KNOWLEDGE, knowledge.id, knowledge.project_id
+        )
         logger.debug(f"Saved domain knowledge: {knowledge.id}")
         return knowledge.id
 
@@ -488,7 +492,9 @@ class AzureCosmosStorage(StorageBackend):
 
         container.upsert_item(doc)
         # Cache partition key for efficient future updates
-        self._cache_partition_key(MemoryType.ANTI_PATTERNS, anti_pattern.id, anti_pattern.project_id)
+        self._cache_partition_key(
+            MemoryType.ANTI_PATTERNS, anti_pattern.id, anti_pattern.project_id
+        )
         logger.debug(f"Saved anti-pattern: {anti_pattern.id}")
         return anti_pattern.id
 
@@ -557,7 +563,9 @@ class AzureCosmosStorage(StorageBackend):
 
         # Cache partition keys for efficient future updates
         for doc in items:
-            self._cache_partition_key(MemoryType.HEURISTICS, doc["id"], doc["project_id"])
+            self._cache_partition_key(
+                MemoryType.HEURISTICS, doc["id"], doc["project_id"]
+            )
 
         return [self._doc_to_heuristic(doc) for doc in items]
 
@@ -728,7 +736,9 @@ class AzureCosmosStorage(StorageBackend):
 
         # Cache partition keys for efficient future updates
         for doc in items:
-            self._cache_partition_key(MemoryType.DOMAIN_KNOWLEDGE, doc["id"], doc["project_id"])
+            self._cache_partition_key(
+                MemoryType.DOMAIN_KNOWLEDGE, doc["id"], doc["project_id"]
+            )
 
         return [self._doc_to_domain_knowledge(doc) for doc in items]
 
@@ -788,7 +798,9 @@ class AzureCosmosStorage(StorageBackend):
 
         # Cache partition keys for efficient future updates
         for doc in items:
-            self._cache_partition_key(MemoryType.ANTI_PATTERNS, doc["id"], doc["project_id"])
+            self._cache_partition_key(
+                MemoryType.ANTI_PATTERNS, doc["id"], doc["project_id"]
+            )
 
         return [self._doc_to_anti_pattern(doc) for doc in items]
 
@@ -933,7 +945,9 @@ class AzureCosmosStorage(StorageBackend):
         container = self._get_container(MemoryType.DOMAIN_KNOWLEDGE)
 
         # Use optimized point read with cache fallback
-        doc = self._point_read_document(MemoryType.DOMAIN_KNOWLEDGE, knowledge_id, project_id)
+        doc = self._point_read_document(
+            MemoryType.DOMAIN_KNOWLEDGE, knowledge_id, project_id
+        )
 
         if not doc:
             return False
@@ -1053,17 +1067,23 @@ class AzureCosmosStorage(StorageBackend):
 
         # Try to get partition key from cache if not provided
         if project_id is None:
-            project_id = self._get_cached_partition_key(MemoryType.HEURISTICS, heuristic_id)
+            project_id = self._get_cached_partition_key(
+                MemoryType.HEURISTICS, heuristic_id
+            )
 
         # If we have a partition key, try direct delete
         if project_id is not None:
             try:
                 container.delete_item(item=heuristic_id, partition_key=project_id)
-                self._invalidate_partition_key_cache(MemoryType.HEURISTICS, heuristic_id)
+                self._invalidate_partition_key_cache(
+                    MemoryType.HEURISTICS, heuristic_id
+                )
                 return True
             except exceptions.CosmosResourceNotFoundError:
                 # Document not found or partition key was wrong
-                self._invalidate_partition_key_cache(MemoryType.HEURISTICS, heuristic_id)
+                self._invalidate_partition_key_cache(
+                    MemoryType.HEURISTICS, heuristic_id
+                )
                 # Fall through to cross-partition lookup
 
         # Fallback: Cross-partition query to find the document

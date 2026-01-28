@@ -536,7 +536,9 @@ class StorageBackend(ABC):
             "migration_supported": False,
         }
 
-    def migrate(self, target_version: Optional[str] = None, dry_run: bool = False) -> List[str]:
+    def migrate(
+        self, target_version: Optional[str] = None, dry_run: bool = False
+    ) -> List[str]:
         """
         Apply pending schema migrations.
 
