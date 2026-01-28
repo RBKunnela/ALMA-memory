@@ -7,6 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-01-28
+
+### Added - Phase 2: Vector Database Backends
+
+- **Qdrant Backend** (`alma/storage/qdrant.py`)
+  - Full `StorageBackend` implementation with 1300+ lines
+  - Vector similarity search using cosine distance
+  - Metadata filtering for all memory queries
+  - Optimized `MatchAny` queries for multi-agent memory sharing
+  - 52 unit tests with full coverage
+
+- **Pinecone Backend** (`alma/storage/pinecone.py`)
+  - Full `StorageBackend` implementation for serverless vector DB
+  - Namespace-based organization per memory type
+  - Serverless spec support for automatic scaling
+  - Environment variable expansion in configuration
+  - 45 unit tests
+
+- **Chroma Backend** (`alma/storage/chroma.py`)
+  - Full `StorageBackend` implementation for ChromaDB
+  - Support for persistent, client-server, and ephemeral modes
+  - Native embedding storage and similarity search
+  - Numpy array handling for edge cases
+
+- **Graph Database Abstraction** (`alma/graph/`)
+  - `GraphBackend` abstract base class for pluggable backends
+  - `Neo4jBackend` wrapping existing Neo4j code
+  - `InMemoryBackend` for testing without external dependencies
+  - `BackendGraphStore` adapter bridging GraphStore API to backends
+  - `create_graph_backend()` factory function for easy setup
+  - 46 unit tests
+
+### Added - Phase 1: Core Features
+
+- **Memory Consolidation Engine** (`alma/consolidation/`)
+  - LLM-powered deduplication that merges similar memories
+  - Cosine similarity-based grouping with configurable thresholds (default 0.85)
+  - Provenance tracking via `merged_from` metadata
+  - Dry-run mode for safety previews
+  - Support for heuristics, domain_knowledge, and anti_patterns
+
+- **Event System** (`alma/events/`)
+  - `EventEmitter` for in-process callbacks
+  - `WebhookManager` for HTTP delivery with HMAC signatures
+  - Event types: CREATED, UPDATED, DELETED, ACCESSED, CONSOLIDATED
+  - Retry logic with configurable count and exponential backoff
+  - `EventAwareStorageMixin` for automatic event emission
+
+- **TypeScript/JavaScript SDK** (`packages/alma-memory-js/`)
+  - Full API coverage: retrieve, learn, addPreference, addKnowledge, forget
+  - Type-safe with comprehensive TypeScript definitions
+  - Error hierarchy matching Python SDK (ALMAError, ConnectionError, etc.)
+  - Automatic retry with configurable backoff
+  - MCP protocol support for direct server communication
+
+- **Multi-Agent Memory Sharing**
+  - `inherit_from` scope attribute for reading other agents' memories
+  - `share_with` scope attribute for making memories readable
+  - Origin tracking via `metadata['shared_from']`
+  - Optimized `get_*_for_agents()` batch queries across all backends
+  - `include_shared` parameter in retrieval engine
+
+### Changed
+
+- Updated version to 0.5.0
+- Added CI/CD workflow with GitHub Actions
+- Updated architecture diagram in README to show all 6 storage backends
+- Expanded troubleshooting section for new backends
+
+---
+
 ## [0.4.0] - 2026-01-28
 
 ### Security
