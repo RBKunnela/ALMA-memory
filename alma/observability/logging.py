@@ -159,7 +159,9 @@ class TextFormatter(logging.Formatter):
         """Format log record as readable text."""
         # Base format: timestamp level [logger] message
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        parts = [f"{timestamp} {record.levelname:8s} [{record.name}] {record.getMessage()}"]
+        parts = [
+            f"{timestamp} {record.levelname:8s} [{record.name}] {record.getMessage()}"
+        ]
 
         # Add location if enabled
         if self.include_location:

@@ -154,7 +154,9 @@ class MigrationRunner:
             migration = migration_class()
 
             if dry_run:
-                logger.info(f"[DRY RUN] Would apply migration {version}: {migration.description}")
+                logger.info(
+                    f"[DRY RUN] Would apply migration {version}: {migration.description}"
+                )
                 applied.append(version)
                 continue
 

@@ -491,7 +491,11 @@ class TestKuzuEdgeCases:
             id="project-entity",
             name="Project Entity",
             entity_type="concept",
-            properties={"project_id": "proj-123", "agent": "test-agent", "extra": "data"},
+            properties={
+                "project_id": "proj-123",
+                "agent": "test-agent",
+                "extra": "data",
+            },
         )
         kuzu_backend.add_entity(entity)
 

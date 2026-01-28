@@ -132,7 +132,16 @@ class InMemoryMetricsCollector:
         with self._lock:
             values = self._histograms.get(key, [])
             if not values:
-                return {"count": 0, "sum": 0, "min": 0, "max": 0, "avg": 0, "p50": 0, "p95": 0, "p99": 0}
+                return {
+                    "count": 0,
+                    "sum": 0,
+                    "min": 0,
+                    "max": 0,
+                    "avg": 0,
+                    "p50": 0,
+                    "p95": 0,
+                    "p99": 0,
+                }
 
             sorted_values = sorted(values)
             count = len(sorted_values)
@@ -159,7 +168,8 @@ class InMemoryMetricsCollector:
             return {
                 "counters": dict(self._counters),
                 "histograms": {
-                    k: self.get_histogram_stats(k.split("{")[0]) for k in self._histograms
+                    k: self.get_histogram_stats(k.split("{")[0])
+                    for k in self._histograms
                 },
                 "gauges": dict(self._gauges),
             }

@@ -51,9 +51,7 @@ class FileBasedStorage(StorageBackend):
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
         # File paths (using canonical memory type names)
-        self._files = {
-            mt: self.storage_dir / f"{mt}.json" for mt in MemoryType.ALL
-        }
+        self._files = {mt: self.storage_dir / f"{mt}.json" for mt in MemoryType.ALL}
 
         # Initialize empty files if they don't exist
         for file_path in self._files.values():

@@ -209,7 +209,10 @@ class TestAlmaLearn:
 
         assert result["success"] is False
         assert "error" in result
-        assert "scope" in result["error"].lower() or "not allowed" in result["error"].lower()
+        assert (
+            "scope" in result["error"].lower()
+            or "not allowed" in result["error"].lower()
+        )
 
 
 class TestAlmaAddPreference:

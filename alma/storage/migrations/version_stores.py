@@ -244,13 +244,16 @@ class PostgreSQLVersionStore:
     def has_version_table(self) -> bool:
         """Check if the version table exists."""
         with self._get_connection() as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables
                     WHERE table_schema = %s
                     AND table_name = '_schema_versions'
                 )
-            """, (self.schema,))
+            """,
+                (self.schema,),
+            )
             row = cursor.fetchone()
             return row["exists"] if row else False
 
