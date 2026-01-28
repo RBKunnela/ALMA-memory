@@ -8,8 +8,15 @@ API Return Type Conventions:
 - Query operations: Return list (empty if none) or object
 
 All scope violations raise ScopeViolationError for consistent error handling.
+
+Async API:
+ALMA provides both synchronous and asynchronous APIs. The async variants
+(async_retrieve, async_learn, etc.) use asyncio.to_thread() to run
+blocking storage operations in a thread pool, enabling better concurrency
+in async applications without blocking the event loop.
 """
 
+import asyncio
 import logging
 import time
 from typing import Any, Dict, Optional
@@ -165,9 +172,8 @@ class ALMA:
 
         # Validate agent has a defined scope
         if agent not in self.scopes:
-            logger.warning(f"Agent '{agent}' has no defined scope, using defaults")
             structured_logger.warning(
-                "Agent has no defined scope, using defaults",
+                f"Agent '{agent}' has no defined scope, using defaults",
                 agent=agent,
                 project_id=self.project_id,
             )
@@ -426,5 +432,191 @@ class ALMA:
         """
         return self.storage.get_stats(
             project_id=self.project_id,
+            agent=agent,
+        )
+
+    # ==================== ASYNC API ====================
+    #
+    # Async variants of core methods for better concurrency support.
+    # These use asyncio.to_thread() to run blocking operations in a
+    # thread pool, preventing event loop blocking in async applications.
+
+    async def async_retrieve(
+        self,
+        task: str,
+        agent: str,
+        user_id: Optional[str] = None,
+        top_k: int = 5,
+    ) -> MemorySlice:
+        """
+        Async version of retrieve(). Retrieve relevant memories for a task.
+
+        Runs the blocking storage operations in a thread pool to avoid
+        blocking the event loop.
+
+        Args:
+            task: Description of the task to perform
+            agent: Name of the agent requesting memories
+            user_id: Optional user ID for preference retrieval
+            top_k: Maximum items per memory type
+
+        Returns:
+            MemorySlice with relevant memories for context injection
+        """
+        return await asyncio.to_thread(
+            self.retrieve,
+            task=task,
+            agent=agent,
+            user_id=user_id,
+            top_k=top_k,
+        )
+
+    async def async_learn(
+        self,
+        agent: str,
+        task: str,
+        outcome: str,
+        strategy_used: str,
+        task_type: Optional[str] = None,
+        duration_ms: Optional[int] = None,
+        error_message: Optional[str] = None,
+        feedback: Optional[str] = None,
+    ) -> Outcome:
+        """
+        Async version of learn(). Learn from a task outcome.
+
+        Validates that learning is within agent's scope before committing.
+        Invalidates cache after learning to ensure fresh retrieval results.
+
+        Args:
+            agent: Name of the agent that executed the task
+            task: Description of the task
+            outcome: "success" or "failure"
+            strategy_used: What approach was taken
+            task_type: Category of task (for grouping)
+            duration_ms: How long the task took
+            error_message: Error details if failed
+            feedback: User feedback if provided
+
+        Returns:
+            The created Outcome record
+
+        Raises:
+            ScopeViolationError: If learning is outside agent's scope
+        """
+        return await asyncio.to_thread(
+            self.learn,
+            agent=agent,
+            task=task,
+            outcome=outcome,
+            strategy_used=strategy_used,
+            task_type=task_type,
+            duration_ms=duration_ms,
+            error_message=error_message,
+            feedback=feedback,
+        )
+
+    async def async_add_user_preference(
+        self,
+        user_id: str,
+        category: str,
+        preference: str,
+        source: str = "explicit_instruction",
+    ) -> UserPreference:
+        """
+        Async version of add_user_preference(). Add a user preference to memory.
+
+        Args:
+            user_id: User identifier
+            category: Category (communication, code_style, workflow)
+            preference: The preference text
+            source: How this was learned
+
+        Returns:
+            The created UserPreference
+        """
+        return await asyncio.to_thread(
+            self.add_user_preference,
+            user_id=user_id,
+            category=category,
+            preference=preference,
+            source=source,
+        )
+
+    async def async_add_domain_knowledge(
+        self,
+        agent: str,
+        domain: str,
+        fact: str,
+        source: str = "user_stated",
+    ) -> DomainKnowledge:
+        """
+        Async version of add_domain_knowledge(). Add domain knowledge within agent's scope.
+
+        Args:
+            agent: Agent this knowledge belongs to
+            domain: Knowledge domain
+            fact: The fact to remember
+            source: How this was learned
+
+        Returns:
+            The created DomainKnowledge
+
+        Raises:
+            ScopeViolationError: If agent is not allowed to learn in this domain
+        """
+        return await asyncio.to_thread(
+            self.add_domain_knowledge,
+            agent=agent,
+            domain=domain,
+            fact=fact,
+            source=source,
+        )
+
+    async def async_forget(
+        self,
+        agent: Optional[str] = None,
+        older_than_days: int = 90,
+        below_confidence: float = 0.3,
+    ) -> int:
+        """
+        Async version of forget(). Prune stale or low-confidence memories.
+
+        This is a delete operation that invalidates cache after pruning
+        to ensure fresh retrieval results.
+
+        Args:
+            agent: Specific agent to prune, or None for all
+            older_than_days: Remove outcomes older than this
+            below_confidence: Remove heuristics below this confidence
+
+        Returns:
+            Number of items pruned (0 if nothing was pruned)
+
+        Raises:
+            StorageError: If the delete operation fails
+        """
+        return await asyncio.to_thread(
+            self.forget,
+            agent=agent,
+            older_than_days=older_than_days,
+            below_confidence=below_confidence,
+        )
+
+    async def async_get_stats(self, agent: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Async version of get_stats(). Get memory statistics.
+
+        Args:
+            agent: Specific agent or None for all
+
+        Returns:
+            Dict with counts and metadata (always returns a dict, may be empty)
+
+        Raises:
+            StorageError: If the query operation fails
+        """
+        return await asyncio.to_thread(
+            self.get_stats,
             agent=agent,
         )

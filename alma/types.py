@@ -212,12 +212,31 @@ class MemorySlice:
     agent: Optional[str] = None
     retrieval_time_ms: Optional[int] = None
 
-    def to_prompt(self, max_tokens: int = 2000) -> str:
+    def to_prompt(
+        self,
+        max_tokens: int = 2000,
+        model: Optional[str] = None,
+    ) -> str:
         """
         Format memories for injection into agent context.
 
         Respects token budget by prioritizing high-confidence items.
+        Uses accurate token counting via tiktoken when available.
+
+        Args:
+            max_tokens: Maximum tokens allowed for the output
+            model: Optional model name for accurate tokenization
+                   (e.g., "gpt-4", "claude-3-sonnet"). If not provided,
+                   uses a general-purpose estimation.
+
+        Returns:
+            Formatted prompt string, truncated if necessary
         """
+        from alma.utils.tokenizer import TokenEstimator
+
+        # Initialize token estimator
+        estimator = TokenEstimator(model=model) if model else TokenEstimator()
+
         sections = []
 
         if self.heuristics:
@@ -246,9 +265,12 @@ class MemorySlice:
 
         result = "\n".join(sections)
 
-        # Basic token estimation (rough: 1 token ~ 4 chars)
-        if len(result) > max_tokens * 4:
-            result = result[: max_tokens * 4] + "\n[truncated]"
+        # Use accurate token estimation and truncation
+        result = estimator.truncate_to_token_limit(
+            text=result,
+            max_tokens=max_tokens,
+            suffix="\n[truncated]",
+        )
 
         return result
 

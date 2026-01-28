@@ -91,7 +91,7 @@ class ProgressTracker:
             **kwargs,
         )
         self._work_items[item.id] = item
-        logger.info(f"Created work item: {item.id} - {item.title}")
+        logger.debug(f"Created work item: {item.id} - {item.title}")
         return item
 
     def get_work_item(self, item_id: str) -> Optional[WorkItem]:
@@ -130,7 +130,7 @@ class ProgressTracker:
         """Delete a work item."""
         if item_id in self._work_items:
             del self._work_items[item_id]
-            logger.info(f"Deleted work item: {item_id}")
+            logger.debug(f"Deleted work item: {item_id}")
             return True
         return False
 
@@ -183,7 +183,7 @@ class ProgressTracker:
                 }
             )
 
-        logger.info(f"Status updated: {item_id} {old_status} -> {status}")
+        logger.debug(f"Status updated: {item_id} {old_status} -> {status}")
         return item
 
     def start_item(self, item_id: str) -> Optional[WorkItem]:

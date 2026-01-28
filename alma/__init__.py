@@ -47,6 +47,19 @@ from alma.consolidation import (
 )
 from alma.core import ALMA
 
+# Extraction / AutoLearner (Phase 15)
+from alma.extraction import (
+    AutoLearner,
+    ExtractedFact,
+    ExtractionResult,
+    FactExtractor,
+    FactType,
+    LLMFactExtractor,
+    RuleBasedExtractor,
+    add_auto_learning_to_alma,
+    create_extractor,
+)
+
 # Domain Memory Factory (Phase 10)
 from alma.domains import (
     DomainMemoryFactory,
@@ -143,6 +156,14 @@ from alma.types import (
     UserPreference,
 )
 
+# Token Estimation (Issue #11: LOW-001)
+from alma.utils.tokenizer import (
+    ModelTokenBudget,
+    TokenEstimator,
+    get_default_token_budget,
+    get_token_estimator,
+)
+
 __all__ = [
     # Core
     "ALMA",
@@ -223,4 +244,19 @@ __all__ = [
     "get_metrics",
     "ALMAMetrics",
     "trace_method",
+    # Extraction / AutoLearner
+    "AutoLearner",
+    "FactExtractor",
+    "LLMFactExtractor",
+    "RuleBasedExtractor",
+    "ExtractedFact",
+    "ExtractionResult",
+    "FactType",
+    "create_extractor",
+    "add_auto_learning_to_alma",
+    # Token Estimation
+    "TokenEstimator",
+    "ModelTokenBudget",
+    "get_token_estimator",
+    "get_default_token_budget",
 ]

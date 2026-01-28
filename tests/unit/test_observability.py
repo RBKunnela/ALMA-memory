@@ -29,6 +29,10 @@ from alma.observability import (
     trace_method,
 )
 from alma.observability.metrics import InMemoryMetricsCollector
+from alma.observability.guidelines import (
+    OPERATION_LOG_LEVELS,
+    get_recommended_level,
+)
 
 # =============================================================================
 # Logging Tests
@@ -739,3 +743,80 @@ class TestObservabilityIntegration:
 
         # Cleanup
         shutdown_observability()
+
+
+# =============================================================================
+# Logging Guidelines Tests
+# =============================================================================
+
+
+class TestLoggingGuidelines:
+    """Tests for logging level guidelines."""
+
+    def test_operation_log_levels_defined(self):
+        """Test that all expected operation types have defined levels."""
+        expected_operations = [
+            "save_success",
+            "save_failure",
+            "cache_hit",
+            "cache_miss",
+            "retrieval_complete",
+            "service_start",
+            "service_stop",
+            "missing_scope",
+            "operation_failure",
+        ]
+        for op in expected_operations:
+            assert op in OPERATION_LOG_LEVELS, f"Missing operation: {op}"
+
+    def test_get_recommended_level_returns_correct_levels(self):
+        """Test that get_recommended_level returns appropriate levels."""
+        import logging
+
+        # DEBUG level operations
+        assert get_recommended_level("save_success") == logging.DEBUG
+        assert get_recommended_level("cache_hit") == logging.DEBUG
+        assert get_recommended_level("cache_miss") == logging.DEBUG
+
+        # INFO level operations
+        assert get_recommended_level("service_start") == logging.INFO
+        assert get_recommended_level("retrieval_complete") == logging.INFO
+
+        # WARNING level operations
+        assert get_recommended_level("missing_scope") == logging.WARNING
+        assert get_recommended_level("retry_attempt") == logging.WARNING
+
+        # ERROR level operations
+        assert get_recommended_level("operation_failure") == logging.ERROR
+        assert get_recommended_level("save_failure") == logging.ERROR
+
+    def test_get_recommended_level_unknown_operation(self):
+        """Test that unknown operations default to INFO."""
+        import logging
+
+        assert get_recommended_level("unknown_operation") == logging.INFO
+        assert get_recommended_level("") == logging.INFO
+
+    def test_log_levels_consistency(self):
+        """Test that similar operations have consistent log levels."""
+        import logging
+
+        # All save success operations should be DEBUG
+        assert OPERATION_LOG_LEVELS["save_success"] == logging.DEBUG
+        assert OPERATION_LOG_LEVELS["batch_save_success"] == logging.DEBUG
+        assert OPERATION_LOG_LEVELS["delete_success"] == logging.DEBUG
+
+        # All failure operations should be ERROR
+        assert OPERATION_LOG_LEVELS["save_failure"] == logging.ERROR
+        assert OPERATION_LOG_LEVELS["delete_failure"] == logging.ERROR
+        assert OPERATION_LOG_LEVELS["operation_failure"] == logging.ERROR
+
+        # All cache operations should be DEBUG
+        assert OPERATION_LOG_LEVELS["cache_hit"] == logging.DEBUG
+        assert OPERATION_LOG_LEVELS["cache_miss"] == logging.DEBUG
+        assert OPERATION_LOG_LEVELS["cache_invalidate"] == logging.DEBUG
+
+        # All lifecycle events should be INFO
+        assert OPERATION_LOG_LEVELS["service_start"] == logging.INFO
+        assert OPERATION_LOG_LEVELS["service_stop"] == logging.INFO
+        assert OPERATION_LOG_LEVELS["config_loaded"] == logging.INFO
