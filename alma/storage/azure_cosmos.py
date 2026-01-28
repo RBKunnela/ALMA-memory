@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from alma.storage.base import StorageBackend
-from alma.storage.constants import MemoryType, AZURE_COSMOS_CONTAINER_NAMES
+from alma.storage.constants import AZURE_COSMOS_CONTAINER_NAMES, MemoryType
 from alma.types import (
     AntiPattern,
     DomainKnowledge,

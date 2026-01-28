@@ -6,8 +6,6 @@ Verifies that MockStorage, MockEmbedder, and factory functions work correctly.
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
-
 from alma.testing import (
     MockEmbedder,
     MockStorage,
@@ -24,7 +22,6 @@ from alma.types import (
     Outcome,
     UserPreference,
 )
-
 
 # =============================================================================
 # MockStorage Tests

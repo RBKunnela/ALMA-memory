@@ -203,7 +203,7 @@ class MigrationRunner:
                     f"Migration {version} failed: {str(e)}",
                     version=version,
                     cause=e,
-                )
+                ) from e
 
         return applied
 
@@ -270,17 +270,17 @@ class MigrationRunner:
                 rolled_back.append(version)
                 logger.info(f"Successfully rolled back migration {version}")
 
-            except NotImplementedError:
+            except NotImplementedError as e:
                 raise MigrationError(
                     f"Migration {version} does not support rollback",
                     version=version,
-                )
+                ) from e
             except Exception as e:
                 raise MigrationError(
                     f"Rollback of {version} failed: {str(e)}",
                     version=version,
                     cause=e,
-                )
+                ) from e
 
         return rolled_back
 

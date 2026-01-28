@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from alma.storage.base import StorageBackend
-from alma.storage.constants import MemoryType, SQLITE_TABLE_NAMES
+from alma.storage.constants import SQLITE_TABLE_NAMES, MemoryType
 from alma.types import (
     AntiPattern,
     DomainKnowledge,
@@ -1299,7 +1299,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                f"DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
+                "DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
                 (MemoryType.HEURISTICS, heuristic_id),
             )
             cursor = conn.execute(
@@ -1317,7 +1317,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                f"DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
+                "DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
                 (MemoryType.OUTCOMES, outcome_id),
             )
             cursor = conn.execute(
@@ -1335,7 +1335,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                f"DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
+                "DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
                 (MemoryType.DOMAIN_KNOWLEDGE, knowledge_id),
             )
             cursor = conn.execute(
@@ -1353,7 +1353,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                f"DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
+                "DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
                 (MemoryType.ANTI_PATTERNS, anti_pattern_id),
             )
             cursor = conn.execute(

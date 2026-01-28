@@ -6,6 +6,8 @@ These tests verify the configuration and structure of the backend without
 requiring a live Memgraph instance.
 """
 
+# Check if neo4j package is available (required for Memgraph backend)
+import importlib.util
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
@@ -14,13 +16,7 @@ import pytest
 from alma.graph import GraphBackend, create_graph_backend
 from alma.graph.store import Entity, Relationship
 
-# Check if neo4j package is available (required for Memgraph backend)
-try:
-    import neo4j
-
-    HAS_NEO4J = True
-except ImportError:
-    HAS_NEO4J = False
+HAS_NEO4J = importlib.util.find_spec("neo4j") is not None
 
 pytestmark = pytest.mark.skipif(
     not HAS_NEO4J, reason="neo4j package not installed (required for Memgraph backend)"

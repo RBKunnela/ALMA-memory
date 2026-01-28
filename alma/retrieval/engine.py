@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from alma.observability.logging import get_logger
 from alma.observability.metrics import get_metrics
-from alma.observability.tracing import SpanKind, get_tracer, trace_method
+from alma.observability.tracing import get_tracer
 from alma.retrieval.cache import NullCache, RetrievalCache
 from alma.retrieval.scoring import MemoryScorer, ScoredItem, ScoringWeights
 from alma.storage.base import StorageBackend

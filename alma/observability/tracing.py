@@ -18,7 +18,8 @@ _NoOpTracer = None
 
 try:
     from opentelemetry import trace
-    from opentelemetry.trace import Span, SpanKind as OTelSpanKind, Status, StatusCode
+    from opentelemetry.trace import SpanKind as OTelSpanKind
+    from opentelemetry.trace import Status, StatusCode
 
     _otel_available = True
 except ImportError:
