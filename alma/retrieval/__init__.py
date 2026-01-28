@@ -7,6 +7,7 @@ Provides semantic search, scoring, and caching for memory retrieval.
 from alma.retrieval.cache import (
     CacheBackend,
     CacheEntry,
+    CacheKeyGenerator,
     CacheStats,
     NullCache,
     PerformanceMetrics,
@@ -38,6 +39,7 @@ __all__ = [
     "compute_composite_score",
     # Cache
     "CacheBackend",
+    "CacheKeyGenerator",
     "RetrievalCache",
     "RedisCache",
     "NullCache",

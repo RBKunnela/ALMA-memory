@@ -1171,7 +1171,7 @@ class ChromaStorage(StorageBackend):
 
             return True
         except Exception as e:
-            logger.error(f"Failed to update heuristic {heuristic_id}: {e}")
+            logger.warning(f"Failed to update heuristic {heuristic_id}: {e}")
             return False
 
     def increment_heuristic_occurrence(
@@ -1217,7 +1217,7 @@ class ChromaStorage(StorageBackend):
 
             return True
         except Exception as e:
-            logger.error(f"Failed to increment occurrence for {heuristic_id}: {e}")
+            logger.warning(f"Failed to increment occurrence for {heuristic_id}: {e}")
             return False
 
     def update_heuristic_confidence(
@@ -1268,7 +1268,7 @@ class ChromaStorage(StorageBackend):
 
             return True
         except Exception as e:
-            logger.error(f"Failed to update knowledge confidence {knowledge_id}: {e}")
+            logger.warning(f"Failed to update knowledge confidence {knowledge_id}: {e}")
             return False
 
     # ==================== DELETE OPERATIONS ====================
@@ -1283,7 +1283,7 @@ class ChromaStorage(StorageBackend):
             logger.debug(f"Deleted heuristic: {heuristic_id}")
             return True
         except Exception as e:
-            logger.error(f"Failed to delete heuristic {heuristic_id}: {e}")
+            logger.warning(f"Failed to delete heuristic {heuristic_id}: {e}")
             return False
 
     def delete_outcome(self, outcome_id: str) -> bool:
@@ -1296,7 +1296,7 @@ class ChromaStorage(StorageBackend):
             logger.debug(f"Deleted outcome: {outcome_id}")
             return True
         except Exception as e:
-            logger.error(f"Failed to delete outcome {outcome_id}: {e}")
+            logger.warning(f"Failed to delete outcome {outcome_id}: {e}")
             return False
 
     def delete_domain_knowledge(self, knowledge_id: str) -> bool:
@@ -1309,7 +1309,7 @@ class ChromaStorage(StorageBackend):
             logger.debug(f"Deleted domain knowledge: {knowledge_id}")
             return True
         except Exception as e:
-            logger.error(f"Failed to delete domain knowledge {knowledge_id}: {e}")
+            logger.warning(f"Failed to delete domain knowledge {knowledge_id}: {e}")
             return False
 
     def delete_anti_pattern(self, anti_pattern_id: str) -> bool:
@@ -1322,7 +1322,7 @@ class ChromaStorage(StorageBackend):
             logger.debug(f"Deleted anti-pattern: {anti_pattern_id}")
             return True
         except Exception as e:
-            logger.error(f"Failed to delete anti-pattern {anti_pattern_id}: {e}")
+            logger.warning(f"Failed to delete anti-pattern {anti_pattern_id}: {e}")
             return False
 
     def delete_outcomes_older_than(

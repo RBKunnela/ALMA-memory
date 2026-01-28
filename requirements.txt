@@ -30,5 +30,8 @@ pytest-cov>=4.0.0
 # Type checking
 mypy>=1.0.0
 
+# Token estimation
+tiktoken>=0.5.0
+
 # Utilities
 python-dotenv>=1.0.0

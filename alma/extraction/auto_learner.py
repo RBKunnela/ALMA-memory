@@ -8,7 +8,7 @@ Enables Mem0-style automatic learning from conversations.
 import logging
 from typing import Any, Dict, List, Optional
 
-from alma.extraction import (
+from alma.extraction.extractor import (
     ExtractedFact,
     FactExtractor,
     FactType,

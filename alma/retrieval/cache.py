@@ -3,21 +3,212 @@ ALMA Retrieval Cache.
 
 Multi-backend caching layer for retrieval results with TTL-based expiration.
 Supports in-memory and Redis backends with performance monitoring.
+
+Key Features:
+- Collision-resistant cache key generation using SHA-256
+- Namespace support for multi-agent/multi-tenant isolation
+- TTL-based expiration with configurable cleanup
+- LRU eviction when max entries reached
+- Performance metrics tracking
 """
 
 import hashlib
 import json
 import logging
+import struct
 import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from alma.types import MemorySlice
 
 logger = logging.getLogger(__name__)
+
+
+# ==================== CACHE KEY GENERATION ====================
+
+
+class CacheKeyGenerator:
+    """
+    Collision-resistant cache key generator with namespace support.
+
+    Uses SHA-256 hashing with length-prefixed encoding to prevent
+    delimiter-based collision attacks. Supports namespaces for
+    multi-agent/multi-tenant isolation.
+
+    Key Structure:
+        {namespace}:{version}:{full_sha256_hash}
+
+    The hash is computed over length-prefixed components to ensure
+    that "a|b" + "c" cannot collide with "a" + "b|c".
+    """
+
+    # Version for cache key format - increment if algorithm changes
+    KEY_VERSION = "v1"
+
+    # Default namespace for single-agent deployments
+    DEFAULT_NAMESPACE = "alma"
+
+    def __init__(self, namespace: Optional[str] = None):
+        """
+        Initialize the cache key generator.
+
+        Args:
+            namespace: Optional namespace for cache isolation.
+                       Useful for multi-agent or multi-tenant deployments.
+                       Defaults to "alma".
+        """
+        self.namespace = namespace or self.DEFAULT_NAMESPACE
+
+    @staticmethod
+    def _length_prefix_encode(value: str) -> bytes:
+        """
+        Encode a string with its length prefix for collision resistance.
+
+        This prevents collision attacks where "a|b" + "c" could match "a" + "b|c"
+        when using simple delimiter-based concatenation.
+
+        Args:
+            value: String to encode
+
+        Returns:
+            Bytes with 4-byte big-endian length prefix followed by UTF-8 encoded value
+        """
+        encoded = value.encode("utf-8")
+        length = len(encoded)
+        return struct.pack(">I", length) + encoded
+
+    @staticmethod
+    def _normalize_query(query: str) -> str:
+        """
+        Normalize query string for consistent cache key generation.
+
+        - Converts to lowercase
+        - Strips leading/trailing whitespace
+        - Normalizes internal whitespace to single spaces
+
+        Args:
+            query: Raw query string
+
+        Returns:
+            Normalized query string
+        """
+        return " ".join(query.lower().split())
+
+    def generate(
+        self,
+        query: str,
+        agent: str,
+        project_id: str,
+        user_id: Optional[str] = None,
+        top_k: int = 5,
+        extra_context: Optional[Dict[str, str]] = None,
+    ) -> str:
+        """
+        Generate a collision-resistant cache key.
+
+        Uses length-prefixed encoding of all components followed by SHA-256
+        hashing to prevent delimiter-based collision attacks.
+
+        Args:
+            query: The search query (will be normalized)
+            agent: Agent identifier
+            project_id: Project identifier
+            user_id: Optional user identifier
+            top_k: Number of results requested
+            extra_context: Optional extra context for key generation
+
+        Returns:
+            Cache key in format: {namespace}:{version}:{sha256_hash}
+        """
+        # Normalize query
+        normalized_query = self._normalize_query(query)
+
+        # Build the hash input using length-prefixed encoding
+        # This ensures "a|b" + "c" cannot collide with "a" + "b|c"
+        hash_input = b""
+        hash_input += self._length_prefix_encode(normalized_query)
+        hash_input += self._length_prefix_encode(agent)
+        hash_input += self._length_prefix_encode(project_id)
+        hash_input += self._length_prefix_encode(user_id or "")
+        hash_input += struct.pack(">I", top_k)  # 4-byte big-endian integer
+
+        # Add extra context if provided (sorted for determinism)
+        if extra_context:
+            for key in sorted(extra_context.keys()):
+                hash_input += self._length_prefix_encode(key)
+                hash_input += self._length_prefix_encode(extra_context[key])
+
+        # Compute full SHA-256 hash (64 hex chars = 256 bits)
+        hash_hex = hashlib.sha256(hash_input).hexdigest()
+
+        # Return namespaced key with version
+        return f"{self.namespace}:{self.KEY_VERSION}:{hash_hex}"
+
+    def generate_pattern(
+        self,
+        agent: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ) -> str:
+        """
+        Generate a pattern for bulk cache invalidation.
+
+        This is primarily useful for Redis-style pattern matching.
+        For in-memory caches, use the index-based invalidation instead.
+
+        Args:
+            agent: Optional agent to match
+            project_id: Optional project to match
+
+        Returns:
+            Pattern string (e.g., "alma:v1:*" for all keys in namespace)
+        """
+        return f"{self.namespace}:{self.KEY_VERSION}:*"
+
+    def parse_key(self, key: str) -> Tuple[str, str, str]:
+        """
+        Parse a cache key into its components.
+
+        Args:
+            key: Cache key to parse
+
+        Returns:
+            Tuple of (namespace, version, hash)
+
+        Raises:
+            ValueError: If key format is invalid
+        """
+        parts = key.split(":", 2)
+        if len(parts) != 3:
+            raise ValueError(f"Invalid cache key format: {key}")
+        return (parts[0], parts[1], parts[2])
+
+    def is_valid_key(self, key: str) -> bool:
+        """
+        Check if a key matches this generator's namespace and version.
+
+        Args:
+            key: Cache key to validate
+
+        Returns:
+            True if key is valid for this generator
+        """
+        try:
+            namespace, version, hash_part = self.parse_key(key)
+            return (
+                namespace == self.namespace
+                and version == self.KEY_VERSION
+                and len(hash_part) == 64  # SHA-256 hex
+            )
+        except ValueError:
+            return False
+
+
+# Global default key generator
+_default_key_generator = CacheKeyGenerator()
 
 
 # ==================== DATA STRUCTURES ====================
@@ -174,6 +365,8 @@ class RetrievalCache(CacheBackend):
     In-memory cache for retrieval results.
 
     Features:
+    - Collision-resistant cache key generation using SHA-256
+    - Namespace support for multi-agent/multi-tenant isolation
     - TTL-based expiration
     - LRU eviction when max size reached
     - Thread-safe operations
@@ -188,6 +381,7 @@ class RetrievalCache(CacheBackend):
         max_entries: int = 1000,
         cleanup_interval: int = 60,
         enable_metrics: bool = True,
+        namespace: Optional[str] = None,
     ):
         """
         Initialize cache.
@@ -197,11 +391,16 @@ class RetrievalCache(CacheBackend):
             max_entries: Maximum number of cached entries before eviction
             cleanup_interval: Seconds between cleanup cycles for expired entries
             enable_metrics: Whether to track performance metrics
+            namespace: Optional namespace for cache isolation (default: "alma")
         """
         self.ttl = ttl_seconds
         self.max_entries = max_entries
         self.cleanup_interval = cleanup_interval
         self.enable_metrics = enable_metrics
+        self.namespace = namespace
+
+        # Initialize collision-resistant key generator with namespace
+        self._key_generator = CacheKeyGenerator(namespace=namespace)
 
         self._cache: Dict[str, CacheEntry] = {}
         # Index for selective invalidation: agent -> set of cache keys
@@ -245,16 +444,29 @@ class RetrievalCache(CacheBackend):
         user_id: Optional[str] = None,
         top_k: int = 5,
     ) -> str:
-        """Generate a unique cache key for the query parameters."""
-        key_parts = [
-            query.lower().strip(),
-            agent,
-            project_id,
-            user_id or "",
-            str(top_k),
-        ]
-        key_string = "|".join(key_parts)
-        return hashlib.sha256(key_string.encode()).hexdigest()[:32]
+        """
+        Generate a collision-resistant cache key for the query parameters.
+
+        Uses the CacheKeyGenerator with length-prefixed encoding and full
+        SHA-256 hashing to prevent delimiter-based collision attacks.
+
+        Args:
+            query: The search query (will be normalized)
+            agent: Agent identifier
+            project_id: Project identifier
+            user_id: Optional user identifier
+            top_k: Number of results requested
+
+        Returns:
+            Cache key in format: {namespace}:{version}:{sha256_hash}
+        """
+        return self._key_generator.generate(
+            query=query,
+            agent=agent,
+            project_id=project_id,
+            user_id=user_id,
+            top_k=top_k,
+        )
 
     def get(
         self,
@@ -545,6 +757,7 @@ class RedisCache(CacheBackend):
         key_prefix: str = "alma:cache:",
         connection_pool_size: int = 10,
         enable_metrics: bool = True,
+        namespace: Optional[str] = None,
     ):
         """
         Initialize Redis cache.
@@ -558,10 +771,15 @@ class RedisCache(CacheBackend):
             key_prefix: Prefix for all cache keys
             connection_pool_size: Size of connection pool
             enable_metrics: Whether to track performance metrics
+            namespace: Optional namespace for cache isolation (default: "alma")
         """
         self.ttl = ttl_seconds
         self.key_prefix = key_prefix
         self.enable_metrics = enable_metrics
+        self.namespace = namespace
+
+        # Initialize collision-resistant key generator with namespace
+        self._key_generator = CacheKeyGenerator(namespace=namespace)
 
         self._stats = CacheStats()
         self._metrics = PerformanceMetrics() if enable_metrics else None
@@ -613,16 +831,36 @@ class RedisCache(CacheBackend):
         user_id: Optional[str] = None,
         top_k: int = 5,
     ) -> str:
-        """Generate a unique cache key with prefix for pattern matching."""
-        key_parts = [
-            query.lower().strip(),
-            user_id or "",
-            str(top_k),
-        ]
-        hash_part = hashlib.sha256("|".join(key_parts).encode()).hexdigest()[:16]
-        # Structure: prefix:project:agent:hash
-        # This enables pattern-based invalidation
-        return f"{self.key_prefix}{project_id}:{agent}:{hash_part}"
+        """
+        Generate a collision-resistant cache key with Redis prefix for pattern matching.
+
+        Uses the CacheKeyGenerator for the hash component, then wraps it with
+        Redis-specific prefix structure for pattern-based invalidation.
+
+        Structure: {redis_prefix}{project}:{agent}:{namespace}:{version}:{hash}
+
+        Args:
+            query: The search query (will be normalized)
+            agent: Agent identifier
+            project_id: Project identifier
+            user_id: Optional user identifier
+            top_k: Number of results requested
+
+        Returns:
+            Redis cache key with prefix for pattern matching
+        """
+        # Generate collision-resistant key
+        base_key = self._key_generator.generate(
+            query=query,
+            agent=agent,
+            project_id=project_id,
+            user_id=user_id,
+            top_k=top_k,
+        )
+
+        # Structure: prefix:project:agent:base_key
+        # This enables pattern-based invalidation by project or agent
+        return f"{self.key_prefix}{project_id}:{agent}:{base_key}"
 
     def _serialize_result(self, result: MemorySlice) -> bytes:
         """Serialize MemorySlice to bytes."""
@@ -831,7 +1069,7 @@ class RedisCache(CacheBackend):
             return result
 
         except Exception as e:
-            logger.error(f"Redis get error: {e}")
+            logger.warning(f"Redis get error: {e}")
             with self._lock:
                 self._stats.misses += 1
             self._record_get_time(start_time)
@@ -859,7 +1097,7 @@ class RedisCache(CacheBackend):
             logger.debug(f"Redis cached result for query: {query[:50]}...")
 
         except Exception as e:
-            logger.error(f"Redis set error: {e}")
+            logger.warning(f"Redis set error: {e}")
             self._record_set_time(start_time)
 
     def invalidate(
@@ -909,7 +1147,7 @@ class RedisCache(CacheBackend):
             return count
 
         except Exception as e:
-            logger.error(f"Redis invalidate error: {e}")
+            logger.warning(f"Redis invalidate error: {e}")
             return 0
 
     def _record_get_time(self, start_time: float) -> None:
@@ -961,7 +1199,7 @@ class RedisCache(CacheBackend):
                 return self._stats
 
         except Exception as e:
-            logger.error(f"Redis get_stats error: {e}")
+            logger.warning(f"Redis get_stats error: {e}")
             return self._stats
 
     def clear(self) -> None:
@@ -974,7 +1212,7 @@ class RedisCache(CacheBackend):
                     self._metrics = PerformanceMetrics()
             logger.info(f"Cleared Redis cache ({count} entries)")
         except Exception as e:
-            logger.error(f"Redis clear error: {e}")
+            logger.warning(f"Redis clear error: {e}")
 
 
 # ==================== NULL CACHE ====================
@@ -1025,6 +1263,7 @@ def create_cache(
     redis_password: Optional[str] = None,
     redis_db: int = 0,
     enable_metrics: bool = True,
+    namespace: Optional[str] = None,
 ) -> CacheBackend:
     """
     Factory function to create a cache backend.
@@ -1038,6 +1277,8 @@ def create_cache(
         redis_password: Redis password (for redis backend)
         redis_db: Redis database number (for redis backend)
         enable_metrics: Whether to track performance metrics
+        namespace: Optional namespace for cache isolation (default: "alma").
+                   Useful for multi-agent or multi-tenant deployments.
 
     Returns:
         Configured CacheBackend instance
@@ -1050,6 +1291,7 @@ def create_cache(
             password=redis_password,
             ttl_seconds=ttl_seconds,
             enable_metrics=enable_metrics,
+            namespace=namespace,
         )
     elif backend == "null":
         return NullCache()
@@ -1058,4 +1300,5 @@ def create_cache(
             ttl_seconds=ttl_seconds,
             max_entries=max_entries,
             enable_metrics=enable_metrics,
+            namespace=namespace,
         )

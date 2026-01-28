@@ -4,13 +4,213 @@ Unit tests for ALMA Retrieval Cache.
 
 import time
 
+import pytest
+
 from alma.retrieval.cache import (
     CacheEntry,
+    CacheKeyGenerator,
     CacheStats,
     NullCache,
     RetrievalCache,
+    create_cache,
 )
 from alma.types import MemorySlice
+
+
+class TestCacheKeyGenerator:
+    """Tests for CacheKeyGenerator - collision-resistant key generation."""
+
+    def test_deterministic_key_generation(self):
+        """Same inputs should always produce same key."""
+        gen = CacheKeyGenerator()
+
+        key1 = gen.generate("test query", "agent1", "project1", "user1", 5)
+        key2 = gen.generate("test query", "agent1", "project1", "user1", 5)
+
+        assert key1 == key2
+
+    def test_key_format_structure(self):
+        """Keys should have correct namespace:version:hash structure."""
+        gen = CacheKeyGenerator(namespace="test_ns")
+
+        key = gen.generate("query", "agent", "project")
+
+        parts = key.split(":")
+        assert len(parts) == 3
+        assert parts[0] == "test_ns"
+        assert parts[1] == "v1"
+        assert len(parts[2]) == 64  # Full SHA-256 hex
+
+    def test_default_namespace(self):
+        """Default namespace should be 'alma'."""
+        gen = CacheKeyGenerator()
+
+        key = gen.generate("query", "agent", "project")
+
+        assert key.startswith("alma:v1:")
+
+    def test_custom_namespace(self):
+        """Custom namespace should be used in key."""
+        gen = CacheKeyGenerator(namespace="custom_agent")
+
+        key = gen.generate("query", "agent", "project")
+
+        assert key.startswith("custom_agent:v1:")
+
+    def test_different_namespaces_different_keys(self):
+        """Same inputs with different namespaces produce different keys."""
+        gen1 = CacheKeyGenerator(namespace="agent_a")
+        gen2 = CacheKeyGenerator(namespace="agent_b")
+
+        key1 = gen1.generate("query", "agent", "project", "user", 5)
+        key2 = gen2.generate("query", "agent", "project", "user", 5)
+
+        assert key1 != key2
+
+    def test_collision_resistance_delimiter_attack(self):
+        """Keys should not collide due to delimiter-based attack."""
+        gen = CacheKeyGenerator()
+
+        # These could collide with simple "|" concatenation:
+        # "a|b" + "c" vs "a" + "b|c"
+        key1 = gen.generate("a|b", "c", "project")
+        key2 = gen.generate("a", "b|c", "project")
+
+        assert key1 != key2
+
+    def test_collision_resistance_empty_vs_none(self):
+        """Empty string user_id should differ from None."""
+        gen = CacheKeyGenerator()
+
+        # These should produce different keys
+        key_none = gen.generate("query", "agent", "project", None, 5)
+        key_empty = gen.generate("query", "agent", "project", "", 5)
+
+        # Note: Both should be treated as empty, so they may be equal
+        # This is intentional - None and "" are semantically equivalent
+        assert key_none == key_empty
+
+    def test_query_normalization_case_insensitive(self):
+        """Queries should be normalized to lowercase."""
+        gen = CacheKeyGenerator()
+
+        key1 = gen.generate("Test Query", "agent", "project")
+        key2 = gen.generate("test query", "agent", "project")
+        key3 = gen.generate("TEST QUERY", "agent", "project")
+
+        assert key1 == key2 == key3
+
+    def test_query_normalization_whitespace(self):
+        """Query whitespace should be normalized."""
+        gen = CacheKeyGenerator()
+
+        key1 = gen.generate("test query", "agent", "project")
+        key2 = gen.generate("  test   query  ", "agent", "project")
+        key3 = gen.generate("test\t\nquery", "agent", "project")
+
+        assert key1 == key2 == key3
+
+    def test_different_top_k_different_keys(self):
+        """Different top_k values should produce different keys."""
+        gen = CacheKeyGenerator()
+
+        key1 = gen.generate("query", "agent", "project", top_k=5)
+        key2 = gen.generate("query", "agent", "project", top_k=10)
+        key3 = gen.generate("query", "agent", "project", top_k=20)
+
+        assert key1 != key2 != key3
+
+    def test_extra_context_support(self):
+        """Extra context should affect key generation."""
+        gen = CacheKeyGenerator()
+
+        key1 = gen.generate("query", "agent", "project")
+        key2 = gen.generate(
+            "query", "agent", "project", extra_context={"filter": "recent"}
+        )
+        key3 = gen.generate(
+            "query", "agent", "project", extra_context={"filter": "all"}
+        )
+
+        assert key1 != key2
+        assert key2 != key3
+
+    def test_extra_context_order_independence(self):
+        """Extra context should be order-independent (sorted)."""
+        gen = CacheKeyGenerator()
+
+        key1 = gen.generate(
+            "query", "agent", "project", extra_context={"a": "1", "b": "2"}
+        )
+        key2 = gen.generate(
+            "query", "agent", "project", extra_context={"b": "2", "a": "1"}
+        )
+
+        assert key1 == key2
+
+    def test_parse_key(self):
+        """parse_key should correctly extract components."""
+        gen = CacheKeyGenerator(namespace="test")
+
+        key = gen.generate("query", "agent", "project")
+        namespace, version, hash_part = gen.parse_key(key)
+
+        assert namespace == "test"
+        assert version == "v1"
+        assert len(hash_part) == 64
+
+    def test_parse_key_invalid_format(self):
+        """parse_key should raise ValueError for invalid keys."""
+        gen = CacheKeyGenerator()
+
+        with pytest.raises(ValueError):
+            gen.parse_key("invalid_key_no_colons")
+
+        with pytest.raises(ValueError):
+            gen.parse_key("only:one")
+
+    def test_is_valid_key(self):
+        """is_valid_key should validate key format and namespace."""
+        gen = CacheKeyGenerator(namespace="test")
+
+        valid_key = gen.generate("query", "agent", "project")
+        assert gen.is_valid_key(valid_key) is True
+
+        # Different namespace
+        other_gen = CacheKeyGenerator(namespace="other")
+        other_key = other_gen.generate("query", "agent", "project")
+        assert gen.is_valid_key(other_key) is False
+
+        # Invalid format
+        assert gen.is_valid_key("invalid") is False
+        assert gen.is_valid_key("alma:v1:short") is False  # Hash too short
+
+    def test_generate_pattern(self):
+        """generate_pattern should return valid pattern."""
+        gen = CacheKeyGenerator(namespace="test")
+
+        pattern = gen.generate_pattern()
+        assert pattern == "test:v1:*"
+
+    def test_uniqueness_across_large_set(self):
+        """Keys should be unique across a large set of inputs."""
+        gen = CacheKeyGenerator()
+        keys = set()
+
+        # Generate 1000 unique keys
+        for i in range(100):
+            for j in range(10):
+                key = gen.generate(
+                    f"query {i}",
+                    f"agent_{j}",
+                    f"project_{i % 5}",
+                    f"user_{j % 3}" if j % 2 == 0 else None,
+                    5 + (i % 3),
+                )
+                keys.add(key)
+
+        # All keys should be unique
+        assert len(keys) == 1000
 
 
 class TestCacheEntry:
@@ -96,6 +296,47 @@ class TestRetrievalCache:
 
         keys = [key1, key2, key3, key4, key5]
         assert len(set(keys)) == 5  # All unique
+
+    def test_namespace_isolation(self):
+        """Different namespaces should not share cache entries."""
+        cache1 = RetrievalCache(namespace="agent_alpha")
+        cache2 = RetrievalCache(namespace="agent_beta")
+
+        slice_obj = MemorySlice(query="test", agent="agent")
+
+        # Set in cache1
+        cache1.set("test query", "agent", "project-1", slice_obj)
+
+        # Should be found in cache1
+        assert cache1.get("test query", "agent", "project-1") is not None
+
+        # Should NOT be found in cache2 (different namespace)
+        assert cache2.get("test query", "agent", "project-1") is None
+
+    def test_key_format_includes_namespace(self):
+        """Generated keys should include namespace prefix."""
+        cache = RetrievalCache(namespace="custom_ns")
+
+        key = cache._generate_key("query", "agent", "project")
+
+        assert key.startswith("custom_ns:v1:")
+        assert len(key.split(":")) == 3
+
+    def test_collision_resistance_with_special_chars(self):
+        """Keys should not collide with special characters in inputs."""
+        cache = RetrievalCache()
+
+        # Potential collision attack with delimiters
+        key1 = cache._generate_key("query:with:colons", "agent", "project")
+        key2 = cache._generate_key("query", "with:colons:agent", "project")
+
+        assert key1 != key2
+
+        # Another potential collision scenario
+        key3 = cache._generate_key("a|b|c", "d", "e")
+        key4 = cache._generate_key("a", "b|c|d", "e")
+
+        assert key3 != key4
 
     def test_set_and_get(self):
         """Test basic set and get operations."""

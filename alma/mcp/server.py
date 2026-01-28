@@ -26,6 +26,14 @@ from alma.mcp.tools import (
     alma_learn,
     alma_retrieve,
     alma_stats,
+    # Async variants
+    async_alma_add_knowledge,
+    async_alma_add_preference,
+    async_alma_forget,
+    async_alma_health,
+    async_alma_learn,
+    async_alma_retrieve,
+    async_alma_stats,
 )
 
 logger = logging.getLogger(__name__)
@@ -340,20 +348,25 @@ class ALMAMCPServer:
         request_id: Optional[int],
         params: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Handle tools/call request."""
+        """
+        Handle tools/call request.
+
+        Uses async tool variants for better concurrency in the async server.
+        """
         tool_name = params.get("name", "")
         arguments = params.get("arguments", {})
 
-        # Map tool names to functions
-        tool_handlers = {
-            "alma_retrieve": lambda: alma_retrieve(
+        # Map tool names to async functions for non-blocking execution
+        # All tools now use async variants for consistency in async server
+        async_tool_handlers = {
+            "alma_retrieve": lambda: async_alma_retrieve(
                 self.alma,
                 task=arguments.get("task", ""),
                 agent=arguments.get("agent", ""),
                 user_id=arguments.get("user_id"),
                 top_k=arguments.get("top_k", 5),
             ),
-            "alma_learn": lambda: alma_learn(
+            "alma_learn": lambda: async_alma_learn(
                 self.alma,
                 agent=arguments.get("agent", ""),
                 task=arguments.get("task", ""),
@@ -364,31 +377,31 @@ class ALMAMCPServer:
                 error_message=arguments.get("error_message"),
                 feedback=arguments.get("feedback"),
             ),
-            "alma_add_preference": lambda: alma_add_preference(
+            "alma_add_preference": lambda: async_alma_add_preference(
                 self.alma,
                 user_id=arguments.get("user_id", ""),
                 category=arguments.get("category", ""),
                 preference=arguments.get("preference", ""),
                 source=arguments.get("source", "explicit_instruction"),
             ),
-            "alma_add_knowledge": lambda: alma_add_knowledge(
+            "alma_add_knowledge": lambda: async_alma_add_knowledge(
                 self.alma,
                 agent=arguments.get("agent", ""),
                 domain=arguments.get("domain", ""),
                 fact=arguments.get("fact", ""),
                 source=arguments.get("source", "user_stated"),
             ),
-            "alma_forget": lambda: alma_forget(
+            "alma_forget": lambda: async_alma_forget(
                 self.alma,
                 agent=arguments.get("agent"),
                 older_than_days=arguments.get("older_than_days", 90),
                 below_confidence=arguments.get("below_confidence", 0.3),
             ),
-            "alma_stats": lambda: alma_stats(
+            "alma_stats": lambda: async_alma_stats(
                 self.alma,
                 agent=arguments.get("agent"),
             ),
-            "alma_health": lambda: alma_health(self.alma),
+            "alma_health": lambda: async_alma_health(self.alma),
             "alma_consolidate": lambda: alma_consolidate(
                 self.alma,
                 agent=arguments.get("agent", ""),
@@ -398,16 +411,16 @@ class ALMAMCPServer:
             ),
         }
 
-        if tool_name not in tool_handlers:
+        if tool_name not in async_tool_handlers:
             return self._error_response(
                 request_id,
                 -32602,
                 f"Unknown tool: {tool_name}",
             )
 
-        result = tool_handlers[tool_name]()
+        result = async_tool_handlers[tool_name]()
 
-        # Handle async functions (like alma_consolidate)
+        # All handlers now return coroutines
         if asyncio.iscoroutine(result):
             result = await result
 
