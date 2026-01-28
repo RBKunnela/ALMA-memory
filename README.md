@@ -3,8 +3,61 @@
 [![PyPI version](https://badge.fury.io/py/alma-memory.svg)](https://pypi.org/project/alma-memory/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/RBKunnela/ALMA-memory/actions)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 > Persistent memory for AI agents that learn and improve over time - without model weight updates.
+
+---
+
+## Why ALMA? Key Differentiators
+
+ALMA isn't just another memory framework. Here's what sets it apart from alternatives like Mem0:
+
+| Feature | ALMA | Mem0 | Why It Matters |
+|---------|------|------|----------------|
+| **Memory Scoping** | `can_learn` / `cannot_learn` per agent | Basic user/session isolation | Prevents agents from learning outside their domain |
+| **Anti-Pattern Learning** | Explicit with `why_bad` + `better_alternative` | None | Agents learn what NOT to do |
+| **Harness Pattern** | Decouples agent from domain memory | None | Reusable agent architecture |
+| **MCP Integration** | Native stdio/HTTP server | None | Direct Claude Code integration |
+| **Domain Memory Factory** | 6 pre-built schemas | None | Instant setup for any domain |
+| **Multi-Factor Scoring** | Similarity + Recency + Success + Confidence | Primarily vector + recency | More nuanced retrieval |
+| **Session Handoff** | Full context continuity | Minimal | No "starting fresh" problem |
+| **Progress Tracking** | Built-in work item management | None | Agents know what to do next |
+
+**Bottom line:** ALMA is purpose-built for AI agents that need to learn, remember, and improve - not just store and retrieve.
+
+---
+
+## What's New in v0.4.0
+
+### Security Fixes
+- **CRIT-001**: Fixed `eval()` vulnerability in Neo4j graph store - now uses safe `json.loads()`
+- Input validation added to all MCP tools
+
+### Bug Fixes
+- **CRIT-002**: Fixed SQLite embeddings delete bug (memory_type naming mismatch)
+- Fixed Azure Cosmos DB missing `update_heuristic_confidence()` and `update_knowledge_confidence()` methods
+- Fixed PostgreSQL IVFFlat index creation on empty tables
+
+### Performance Improvements
+- Added HNSW indexes for PostgreSQL vector search (faster than IVFFlat)
+- Lazy FAISS index rebuild for SQLite (only when needed)
+- Added timestamp indexes for efficient temporal queries
+- Connection pooling improvements for PostgreSQL
+
+### API Improvements
+- New `batch_save_*()` methods for bulk operations
+- Comprehensive exception hierarchy (`ALMAError`, `StorageError`, `ValidationError`, etc.)
+- Input validation with clear error messages
+
+### Deprecation Fixes
+- Replaced all `datetime.utcnow()` with timezone-aware `datetime.now(timezone.utc)`
+- Python 3.13+ compatibility ensured
+
+See [CHANGELOG.md](CHANGELOG.md) for the complete list.
+
+---
 
 ## What is ALMA?
 
@@ -17,18 +70,20 @@ ALMA is a **memory framework** that makes AI agents appear to "learn" by:
 **No fine-tuning. No model changes. Just smarter prompts.**
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  BEFORE TASK: Retrieve relevant memories                        │
-│  ├── "Last time you tested forms, incremental validation worked"│
-│  ├── "User prefers verbose output"                              │
-│  └── "Don't use sleep() - causes flaky tests"                   │
-├─────────────────────────────────────────────────────────────────┤
-│  DURING TASK: Agent executes with injected knowledge            │
-├─────────────────────────────────────────────────────────────────┤
-│  AFTER TASK: Learn from outcome                                 │
-│  └── Success? → New heuristic. Failure? → Anti-pattern.         │
-└─────────────────────────────────────────────────────────────────┘
++---------------------------------------------------------------------+
+|  BEFORE TASK: Retrieve relevant memories                            |
+|  +-- "Last time you tested forms, incremental validation worked"    |
+|  +-- "User prefers verbose output"                                  |
+|  +-- "Don't use sleep() - causes flaky tests"                       |
++---------------------------------------------------------------------+
+|  DURING TASK: Agent executes with injected knowledge                |
++---------------------------------------------------------------------+
+|  AFTER TASK: Learn from outcome                                     |
+|  +-- Success? -> New heuristic. Failure? -> Anti-pattern.           |
++---------------------------------------------------------------------+
 ```
+
+---
 
 ## Installation
 
@@ -36,7 +91,27 @@ ALMA is a **memory framework** that makes AI agents appear to "learn" by:
 pip install alma-memory
 ```
 
+**With optional backends:**
+```bash
+pip install alma-memory[local]     # SQLite + FAISS + local embeddings
+pip install alma-memory[postgres]  # PostgreSQL + pgvector
+pip install alma-memory[azure]     # Azure Cosmos DB + Azure OpenAI
+pip install alma-memory[all]       # Everything
+```
+
+---
+
 ## Quick Start
+
+### 1. Set Up Configuration
+
+```bash
+cp config.yaml.example .alma/config.yaml
+```
+
+Edit `.alma/config.yaml` to configure your project ID, storage backend, and agents.
+
+### 2. Use ALMA in Your Code
 
 ```python
 from alma import ALMA
@@ -69,29 +144,114 @@ alma.learn(
 )
 ```
 
-## Features
+---
 
-### Core Memory System
+## Core Features
 
-| Feature | Description |
-|---------|-------------|
-| **5 Memory Types** | Heuristics, Outcomes, Preferences, Domain Knowledge, Anti-patterns |
-| **Semantic Search** | Vector similarity for relevant memory retrieval |
-| **Scoped Learning** | Agents only learn from their domain (Helena can't learn backend) |
-| **LLM Fact Extraction** | Automatic learning from conversations (NEW) |
-| **Graph Memory** | Entity relationships via Neo4j (NEW) |
-| **Confidence Decay** | Old memories fade, recent ones stay strong |
-| **Forgetting** | Automatic cleanup of low-value memories |
+### Five Memory Types
+
+| Type | What It Stores | Example |
+|------|----------------|---------|
+| **Heuristic** | Learned strategies | "For forms with >5 fields, test validation incrementally" |
+| **Outcome** | Task results | "Login test succeeded using JWT token strategy" |
+| **Preference** | User constraints | "User prefers verbose test output" |
+| **Domain Knowledge** | Accumulated facts | "Login uses OAuth 2.0 with 24h token expiry" |
+| **Anti-pattern** | What NOT to do | "Don't use sleep() for async waits - causes flaky tests" |
+
+### Scoped Learning
+
+Agents only learn within their defined domains. Helena (frontend tester) cannot learn backend logic:
+
+```yaml
+agents:
+  helena:
+    domain: coding
+    can_learn:
+      - testing_strategies
+      - selector_patterns
+    cannot_learn:
+      - backend_logic
+      - database_queries
+```
 
 ### Storage Backends
 
-| Backend | Use Case | Vector Search |
-|---------|----------|---------------|
-| **SQLite + FAISS** | Local development | Yes |
-| **Azure Cosmos DB** | Production | Yes (native) |
-| **File-based** | Testing/Simple use | No |
+| Backend | Use Case | Vector Search | Production Ready |
+|---------|----------|---------------|------------------|
+| **SQLite + FAISS** | Local development | Yes | Yes |
+| **PostgreSQL + pgvector** | Production, HA | Yes (HNSW) | Yes |
+| **Azure Cosmos DB** | Enterprise, Azure-native | Yes (DiskANN) | Yes |
+| **File-based** | Testing | No | No |
 
-### Domain Memory Factory (NEW in v0.3.0)
+---
+
+## The Harness Pattern
+
+ALMA implements a generalized harness pattern for any tool-using agent:
+
+```
++---------------------------------------------------------------------+
+|  1. SETTING        Fixed environment: tools, constraints            |
++---------------------------------------------------------------------+
+|  2. CONTEXT        Ephemeral per-run inputs: task, user             |
++---------------------------------------------------------------------+
+|  3. AGENT          The executor with scoped intelligence            |
++---------------------------------------------------------------------+
+|  4. MEMORY SCHEMA  Domain-specific learning structure               |
++---------------------------------------------------------------------+
+```
+
+```python
+from alma import create_harness, Context
+
+# Create domain-specific harness
+harness = create_harness("coding", "helena", alma)
+
+# Run with automatic memory injection
+result = harness.run(Context(
+    task="Test the login form validation",
+    project_id="my-app",
+))
+```
+
+---
+
+## MCP Server Integration
+
+Expose ALMA to Claude Code or any MCP-compatible client:
+
+```bash
+python -m alma.mcp --config .alma/config.yaml
+```
+
+```json
+// .mcp.json
+{
+  "mcpServers": {
+    "alma-memory": {
+      "command": "python",
+      "args": ["-m", "alma.mcp", "--config", ".alma/config.yaml"]
+    }
+  }
+}
+```
+
+**Available MCP Tools:**
+| Tool | Description |
+|------|-------------|
+| `alma_retrieve` | Get memories for a task |
+| `alma_learn` | Record task outcome |
+| `alma_add_preference` | Add user preference |
+| `alma_add_knowledge` | Add domain knowledge |
+| `alma_forget` | Prune stale memories |
+| `alma_stats` | Get memory statistics |
+| `alma_health` | Health check |
+
+---
+
+## Advanced Features
+
+### Domain Memory Factory
 
 Create ALMA instances for any domain - not just coding:
 
@@ -118,7 +278,7 @@ schema = factory.create_schema("sales", {
 
 **Pre-built schemas:** `coding`, `research`, `sales`, `general`, `customer_support`, `content_creation`
 
-### Progress Tracking (NEW in v0.3.0)
+### Progress Tracking
 
 Track work items and get intelligent next-task suggestions:
 
@@ -140,13 +300,9 @@ tracker.update_status(item.id, "in_progress")
 
 # Get next task (by priority, quick wins, or unblock others)
 next_task = tracker.get_next_item(strategy="priority")
-
-# Get progress summary
-summary = tracker.get_progress_summary()
-print(f"Done: {summary.done}/{summary.total} ({summary.completion_percentage}%)")
 ```
 
-### Session Handoff (NEW in v0.3.0)
+### Session Handoff
 
 Maintain context across sessions - no more "starting fresh":
 
@@ -163,12 +319,6 @@ if context.previous_handoff:
     print(f"Last action: {context.previous_handoff.last_action}")
     print(f"Blockers: {context.previous_handoff.blockers}")
 
-# Track decisions and blockers during work
-manager.update_session("Helena", context.session_id,
-    decision="Using OAuth mock for testing",
-    blocker="Staging API is down",
-)
-
 # End session with handoff for next time
 manager.create_handoff("Helena", context.session_id,
     last_action="completed_oauth_tests",
@@ -177,9 +327,9 @@ manager.create_handoff("Helena", context.session_id,
 )
 ```
 
-### LLM-Powered Fact Extraction (NEW in v0.5.0)
+### LLM-Powered Fact Extraction
 
-Automatically extract and learn from conversations - no manual `learn()` calls needed:
+Automatically extract and learn from conversations:
 
 ```python
 from alma.extraction import AutoLearner
@@ -197,12 +347,9 @@ results = auto_learner.learn_from_conversation(
 )
 
 print(f"Extracted {results['extracted_count']} facts")
-print(f"Committed {results['committed_count']} to memory")
 ```
 
-Supports OpenAI, Anthropic, or rule-based extraction (free, offline).
-
-### Graph Memory (NEW in v0.5.0)
+### Graph Memory
 
 Capture entity relationships for complex reasoning:
 
@@ -228,82 +375,72 @@ for entity in entities:
     graph.add_entity(entity)
 for rel in relationships:
     graph.add_relationship(rel)
-
-# Query relationships
-result = graph.traverse("alice-id", max_hops=2)
-print(f"Found {len(result.entities)} related entities")
 ```
 
-Supports Neo4j, in-memory (testing), with Amazon Neptune coming soon.
+### Confidence Engine
 
-### MCP Server Integration
-
-Expose ALMA to Claude Code or any MCP-compatible client:
-
-```bash
-# Start MCP server
-python -m alma.mcp --config .alma/config.yaml
-```
-
-```json
-// .mcp.json
-{
-  "mcpServers": {
-    "alma-memory": {
-      "command": "python",
-      "args": ["-m", "alma.mcp", "--config", ".alma/config.yaml"]
-    }
-  }
-}
-```
-
-**Available MCP Tools:**
-- `alma_retrieve` - Get memories for a task
-- `alma_learn` - Record task outcome
-- `alma_add_preference` - Add user preference
-- `alma_add_knowledge` - Add domain knowledge
-- `alma_forget` - Prune stale memories
-- `alma_stats` - Get memory statistics
-- `alma_health` - Health check
-
-## Memory Types
-
-| Type | What It Stores | Example |
-|------|----------------|---------|
-| **Heuristic** | Learned strategies | "For forms with >5 fields, test validation incrementally" |
-| **Outcome** | Task results | "Login test succeeded using JWT token strategy" |
-| **Preference** | User constraints | "User prefers verbose test output" |
-| **Domain Knowledge** | Accumulated facts | "Login uses OAuth 2.0 with 24h token expiry" |
-| **Anti-pattern** | What NOT to do | "Don't use sleep() for async waits - causes flaky tests" |
-
-## The Harness Pattern
-
-ALMA implements a generalized harness pattern for any tool-using agent:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  1. SETTING        Fixed environment: tools, constraints        │
-├─────────────────────────────────────────────────────────────────┤
-│  2. CONTEXT        Ephemeral per-run inputs: task, user         │
-├─────────────────────────────────────────────────────────────────┤
-│  3. AGENT          The executor with scoped intelligence        │
-├─────────────────────────────────────────────────────────────────┤
-│  4. MEMORY SCHEMA  Domain-specific learning structure           │
-└─────────────────────────────────────────────────────────────────┘
-```
+Assess strategies before trying them:
 
 ```python
-from alma import create_harness, Context
+from alma.confidence import ConfidenceEngine
 
-# Create domain-specific harness
-harness = create_harness("coding", "helena", alma)
+engine = ConfidenceEngine(alma)
 
-# Run with automatic memory injection
-result = harness.run(Context(
-    task="Test the login form validation",
-    project_id="my-app",
-))
+# Assess a strategy before trying it
+signal = engine.assess_strategy(
+    strategy="Use incremental validation",
+    context="Testing a 5-field registration form",
+    agent="Helena",
+)
+
+print(f"Confidence: {signal.confidence_score:.0%}")
+print(f"Recommendation: {signal.recommendation}")
+# -> Confidence: 78%
+# -> Recommendation: yes
 ```
+
+---
+
+## Architecture
+
+```
++-------------------------------------------------------------------------+
+|                          ALMA v0.4.0                                    |
++-------------------------------------------------------------------------+
+|  HARNESS LAYER                                                          |
+|  +-----------+  +-----------+  +-----------+  +----------------+        |
+|  | Setting   |  | Context   |  |  Agent    |  | MemorySchema   |        |
+|  +-----------+  +-----------+  +-----------+  +----------------+        |
++-------------------------------------------------------------------------+
+|  EXTENSION MODULES                                                      |
+|  +-------------+  +---------------+  +------------------+               |
+|  | Progress    |  | Session       |  | Domain Memory    |               |
+|  | Tracking    |  | Handoff       |  | Factory          |               |
+|  +-------------+  +---------------+  +------------------+               |
+|  +-------------+  +---------------+  +------------------+               |
+|  | Auto        |  | Confidence    |  | Graph            |               |
+|  | Learner     |  | Engine        |  | Memory           |               |
+|  +-------------+  +---------------+  +------------------+               |
++-------------------------------------------------------------------------+
+|  CORE LAYER                                                             |
+|  +-------------+  +-------------+  +-------------+  +------------+      |
+|  | Retrieval   |  |  Learning   |  |  Caching    |  | Forgetting |      |
+|  |  Engine     |  |  Protocol   |  |   Layer     |  | Mechanism  |      |
+|  +-------------+  +-------------+  +-------------+  +------------+      |
++-------------------------------------------------------------------------+
+|  STORAGE LAYER                                                          |
+|  +---------------+  +------------------+  +---------------+             |
+|  | SQLite+FAISS  |  | PostgreSQL+pgvec |  | Azure Cosmos  |             |
+|  +---------------+  +------------------+  +---------------+             |
++-------------------------------------------------------------------------+
+|  INTEGRATION LAYER                                                      |
+|  +-------------------------------------------------------------------+  |
+|  |                         MCP Server                                 |  |
+|  +-------------------------------------------------------------------+  |
++-------------------------------------------------------------------------+
+```
+
+---
 
 ## Configuration
 
@@ -312,8 +449,11 @@ Create `.alma/config.yaml`:
 ```yaml
 alma:
   project_id: "my-project"
-  storage: sqlite  # or "azure" for production
-  embedding_provider: local  # or "azure" for production
+  storage: sqlite  # sqlite | postgres | azure | file
+  embedding_provider: local  # local | azure | mock
+  storage_dir: .alma
+  db_name: alma.db
+  embedding_dim: 384
 
   agents:
     helena:
@@ -332,260 +472,107 @@ alma:
         - database_queries
       cannot_learn:
         - frontend_selectors
-      min_occurrences_for_heuristic: 3
 ```
 
-### Embedding Model Configuration
+### Embedding Providers
 
-ALMA uses embeddings for semantic memory retrieval. You can choose between local (free, offline) or cloud-based providers.
+| Provider | Model | Dimensions | Cost | Best For |
+|----------|-------|------------|------|----------|
+| **local** | all-MiniLM-L6-v2 | 384 | Free | Development, offline |
+| **azure** | text-embedding-3-small | 1536 | ~$0.02/1M | Production |
+| **mock** | (hash-based) | 384 | Free | Testing only |
 
-#### Provider Comparison
-
-| Provider | Model | Dimensions | Cost | Latency | Best For |
-|----------|-------|------------|------|---------|----------|
-| **local** | all-MiniLM-L6-v2 | 384 | Free | ~10ms | Development, offline use, cost-sensitive |
-| **local** | all-mpnet-base-v2 | 768 | Free | ~25ms | Better quality, still offline |
-| **azure** | text-embedding-3-small | 1536 | ~$0.02/1M tokens | ~50ms | Production, high accuracy |
-| **azure** | text-embedding-3-large | 3072 | ~$0.13/1M tokens | ~80ms | Maximum quality, enterprise |
-| **mock** | (hash-based) | 384 | Free | <1ms | Testing only |
-
-#### Local Embeddings (Default)
-
-No API keys required. Uses [sentence-transformers](https://www.sbert.net/).
-
-```yaml
-# .alma/config.yaml
-alma:
-  embedding_provider: local
-  # Default model: all-MiniLM-L6-v2
-  # To use a different model, set in code:
-  # LocalEmbedder(model_name="all-mpnet-base-v2")
-```
-
-Install dependencies:
-```bash
-pip install sentence-transformers
-```
-
-#### Azure OpenAI Embeddings (Production)
-
-For production deployments with higher accuracy.
-
-```yaml
-# .alma/config.yaml
-alma:
-  embedding_provider: azure
-  azure:
-    openai_endpoint: ${AZURE_OPENAI_ENDPOINT}
-    openai_key: ${AZURE_OPENAI_KEY}
-    openai_deployment: text-embedding-3-small
-```
-
-Set environment variables:
-```bash
-# .env
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_KEY=your-api-key
-AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
-```
-
-Or use Azure Key Vault for secrets:
-```yaml
-alma:
-  azure:
-    openai_key: ${KEYVAULT:alma-openai-key}
-```
-
-#### Mock Embeddings (Testing)
-
-Deterministic hash-based embeddings for unit tests.
-
-```yaml
-alma:
-  embedding_provider: mock
-```
-
-### Storage Backend Configuration
-
-| Backend | Config Value | Vector Search | Use Case |
-|---------|--------------|---------------|----------|
-| SQLite + FAISS | `sqlite` | Yes (FAISS) | Local development |
-| Azure Cosmos DB | `azure` | Yes (native) | Production |
-| File-based | `file` | No | Simple testing |
-
-```yaml
-alma:
-  storage: sqlite  # Options: sqlite, azure, file
-  storage_dir: .alma  # Where to store local databases
-  db_name: alma.db  # Database filename
-  embedding_dim: 384  # Must match your embedding model
-```
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        ALMA v0.3.0                              │
-├─────────────────────────────────────────────────────────────────┤
-│  HARNESS LAYER                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐    │
-│  │ Setting  │  │ Context  │  │  Agent   │  │MemorySchema  │    │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────────┘    │
-├─────────────────────────────────────────────────────────────────┤
-│  NEW IN v0.3.0                                                  │
-│  ┌──────────────┐  ┌────────────────┐  ┌───────────────────┐   │
-│  │ Progress     │  │ Session        │  │ Domain Memory     │   │
-│  │ Tracking     │  │ Handoff        │  │ Factory           │   │
-│  └──────────────┘  └────────────────┘  └───────────────────┘   │
-├─────────────────────────────────────────────────────────────────┤
-│  CORE LAYER                                                     │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  │
-│  │ Retrieval  │  │  Learning  │  │  Caching   │  │Forgetting│  │
-│  │  Engine    │  │  Protocol  │  │   Layer    │  │Mechanism │  │
-│  └────────────┘  └────────────┘  └────────────┘  └──────────┘  │
-├─────────────────────────────────────────────────────────────────┤
-│  STORAGE LAYER                                                  │
-│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐    │
-│  │ SQLite + FAISS │  │  Azure Cosmos  │  │   File-based   │    │
-│  └────────────────┘  └────────────────┘  └────────────────┘    │
-├─────────────────────────────────────────────────────────────────┤
-│  INTEGRATION LAYER                                              │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │                    MCP Server                           │    │
-│  └────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-```
+---
 
 ## Development Status
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Core Abstractions | ✅ Done |
-| 2 | Local Storage (SQLite + FAISS) | ✅ Done |
-| 3 | Retrieval Engine | ✅ Done |
-| 4 | Learning Protocols | ✅ Done |
-| 5 | Agent Integration | ✅ Done |
-| 6 | Azure Cosmos DB | ✅ Done |
-| 7 | Cache Layer | ✅ Done |
-| 8 | Forgetting Mechanism | ✅ Done |
-| 9 | MCP Server + Testing Suite | ✅ Done |
-| 10 | Progress, Sessions, Domains | ✅ Done |
-| 11 | Initializer Agent Pattern | ✅ Done |
-| 12 | Forward-Looking Confidence | ✅ Done |
+| Core Abstractions | Memory types, scopes | Done |
+| Local Storage | SQLite + FAISS | Done |
+| Retrieval Engine | Semantic search, scoring | Done |
+| Learning Protocols | Heuristic formation | Done |
+| Agent Integration | Harness pattern | Done |
+| Azure Cosmos DB | Enterprise storage | Done |
+| PostgreSQL | Production storage | Done |
+| Cache Layer | Performance optimization | Done |
+| Forgetting Mechanism | Memory pruning | Done |
+| MCP Server | Claude Code integration | Done |
+| Progress Tracking | Work item management | Done |
+| Session Handoff | Context continuity | Done |
+| Domain Factory | Any-domain support | Done |
+| Confidence Engine | Strategy assessment | Done |
+| Technical Debt Sprint | Security & performance fixes | Done |
 
-## API Reference
+---
 
-### Core
+## Troubleshooting
 
-```python
-# Initialize
-alma = ALMA.from_config(".alma/config.yaml")
+### Common Issues
 
-# Retrieve memories
-memories = alma.retrieve(task, agent, top_k=5)
-
-# Learn from outcome
-alma.learn(agent, task, outcome, strategy_used, feedback=None)
-
-# Add knowledge directly
-alma.add_preference(user_id, category, preference)
-alma.add_domain_knowledge(agent, domain, fact)
-
-# Memory hygiene
-alma.forget(agent, older_than_days=90, min_confidence=0.3)
+**ImportError: sentence-transformers is required**
+```bash
+pip install alma-memory[local]
 ```
 
-### Progress Tracking
-
-```python
-from alma.progress import ProgressTracker, WorkItem
-
-tracker = ProgressTracker("project-id")
-item = tracker.create_work_item(title, description, priority=50)
-tracker.update_status(item.id, "in_progress")  # or "done", "blocked"
-next_item = tracker.get_next_item(strategy="priority")
-summary = tracker.get_progress_summary(agent="helena")
+**pgvector extension not found**
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-### Session Management
+**Embeddings dimension mismatch**
+- Ensure `embedding_dim` in config matches your embedding provider
+- Local: 384, Azure text-embedding-3-small: 1536
+
+### Debug Logging
 
 ```python
-from alma.session import SessionManager
-
-manager = SessionManager("project-id")
-context = manager.start_session(agent, goal)
-manager.update_session(agent, session_id, decision=..., blocker=...)
-manager.create_handoff(agent, session_id, last_action, outcome, next_steps)
-reload_str = manager.get_quick_reload(agent)
+import logging
+logging.getLogger("alma").setLevel(logging.DEBUG)
 ```
 
-### Domain Factory
+---
 
-```python
-from alma.domains import DomainMemoryFactory, get_coding_schema
+## Contributing
 
-factory = DomainMemoryFactory()
-schema = get_coding_schema()  # or research, sales, general
-alma = factory.create_alma(schema, "project-id")
-```
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-### Session Initializer (NEW in v0.4.0)
+**What we need most:**
+- Documentation improvements
+- Test coverage for edge cases
+- Storage backend integrations (MongoDB, Pinecone)
+- TypeScript/JavaScript SDK
+- LLM provider integrations (Ollama, Groq)
 
-```python
-from alma.initializer import SessionInitializer
+---
 
-initializer = SessionInitializer(alma)
+## Roadmap
 
-# Full initialization before starting work
-result = initializer.initialize(
-    project_id="my-project",
-    agent="Helena",
-    user_prompt="Test the login form validation",
-    project_path="/path/to/project",
-)
+Based on our [competitive analysis](docs/architecture/competitive-analysis-mem0.md):
 
-# Inject into agent prompt
-prompt = f"""
-{result.to_prompt()}
+**Next Quarter:**
+- Multi-agent memory sharing
+- Memory consolidation engine
+- Event system / webhooks
+- TypeScript SDK
 
-Now proceed with the first work item.
-"""
-```
+**Future:**
+- Expanded vector database support (Qdrant, Pinecone, Chroma)
+- Memory compression / summarization
+- Temporal reasoning
+- Proactive memory suggestions
 
-### Confidence Engine (NEW in v0.4.0)
-
-```python
-from alma.confidence import ConfidenceEngine
-
-engine = ConfidenceEngine(alma)
-
-# Assess a strategy before trying it
-signal = engine.assess_strategy(
-    strategy="Use incremental validation",
-    context="Testing a 5-field registration form",
-    agent="Helena",
-)
-
-print(f"Confidence: {signal.confidence_score:.0%}")
-print(f"Recommendation: {signal.recommendation}")
-# → Confidence: 78%
-# → Recommendation: yes
-
-# Rank multiple strategies
-rankings = engine.rank_strategies(
-    strategies=["Strategy A", "Strategy B", "Strategy C"],
-    context="Current task",
-    agent="Helena",
-)
-```
+---
 
 ## License
 
 MIT
 
-## Contributing
+---
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+## Star History
+
+If ALMA helps your AI agents get smarter, consider giving us a star!
 
 ---
 

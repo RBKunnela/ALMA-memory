@@ -4,10 +4,10 @@ Domain Memory Types.
 Data models for domain-specific memory schemas.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional
-import uuid
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -21,11 +21,15 @@ class EntityType:
 
     name: str  # "feature", "test", "paper", "lead"
     description: str
-    attributes: List[str] = field(default_factory=list)  # ["status", "priority", "owner"]
+    attributes: List[str] = field(
+        default_factory=list
+    )  # ["status", "priority", "owner"]
 
     # Optional schema validation
     required_attributes: List[str] = field(default_factory=list)
-    attribute_types: Dict[str, str] = field(default_factory=dict)  # attr -> "str", "int", "bool"
+    attribute_types: Dict[str, str] = field(
+        default_factory=dict
+    )  # attr -> "str", "int", "bool"
 
     def validate_entity(self, entity: Dict[str, Any]) -> List[str]:
         """Validate an entity instance against this type."""

@@ -17,63 +17,71 @@ memory slices before each run and updating memory after.
 __version__ = "0.4.0"
 
 # Core
+# Confidence Engine (Phase 12)
+from alma.confidence import (
+    ConfidenceEngine,
+    ConfidenceSignal,
+    OpportunitySignal,
+    RiskSignal,
+)
+
+# Consolidation Engine (Phase 13)
+from alma.consolidation import (
+    ConsolidationEngine,
+    ConsolidationResult,
+)
 from alma.core import ALMA
-from alma.types import (
-    Heuristic,
-    Outcome,
-    UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-    MemorySlice,
-    MemoryScope,
+
+# Domain Memory Factory (Phase 10)
+from alma.domains import (
+    DomainMemoryFactory,
+    DomainSchema,
+    EntityType,
+    RelationshipType,
+    get_coding_schema,
+    get_general_schema,
+    get_research_schema,
+    get_sales_schema,
+)
+
+# Event System (Phase 19)
+from alma.events import (
+    EventEmitter,
+    MemoryEvent,
+    MemoryEventType,
+    WebhookConfig,
+    WebhookManager,
+    get_emitter,
+)
+
+# Exceptions
+from alma.exceptions import (
+    ALMAError,
+    ConfigurationError,
+    EmbeddingError,
+    ExtractionError,
+    RetrievalError,
+    ScopeViolationError,
+    StorageError,
 )
 
 # Harness Pattern
 from alma.harness.base import (
-    Setting,
-    Context,
     Agent,
-    MemorySchema,
+    Context,
     Harness,
+    MemorySchema,
+    RunResult,
+    Setting,
     Tool,
     ToolType,
-    RunResult,
 )
 from alma.harness.domains import (
     CodingDomain,
-    ResearchDomain,
     ContentDomain,
     OperationsDomain,
+    ResearchDomain,
     create_harness,
-)
-
-# Progress Tracking (Phase 10)
-from alma.progress import (
-    WorkItem,
-    WorkItemStatus,
-    ProgressLog,
-    ProgressSummary,
-    ProgressTracker,
-)
-
-# Session Management (Phase 10)
-from alma.session import (
-    SessionHandoff,
-    SessionContext,
-    SessionOutcome,
-    SessionManager,
-)
-
-# Domain Memory Factory (Phase 10)
-from alma.domains import (
-    DomainSchema,
-    EntityType,
-    RelationshipType,
-    DomainMemoryFactory,
-    get_coding_schema,
-    get_research_schema,
-    get_sales_schema,
-    get_general_schema,
 )
 
 # Session Initializer (Phase 11)
@@ -84,12 +92,30 @@ from alma.initializer import (
     SessionInitializer,
 )
 
-# Confidence Engine (Phase 12)
-from alma.confidence import (
-    ConfidenceEngine,
-    ConfidenceSignal,
-    OpportunitySignal,
-    RiskSignal,
+# Progress Tracking (Phase 10)
+from alma.progress import (
+    ProgressLog,
+    ProgressSummary,
+    ProgressTracker,
+    WorkItem,
+    WorkItemStatus,
+)
+
+# Session Management (Phase 10)
+from alma.session import (
+    SessionContext,
+    SessionHandoff,
+    SessionManager,
+    SessionOutcome,
+)
+from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
+    Heuristic,
+    MemoryScope,
+    MemorySlice,
+    Outcome,
+    UserPreference,
 )
 
 __all__ = [
@@ -147,4 +173,22 @@ __all__ = [
     "ConfidenceSignal",
     "OpportunitySignal",
     "RiskSignal",
+    # Consolidation Engine
+    "ConsolidationEngine",
+    "ConsolidationResult",
+    # Event System
+    "MemoryEvent",
+    "MemoryEventType",
+    "EventEmitter",
+    "get_emitter",
+    "WebhookConfig",
+    "WebhookManager",
+    # Exceptions
+    "ALMAError",
+    "ConfigurationError",
+    "ScopeViolationError",
+    "StorageError",
+    "EmbeddingError",
+    "RetrievalError",
+    "ExtractionError",
 ]

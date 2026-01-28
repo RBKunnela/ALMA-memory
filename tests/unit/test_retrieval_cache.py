@@ -10,28 +10,26 @@ Tests cover:
 """
 
 import time
-import pytest
 from datetime import datetime, timezone
-from unittest.mock import Mock, patch
 
-from alma.types import (
-    MemorySlice,
-    Heuristic,
-    Outcome,
-    UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-)
+import pytest
+
 from alma.retrieval.cache import (
     CacheBackend,
-    RetrievalCache,
-    NullCache,
-    CacheEntry,
     CacheStats,
+    NullCache,
     PerformanceMetrics,
+    RetrievalCache,
     create_cache,
 )
-
+from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
+    Heuristic,
+    MemorySlice,
+    Outcome,
+    UserPreference,
+)
 
 # ==================== FIXTURES ====================
 
@@ -413,18 +411,30 @@ class TestCacheInvalidation:
 
     def test_invalidate_by_agent_and_project(self, cache, sample_memory_slice):
         """Test invalidating by both agent and project."""
+        # Use different modulo values to create a matrix of agent/project combinations
+        # This ensures we have varied agent/project pairings
         for i in range(9):
             cache.set(
                 query=f"query {i}",
-                agent=f"agent_{i % 3}",  # agent_0, agent_1, agent_2
-                project_id=f"proj_{i % 3}",  # proj_0, proj_1, proj_2
+                agent=f"agent_{i % 3}",  # agent_0, agent_1, agent_2 (cycles every 3)
+                project_id=f"proj_{i // 3}",  # proj_0, proj_0, proj_0, proj_1, proj_1, proj_1, proj_2, proj_2, proj_2
                 result=sample_memory_slice,
             )
+        # This creates:
+        # i=0: agent_0, proj_0
+        # i=1: agent_1, proj_0
+        # i=2: agent_2, proj_0
+        # i=3: agent_0, proj_1
+        # i=4: agent_1, proj_1
+        # i=5: agent_2, proj_1
+        # i=6: agent_0, proj_2
+        # i=7: agent_1, proj_2
+        # i=8: agent_2, proj_2
 
         # Invalidate only agent_0 in proj_0
         count = cache.invalidate(agent="agent_0", project_id="proj_0")
 
-        # Only 1 entry matches both criteria
+        # Only 1 entry matches both criteria (i=0: agent_0, proj_0)
         assert count == 1
         assert cache.get_stats().current_size == 8
 

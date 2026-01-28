@@ -22,12 +22,12 @@ Usage:
     '''
 """
 
+from alma.initializer.initializer import SessionInitializer
 from alma.initializer.types import (
     CodebaseOrientation,
     InitializationResult,
     RulesOfEngagement,
 )
-from alma.initializer.initializer import SessionInitializer
 
 __all__ = [
     "CodebaseOrientation",

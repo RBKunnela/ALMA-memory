@@ -6,28 +6,30 @@ This is the recommended backend for local development and testing.
 """
 
 import json
-import sqlite3
 import logging
-import numpy as np
-from pathlib import Path
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Tuple
+import sqlite3
 from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
+
+from alma.storage.base import StorageBackend
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
 )
-from alma.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
 
 # Try to import FAISS, fall back to numpy-based search if not available
 try:
     import faiss
+
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
@@ -72,6 +74,7 @@ class SQLiteStorage(StorageBackend):
         # Initialize FAISS indices (one per memory type)
         self._indices: Dict[str, Any] = {}
         self._id_maps: Dict[str, List[str]] = {}  # memory_type -> [memory_ids]
+        self._index_dirty: Dict[str, bool] = {}  # Track which indexes need rebuilding
         self._load_faiss_indices()
 
     @classmethod
@@ -149,6 +152,10 @@ class SQLiteStorage(StorageBackend):
                 "CREATE INDEX IF NOT EXISTS idx_outcomes_task_type "
                 "ON outcomes(project_id, agent, task_type)"
             )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_outcomes_timestamp "
+                "ON outcomes(project_id, timestamp)"
+            )
 
             # User preferences table
             cursor.execute("""
@@ -222,9 +229,19 @@ class SQLiteStorage(StorageBackend):
                 "ON embeddings(memory_type)"
             )
 
-    def _load_faiss_indices(self):
-        """Load or create FAISS indices for each memory type."""
-        memory_types = ["heuristics", "outcomes", "domain_knowledge", "anti_patterns"]
+    def _load_faiss_indices(self, memory_types: Optional[List[str]] = None):
+        """Load or create FAISS indices for specified memory types.
+
+        Args:
+            memory_types: List of memory types to load. If None, loads all types.
+        """
+        if memory_types is None:
+            memory_types = [
+                "heuristics",
+                "outcomes",
+                "domain_knowledge",
+                "anti_patterns",
+            ]
 
         for memory_type in memory_types:
             if FAISS_AVAILABLE:
@@ -235,6 +252,7 @@ class SQLiteStorage(StorageBackend):
                 self._indices[memory_type] = []
 
             self._id_maps[memory_type] = []
+            self._index_dirty[memory_type] = False  # Mark as fresh after rebuild
 
             # Load existing embeddings
             with self._get_connection() as conn:
@@ -256,6 +274,19 @@ class SQLiteStorage(StorageBackend):
                         )
                     else:
                         self._indices[memory_type].append(embedding)
+
+    def _ensure_index_fresh(self, memory_type: str) -> None:
+        """Rebuild index for a memory type if it has been marked dirty.
+
+        This implements lazy rebuilding - indexes are only rebuilt when
+        actually needed for search, not immediately on every delete.
+
+        Args:
+            memory_type: The type of memory index to check/rebuild.
+        """
+        if self._index_dirty.get(memory_type, False):
+            logger.debug(f"Rebuilding dirty index for {memory_type}")
+            self._load_faiss_indices([memory_type])
 
     def _add_to_index(
         self,
@@ -296,6 +327,9 @@ class SQLiteStorage(StorageBackend):
         top_k: int,
     ) -> List[Tuple[str, float]]:
         """Search FAISS index for similar embeddings."""
+        # Ensure index is up-to-date before searching (lazy rebuild)
+        self._ensure_index_fresh(memory_type)
+
         if not self._id_maps[memory_type]:
             return []
 
@@ -304,10 +338,12 @@ class SQLiteStorage(StorageBackend):
         if FAISS_AVAILABLE:
             # Normalize for cosine similarity (IndexFlatIP)
             faiss.normalize_L2(query)
-            scores, indices = self._indices[memory_type].search(query, min(top_k, len(self._id_maps[memory_type])))
+            scores, indices = self._indices[memory_type].search(
+                query, min(top_k, len(self._id_maps[memory_type]))
+            )
 
             results = []
-            for score, idx in zip(scores[0], indices[0]):
+            for score, idx in zip(scores[0], indices[0], strict=False):
                 if idx >= 0 and idx < len(self._id_maps[memory_type]):
                     results.append((self._id_maps[memory_type][idx], float(score)))
             return results
@@ -354,7 +390,11 @@ class SQLiteStorage(StorageBackend):
                     heuristic.confidence,
                     heuristic.occurrence_count,
                     heuristic.success_count,
-                    heuristic.last_validated.isoformat() if heuristic.last_validated else None,
+                    (
+                        heuristic.last_validated.isoformat()
+                        if heuristic.last_validated
+                        else None
+                    ),
                     heuristic.created_at.isoformat() if heuristic.created_at else None,
                     json.dumps(heuristic.metadata) if heuristic.metadata else None,
                 ),
@@ -439,7 +479,11 @@ class SQLiteStorage(StorageBackend):
                     knowledge.fact,
                     knowledge.source,
                     knowledge.confidence,
-                    knowledge.last_verified.isoformat() if knowledge.last_verified else None,
+                    (
+                        knowledge.last_verified.isoformat()
+                        if knowledge.last_verified
+                        else None
+                    ),
                     json.dumps(knowledge.metadata) if knowledge.metadata else None,
                 ),
             )
@@ -468,9 +512,21 @@ class SQLiteStorage(StorageBackend):
                     anti_pattern.why_bad,
                     anti_pattern.better_alternative,
                     anti_pattern.occurrence_count,
-                    anti_pattern.last_seen.isoformat() if anti_pattern.last_seen else None,
-                    anti_pattern.created_at.isoformat() if anti_pattern.created_at else None,
-                    json.dumps(anti_pattern.metadata) if anti_pattern.metadata else None,
+                    (
+                        anti_pattern.last_seen.isoformat()
+                        if anti_pattern.last_seen
+                        else None
+                    ),
+                    (
+                        anti_pattern.created_at.isoformat()
+                        if anti_pattern.created_at
+                        else None
+                    ),
+                    (
+                        json.dumps(anti_pattern.metadata)
+                        if anti_pattern.metadata
+                        else None
+                    ),
                 ),
             )
 
@@ -478,6 +534,125 @@ class SQLiteStorage(StorageBackend):
         self._add_to_index("anti_patterns", anti_pattern.id, anti_pattern.embedding)
         logger.debug(f"Saved anti-pattern: {anti_pattern.id}")
         return anti_pattern.id
+
+    # ==================== BATCH WRITE OPERATIONS ====================
+
+    def save_heuristics(self, heuristics: List[Heuristic]) -> List[str]:
+        """Save multiple heuristics in a batch using executemany."""
+        if not heuristics:
+            return []
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.executemany(
+                """
+                INSERT OR REPLACE INTO heuristics
+                (id, agent, project_id, condition, strategy, confidence,
+                 occurrence_count, success_count, last_validated, created_at, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        h.id,
+                        h.agent,
+                        h.project_id,
+                        h.condition,
+                        h.strategy,
+                        h.confidence,
+                        h.occurrence_count,
+                        h.success_count,
+                        h.last_validated.isoformat() if h.last_validated else None,
+                        h.created_at.isoformat() if h.created_at else None,
+                        json.dumps(h.metadata) if h.metadata else None,
+                    )
+                    for h in heuristics
+                ],
+            )
+
+        # Add embeddings to index
+        for h in heuristics:
+            self._add_to_index("heuristics", h.id, h.embedding)
+
+        logger.debug(f"Batch saved {len(heuristics)} heuristics")
+        return [h.id for h in heuristics]
+
+    def save_outcomes(self, outcomes: List[Outcome]) -> List[str]:
+        """Save multiple outcomes in a batch using executemany."""
+        if not outcomes:
+            return []
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.executemany(
+                """
+                INSERT OR REPLACE INTO outcomes
+                (id, agent, project_id, task_type, task_description, success,
+                 strategy_used, duration_ms, error_message, user_feedback, timestamp, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        o.id,
+                        o.agent,
+                        o.project_id,
+                        o.task_type,
+                        o.task_description,
+                        1 if o.success else 0,
+                        o.strategy_used,
+                        o.duration_ms,
+                        o.error_message,
+                        o.user_feedback,
+                        o.timestamp.isoformat() if o.timestamp else None,
+                        json.dumps(o.metadata) if o.metadata else None,
+                    )
+                    for o in outcomes
+                ],
+            )
+
+        # Add embeddings to index
+        for o in outcomes:
+            self._add_to_index("outcomes", o.id, o.embedding)
+
+        logger.debug(f"Batch saved {len(outcomes)} outcomes")
+        return [o.id for o in outcomes]
+
+    def save_domain_knowledge_batch(
+        self, knowledge_items: List[DomainKnowledge]
+    ) -> List[str]:
+        """Save multiple domain knowledge items in a batch using executemany."""
+        if not knowledge_items:
+            return []
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.executemany(
+                """
+                INSERT OR REPLACE INTO domain_knowledge
+                (id, agent, project_id, domain, fact, source, confidence, last_verified, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        k.id,
+                        k.agent,
+                        k.project_id,
+                        k.domain,
+                        k.fact,
+                        k.source,
+                        k.confidence,
+                        k.last_verified.isoformat() if k.last_verified else None,
+                        json.dumps(k.metadata) if k.metadata else None,
+                    )
+                    for k in knowledge_items
+                ],
+            )
+
+        # Add embeddings to index
+        for k in knowledge_items:
+            self._add_to_index("domain_knowledge", k.id, k.embedding)
+
+        logger.debug(f"Batch saved {len(knowledge_items)} domain knowledge items")
+        return [k.id for k in knowledge_items]
 
     # ==================== READ OPERATIONS ====================
 
@@ -596,7 +771,9 @@ class SQLiteStorage(StorageBackend):
         """Get domain knowledge with optional vector search."""
         candidate_ids = None
         if embedding:
-            search_results = self._search_index("domain_knowledge", embedding, top_k * 2)
+            search_results = self._search_index(
+                "domain_knowledge", embedding, top_k * 2
+            )
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -656,6 +833,175 @@ class SQLiteStorage(StorageBackend):
 
             query += " ORDER BY occurrence_count DESC LIMIT ?"
             params.append(top_k)
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_anti_pattern(row) for row in rows]
+
+    # ==================== MULTI-AGENT MEMORY SHARING ====================
+
+    def get_heuristics_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+        min_confidence: float = 0.0,
+    ) -> List[Heuristic]:
+        """Get heuristics from multiple agents using optimized IN query."""
+        if not agents:
+            return []
+
+        candidate_ids = None
+        if embedding:
+            search_results = self._search_index(
+                "heuristics", embedding, top_k * 2 * len(agents)
+            )
+            candidate_ids = [id for id, _ in search_results]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            placeholders = ",".join("?" * len(agents))
+            query = f"SELECT * FROM heuristics WHERE project_id = ? AND confidence >= ? AND agent IN ({placeholders})"
+            params: List[Any] = [project_id, min_confidence] + list(agents)
+
+            if candidate_ids is not None:
+                id_placeholders = ",".join("?" * len(candidate_ids))
+                query += f" AND id IN ({id_placeholders})"
+                params.extend(candidate_ids)
+
+            query += " ORDER BY confidence DESC LIMIT ?"
+            params.append(top_k * len(agents))
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_heuristic(row) for row in rows]
+
+    def get_outcomes_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        task_type: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+        success_only: bool = False,
+    ) -> List[Outcome]:
+        """Get outcomes from multiple agents using optimized IN query."""
+        if not agents:
+            return []
+
+        candidate_ids = None
+        if embedding:
+            search_results = self._search_index(
+                "outcomes", embedding, top_k * 2 * len(agents)
+            )
+            candidate_ids = [id for id, _ in search_results]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            placeholders = ",".join("?" * len(agents))
+            query = f"SELECT * FROM outcomes WHERE project_id = ? AND agent IN ({placeholders})"
+            params: List[Any] = [project_id] + list(agents)
+
+            if task_type:
+                query += " AND task_type = ?"
+                params.append(task_type)
+
+            if success_only:
+                query += " AND success = 1"
+
+            if candidate_ids is not None:
+                id_placeholders = ",".join("?" * len(candidate_ids))
+                query += f" AND id IN ({id_placeholders})"
+                params.extend(candidate_ids)
+
+            query += " ORDER BY timestamp DESC LIMIT ?"
+            params.append(top_k * len(agents))
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_outcome(row) for row in rows]
+
+    def get_domain_knowledge_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        domain: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+    ) -> List[DomainKnowledge]:
+        """Get domain knowledge from multiple agents using optimized IN query."""
+        if not agents:
+            return []
+
+        candidate_ids = None
+        if embedding:
+            search_results = self._search_index(
+                "domain_knowledge", embedding, top_k * 2 * len(agents)
+            )
+            candidate_ids = [id for id, _ in search_results]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            placeholders = ",".join("?" * len(agents))
+            query = f"SELECT * FROM domain_knowledge WHERE project_id = ? AND agent IN ({placeholders})"
+            params: List[Any] = [project_id] + list(agents)
+
+            if domain:
+                query += " AND domain = ?"
+                params.append(domain)
+
+            if candidate_ids is not None:
+                id_placeholders = ",".join("?" * len(candidate_ids))
+                query += f" AND id IN ({id_placeholders})"
+                params.extend(candidate_ids)
+
+            query += " ORDER BY confidence DESC LIMIT ?"
+            params.append(top_k * len(agents))
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_domain_knowledge(row) for row in rows]
+
+    def get_anti_patterns_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+    ) -> List[AntiPattern]:
+        """Get anti-patterns from multiple agents using optimized IN query."""
+        if not agents:
+            return []
+
+        candidate_ids = None
+        if embedding:
+            search_results = self._search_index(
+                "anti_patterns", embedding, top_k * 2 * len(agents)
+            )
+            candidate_ids = [id for id, _ in search_results]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            placeholders = ",".join("?" * len(agents))
+            query = f"SELECT * FROM anti_patterns WHERE project_id = ? AND agent IN ({placeholders})"
+            params: List[Any] = [project_id] + list(agents)
+
+            if candidate_ids is not None:
+                id_placeholders = ",".join("?" * len(candidate_ids))
+                query += f" AND id IN ({id_placeholders})"
+                params.extend(candidate_ids)
+
+            query += " ORDER BY occurrence_count DESC LIMIT ?"
+            params.append(top_k * len(agents))
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
@@ -944,7 +1290,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                "DELETE FROM embeddings WHERE memory_type = 'heuristic' AND memory_id = ?",
+                "DELETE FROM embeddings WHERE memory_type = 'heuristics' AND memory_id = ?",
                 (heuristic_id,),
             )
             cursor = conn.execute(
@@ -952,9 +1298,8 @@ class SQLiteStorage(StorageBackend):
                 (heuristic_id,),
             )
             if cursor.rowcount > 0:
-                # Rebuild index if we had one
-                if "heuristic" in self._indices:
-                    self._load_faiss_indices()
+                # Mark index as dirty for lazy rebuild on next search
+                self._index_dirty["heuristics"] = True
                 return True
             return False
 
@@ -963,7 +1308,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                "DELETE FROM embeddings WHERE memory_type = 'outcome' AND memory_id = ?",
+                "DELETE FROM embeddings WHERE memory_type = 'outcomes' AND memory_id = ?",
                 (outcome_id,),
             )
             cursor = conn.execute(
@@ -971,8 +1316,8 @@ class SQLiteStorage(StorageBackend):
                 (outcome_id,),
             )
             if cursor.rowcount > 0:
-                if "outcome" in self._indices:
-                    self._load_faiss_indices()
+                # Mark index as dirty for lazy rebuild on next search
+                self._index_dirty["outcomes"] = True
                 return True
             return False
 
@@ -989,8 +1334,8 @@ class SQLiteStorage(StorageBackend):
                 (knowledge_id,),
             )
             if cursor.rowcount > 0:
-                if "domain_knowledge" in self._indices:
-                    self._load_faiss_indices()
+                # Mark index as dirty for lazy rebuild on next search
+                self._index_dirty["domain_knowledge"] = True
                 return True
             return False
 
@@ -999,7 +1344,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                "DELETE FROM embeddings WHERE memory_type = 'anti_pattern' AND memory_id = ?",
+                "DELETE FROM embeddings WHERE memory_type = 'anti_patterns' AND memory_id = ?",
                 (anti_pattern_id,),
             )
             cursor = conn.execute(
@@ -1007,7 +1352,7 @@ class SQLiteStorage(StorageBackend):
                 (anti_pattern_id,),
             )
             if cursor.rowcount > 0:
-                if "anti_pattern" in self._indices:
-                    self._load_faiss_indices()
+                # Mark index as dirty for lazy rebuild on next search
+                self._index_dirty["anti_patterns"] = True
                 return True
             return False

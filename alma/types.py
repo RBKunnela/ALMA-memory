@@ -5,13 +5,14 @@ Defines the core data structures for all memory types.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Optional, List, Dict, Any
+from datetime import datetime, timezone
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class MemoryType(Enum):
     """Categories of memory that agents can store and retrieve."""
+
     HEURISTIC = "heuristic"
     OUTCOME = "outcome"
     USER_PREFERENCE = "user_preference"
@@ -22,13 +23,21 @@ class MemoryType(Enum):
 @dataclass
 class MemoryScope:
     """
-    Defines what an agent is allowed to learn.
+    Defines what an agent is allowed to learn and share.
 
     Prevents scope creep by explicitly listing allowed and forbidden domains.
+    Supports multi-agent memory sharing through share_with and inherit_from.
     """
+
     agent_name: str
     can_learn: List[str]
     cannot_learn: List[str]
+    share_with: List[str] = field(
+        default_factory=list
+    )  # Agents that can read this agent's memories
+    inherit_from: List[str] = field(
+        default_factory=list
+    )  # Agents whose memories this agent can read
     min_occurrences_for_heuristic: int = 3
 
     def is_allowed(self, domain: str) -> bool:
@@ -39,6 +48,39 @@ class MemoryScope:
             return True
         return domain in self.can_learn
 
+    def get_readable_agents(self) -> List[str]:
+        """
+        Get list of agents whose memories this agent can read.
+
+        Returns:
+            List containing this agent's name plus all inherited agents.
+        """
+        return [self.agent_name] + list(self.inherit_from)
+
+    def can_read_from(self, other_agent: str) -> bool:
+        """
+        Check if this agent can read memories from another agent.
+
+        Args:
+            other_agent: Name of the agent to check
+
+        Returns:
+            True if this agent can read from other_agent
+        """
+        return other_agent == self.agent_name or other_agent in self.inherit_from
+
+    def shares_with(self, other_agent: str) -> bool:
+        """
+        Check if this agent shares memories with another agent.
+
+        Args:
+            other_agent: Name of the agent to check
+
+        Returns:
+            True if this agent shares with other_agent
+        """
+        return other_agent in self.share_with
+
 
 @dataclass
 class Heuristic:
@@ -47,11 +89,12 @@ class Heuristic:
 
     Heuristics are only created after min_occurrences validations.
     """
+
     id: str
     agent: str
     project_id: str
     condition: str  # "form with multiple required fields"
-    strategy: str   # "test happy path first, then individual validation"
+    strategy: str  # "test happy path first, then individual validation"
     confidence: float  # 0.0 to 1.0
     occurrence_count: int
     success_count: int
@@ -75,6 +118,7 @@ class Outcome:
 
     Outcomes are raw data that can be consolidated into heuristics.
     """
+
     id: str
     agent: str
     project_id: str
@@ -85,7 +129,7 @@ class Outcome:
     duration_ms: Optional[int] = None
     error_message: Optional[str] = None
     user_feedback: Optional[str] = None
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     embedding: Optional[List[float]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -97,13 +141,14 @@ class UserPreference:
 
     Persists across sessions so users don't repeat themselves.
     """
+
     id: str
     user_id: str
     category: str  # "communication", "code_style", "workflow"
     preference: str  # "No emojis in documentation"
     source: str  # "explicit_instruction", "inferred_from_correction"
     confidence: float = 1.0  # Lower for inferred preferences
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -114,6 +159,7 @@ class DomainKnowledge:
 
     Different from heuristics - these are facts, not strategies.
     """
+
     id: str
     agent: str
     project_id: str
@@ -121,7 +167,7 @@ class DomainKnowledge:
     fact: str  # "Login endpoint uses JWT with 24h expiry"
     source: str  # "code_analysis", "documentation", "user_stated"
     confidence: float = 1.0
-    last_verified: datetime = field(default_factory=datetime.utcnow)
+    last_verified: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     embedding: Optional[List[float]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -133,6 +179,7 @@ class AntiPattern:
 
     Helps agents avoid repeating mistakes.
     """
+
     id: str
     agent: str
     project_id: str
@@ -141,7 +188,7 @@ class AntiPattern:
     better_alternative: str  # "Use explicit waits with conditions"
     occurrence_count: int
     last_seen: datetime
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     embedding: Optional[List[float]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -153,6 +200,7 @@ class MemorySlice:
 
     This is what gets injected per-call - must stay under token budget.
     """
+
     heuristics: List[Heuristic] = field(default_factory=list)
     outcomes: List[Outcome] = field(default_factory=list)
     preferences: List[UserPreference] = field(default_factory=list)
@@ -200,7 +248,7 @@ class MemorySlice:
 
         # Basic token estimation (rough: 1 token ~ 4 chars)
         if len(result) > max_tokens * 4:
-            result = result[:max_tokens * 4] + "\n[truncated]"
+            result = result[: max_tokens * 4] + "\n[truncated]"
 
         return result
 
@@ -208,9 +256,9 @@ class MemorySlice:
     def total_items(self) -> int:
         """Total number of memory items in this slice."""
         return (
-            len(self.heuristics) +
-            len(self.outcomes) +
-            len(self.preferences) +
-            len(self.domain_knowledge) +
-            len(self.anti_patterns)
+            len(self.heuristics)
+            + len(self.outcomes)
+            + len(self.preferences)
+            + len(self.domain_knowledge)
+            + len(self.anti_patterns)
         )

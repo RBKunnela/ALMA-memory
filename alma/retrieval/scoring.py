@@ -5,11 +5,11 @@ Combines semantic similarity, recency, and success rate for optimal retrieval.
 """
 
 import math
-from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, TypeVar, Callable
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Any, List, Optional
 
-from alma.types import Heuristic, Outcome, DomainKnowledge, AntiPattern
+from alma.types import AntiPattern, DomainKnowledge, Heuristic, Outcome
 
 
 @dataclass
@@ -19,10 +19,11 @@ class ScoringWeights:
 
     All weights should sum to 1.0 for normalized scores.
     """
-    similarity: float = 0.4      # Semantic relevance to query
-    recency: float = 0.3         # How recently the memory was validated/used
-    success_rate: float = 0.2    # Historical success rate
-    confidence: float = 0.1      # Stored confidence score
+
+    similarity: float = 0.4  # Semantic relevance to query
+    recency: float = 0.3  # How recently the memory was validated/used
+    success_rate: float = 0.2  # Historical success rate
+    confidence: float = 0.1  # Stored confidence score
 
     def __post_init__(self):
         """Validate weights sum to approximately 1.0."""
@@ -38,6 +39,7 @@ class ScoringWeights:
 @dataclass
 class ScoredItem:
     """A memory item with its computed score."""
+
     item: Any
     score: float
     similarity_score: float
@@ -93,26 +95,28 @@ class MemoryScorer:
         similarities = similarities or [1.0] * len(heuristics)
         scored = []
 
-        for h, sim in zip(heuristics, similarities):
+        for h, sim in zip(heuristics, similarities, strict=False):
             recency = self._compute_recency_score(h.last_validated)
             success = h.success_rate
             confidence = h.confidence
 
             total = (
-                self.weights.similarity * sim +
-                self.weights.recency * recency +
-                self.weights.success_rate * success +
-                self.weights.confidence * confidence
+                self.weights.similarity * sim
+                + self.weights.recency * recency
+                + self.weights.success_rate * success
+                + self.weights.confidence * confidence
             )
 
-            scored.append(ScoredItem(
-                item=h,
-                score=total,
-                similarity_score=sim,
-                recency_score=recency,
-                success_score=success,
-                confidence_score=confidence,
-            ))
+            scored.append(
+                ScoredItem(
+                    item=h,
+                    score=total,
+                    similarity_score=sim,
+                    recency_score=recency,
+                    success_score=success,
+                    confidence_score=confidence,
+                )
+            )
 
         return sorted(scored, key=lambda x: -x.score)
 
@@ -140,7 +144,7 @@ class MemoryScorer:
         similarities = similarities or [1.0] * len(outcomes)
         scored = []
 
-        for o, sim in zip(outcomes, similarities):
+        for o, sim in zip(outcomes, similarities, strict=False):
             recency = self._compute_recency_score(o.timestamp)
             # Success gets full score, failure gets partial (still useful to learn from)
             success = 1.0 if o.success else 0.3
@@ -148,20 +152,22 @@ class MemoryScorer:
             confidence = 1.0
 
             total = (
-                self.weights.similarity * sim +
-                self.weights.recency * recency +
-                self.weights.success_rate * success +
-                self.weights.confidence * confidence
+                self.weights.similarity * sim
+                + self.weights.recency * recency
+                + self.weights.success_rate * success
+                + self.weights.confidence * confidence
             )
 
-            scored.append(ScoredItem(
-                item=o,
-                score=total,
-                similarity_score=sim,
-                recency_score=recency,
-                success_score=success,
-                confidence_score=confidence,
-            ))
+            scored.append(
+                ScoredItem(
+                    item=o,
+                    score=total,
+                    similarity_score=sim,
+                    recency_score=recency,
+                    success_score=success,
+                    confidence_score=confidence,
+                )
+            )
 
         return sorted(scored, key=lambda x: -x.score)
 
@@ -186,27 +192,29 @@ class MemoryScorer:
         similarities = similarities or [1.0] * len(knowledge)
         scored = []
 
-        for dk, sim in zip(knowledge, similarities):
+        for dk, sim in zip(knowledge, similarities, strict=False):
             recency = self._compute_recency_score(dk.last_verified)
             # Knowledge doesn't have success rate, use 1.0
             success = 1.0
             confidence = dk.confidence
 
             total = (
-                self.weights.similarity * sim +
-                self.weights.recency * recency +
-                self.weights.success_rate * success +
-                self.weights.confidence * confidence
+                self.weights.similarity * sim
+                + self.weights.recency * recency
+                + self.weights.success_rate * success
+                + self.weights.confidence * confidence
             )
 
-            scored.append(ScoredItem(
-                item=dk,
-                score=total,
-                similarity_score=sim,
-                recency_score=recency,
-                success_score=success,
-                confidence_score=confidence,
-            ))
+            scored.append(
+                ScoredItem(
+                    item=dk,
+                    score=total,
+                    similarity_score=sim,
+                    recency_score=recency,
+                    success_score=success,
+                    confidence_score=confidence,
+                )
+            )
 
         return sorted(scored, key=lambda x: -x.score)
 
@@ -233,7 +241,7 @@ class MemoryScorer:
         similarities = similarities or [1.0] * len(anti_patterns)
         scored = []
 
-        for ap, sim in zip(anti_patterns, similarities):
+        for ap, sim in zip(anti_patterns, similarities, strict=False):
             recency = self._compute_recency_score(ap.last_seen)
             # More occurrences = more important to avoid
             # Normalize occurrence count (cap at 10 for scoring)
@@ -241,20 +249,22 @@ class MemoryScorer:
             confidence = 1.0
 
             total = (
-                self.weights.similarity * sim +
-                self.weights.recency * recency +
-                self.weights.success_rate * success +
-                self.weights.confidence * confidence
+                self.weights.similarity * sim
+                + self.weights.recency * recency
+                + self.weights.success_rate * success
+                + self.weights.confidence * confidence
             )
 
-            scored.append(ScoredItem(
-                item=ap,
-                score=total,
-                similarity_score=sim,
-                recency_score=recency,
-                success_score=success,
-                confidence_score=confidence,
-            ))
+            scored.append(
+                ScoredItem(
+                    item=ap,
+                    score=total,
+                    similarity_score=sim,
+                    recency_score=recency,
+                    success_score=success,
+                    confidence_score=confidence,
+                )
+            )
 
         return sorted(scored, key=lambda x: -x.score)
 
@@ -327,8 +337,8 @@ def compute_composite_score(
     recency_score = math.pow(0.5, recency_days / recency_half_life)
 
     return (
-        weights.similarity * similarity +
-        weights.recency * recency_score +
-        weights.success_rate * success_rate +
-        weights.confidence * confidence
+        weights.similarity * similarity
+        + weights.recency * recency_score
+        + weights.success_rate * success_rate
+        + weights.confidence * confidence
     )

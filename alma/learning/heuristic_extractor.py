@@ -4,15 +4,15 @@ ALMA Heuristic Extraction.
 Analyzes outcomes to identify patterns and create heuristics.
 """
 
-import uuid
 import logging
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Tuple
-from dataclasses import dataclass, field
+import uuid
 from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple
 
-from alma.types import Heuristic, Outcome, MemoryScope
 from alma.storage.base import StorageBackend
+from alma.types import Heuristic, MemoryScope, Outcome
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PatternCandidate:
     """A potential pattern for heuristic creation."""
+
     task_type: str
     strategy: str
     occurrence_count: int
@@ -56,6 +57,7 @@ class PatternCandidate:
 @dataclass
 class ExtractionResult:
     """Result of heuristic extraction."""
+
     heuristics_created: int = 0
     heuristics_updated: int = 0
     patterns_analyzed: int = 0
@@ -137,7 +139,7 @@ class HeuristicExtractor:
         # Group outcomes by agent and task type
         grouped = self._group_outcomes(outcomes)
 
-        for (ag, task_type), type_outcomes in grouped.items():
+        for (ag, _task_type), type_outcomes in grouped.items():
             # Find patterns within this group
             patterns = self._identify_patterns(type_outcomes)
             result.patterns_analyzed += len(patterns)
@@ -204,14 +206,16 @@ class HeuristicExtractor:
         patterns = []
         for strategy, group_outcomes in strategy_groups.items():
             success_count = sum(1 for o in group_outcomes if o.success)
-            patterns.append(PatternCandidate(
-                task_type=group_outcomes[0].task_type,
-                strategy=strategy,
-                occurrence_count=len(group_outcomes),
-                success_count=success_count,
-                failure_count=len(group_outcomes) - success_count,
-                outcomes=group_outcomes,
-            ))
+            patterns.append(
+                PatternCandidate(
+                    task_type=group_outcomes[0].task_type,
+                    strategy=strategy,
+                    occurrence_count=len(group_outcomes),
+                    success_count=success_count,
+                    failure_count=len(group_outcomes) - success_count,
+                    outcomes=group_outcomes,
+                )
+            )
 
         return patterns
 
@@ -291,8 +295,9 @@ class HeuristicExtractor:
         )
 
         for h in heuristics:
-            if (task_type in h.condition and
-                    self._strategies_similar(h.strategy, strategy)):
+            if task_type in h.condition and self._strategies_similar(
+                h.strategy, strategy
+            ):
                 return h
 
         return None
@@ -305,13 +310,9 @@ class HeuristicExtractor:
         """Update an existing heuristic with new data."""
         # Merge counts
         heuristic.occurrence_count = max(
-            heuristic.occurrence_count,
-            pattern.occurrence_count
+            heuristic.occurrence_count, pattern.occurrence_count
         )
-        heuristic.success_count = max(
-            heuristic.success_count,
-            pattern.success_count
-        )
+        heuristic.success_count = max(heuristic.success_count, pattern.success_count)
 
         # Update confidence
         heuristic.confidence = pattern.confidence
@@ -344,8 +345,23 @@ class HeuristicExtractor:
         """Normalize strategy text for comparison."""
         # Remove common stop words and normalize
         stop_words = {
-            "the", "a", "an", "and", "or", "but", "in", "on", "at",
-            "to", "for", "of", "with", "by", "then", "first", "next",
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "of",
+            "with",
+            "by",
+            "then",
+            "first",
+            "next",
         }
 
         words = strategy.lower().replace(",", " ").replace(".", " ").split()

@@ -30,13 +30,13 @@ Usage:
     )
 """
 
+from alma.confidence.engine import ConfidenceEngine
 from alma.confidence.types import (
     ConfidenceSignal,
     OpportunitySignal,
     Recommendation,
     RiskSignal,
 )
-from alma.confidence.engine import ConfidenceEngine
 
 __all__ = [
     "ConfidenceSignal",

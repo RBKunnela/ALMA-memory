@@ -11,16 +11,14 @@ Features:
 """
 
 import logging
-import time
 import threading
-import math
-from datetime import datetime, timezone, timedelta
-from typing import Optional, List, Dict, Any, Callable
-from dataclasses import dataclass, field
-from enum import Enum
+import time
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
-from alma.types import Heuristic, Outcome, DomainKnowledge, AntiPattern
 from alma.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
@@ -28,17 +26,19 @@ logger = logging.getLogger(__name__)
 
 class PruneReason(Enum):
     """Reason for pruning a memory item."""
-    STALE = "stale"                    # Too old without validation
+
+    STALE = "stale"  # Too old without validation
     LOW_CONFIDENCE = "low_confidence"  # Below confidence threshold
-    LOW_SUCCESS_RATE = "low_success"   # Too many failures
-    SUPERSEDED = "superseded"          # Replaced by better heuristic
-    DUPLICATE = "duplicate"            # Duplicate of another item
-    QUOTA_EXCEEDED = "quota"           # Agent memory quota exceeded
+    LOW_SUCCESS_RATE = "low_success"  # Too many failures
+    SUPERSEDED = "superseded"  # Replaced by better heuristic
+    DUPLICATE = "duplicate"  # Duplicate of another item
+    QUOTA_EXCEEDED = "quota"  # Agent memory quota exceeded
 
 
 @dataclass
 class PruneResult:
     """Result of a prune operation."""
+
     reason: PruneReason
     item_type: str
     item_id: str
@@ -50,6 +50,7 @@ class PruneResult:
 @dataclass
 class PruneSummary:
     """Summary of a complete prune operation."""
+
     outcomes_pruned: int = 0
     heuristics_pruned: int = 0
     knowledge_pruned: int = 0
@@ -77,6 +78,7 @@ class PrunePolicy:
 
     Defines thresholds and quotas for different memory types.
     """
+
     # Age-based pruning
     outcome_max_age_days: int = 90
     knowledge_max_age_days: int = 180
@@ -146,6 +148,7 @@ class ForgettingEngine:
             PruneSummary with details
         """
         import time
+
         start_time = time.time()
 
         summary = PruneSummary()
@@ -175,10 +178,10 @@ class ForgettingEngine:
         summary.outcomes_pruned += quota_pruned.get("outcomes", 0)
 
         summary.total_pruned = (
-            summary.outcomes_pruned +
-            summary.heuristics_pruned +
-            summary.knowledge_pruned +
-            summary.anti_patterns_pruned
+            summary.outcomes_pruned
+            + summary.heuristics_pruned
+            + summary.knowledge_pruned
+            + summary.anti_patterns_pruned
         )
 
         summary.execution_time_ms = int((time.time() - start_time) * 1000)
@@ -214,14 +217,16 @@ class ForgettingEngine:
             count = sum(1 for o in outcomes if o.timestamp < cutoff)
             for o in outcomes:
                 if o.timestamp < cutoff:
-                    results.append(PruneResult(
-                        reason=PruneReason.STALE,
-                        item_type="outcome",
-                        item_id=o.id,
-                        agent=o.agent,
-                        project_id=project_id,
-                        details=f"Older than {self.policy.outcome_max_age_days} days",
-                    ))
+                    results.append(
+                        PruneResult(
+                            reason=PruneReason.STALE,
+                            item_type="outcome",
+                            item_id=o.id,
+                            agent=o.agent,
+                            project_id=project_id,
+                            details=f"Older than {self.policy.outcome_max_age_days} days",
+                        )
+                    )
             return count
         else:
             return self.storage.delete_outcomes_older_than(
@@ -259,8 +264,10 @@ class ForgettingEngine:
                 details = f"Confidence {h.confidence:.2f} < {self.policy.heuristic_min_confidence}"
 
             # Check success rate (only if enough occurrences)
-            elif (h.occurrence_count >= self.policy.min_occurrences_before_prune and
-                  h.success_rate < self.policy.heuristic_min_success_rate):
+            elif (
+                h.occurrence_count >= self.policy.min_occurrences_before_prune
+                and h.success_rate < self.policy.heuristic_min_success_rate
+            ):
                 reason = PruneReason.LOW_SUCCESS_RATE
                 details = f"Success rate {h.success_rate:.2f} < {self.policy.heuristic_min_success_rate}"
 
@@ -271,14 +278,16 @@ class ForgettingEngine:
 
             if reason:
                 to_delete.append(h)
-                results.append(PruneResult(
-                    reason=reason,
-                    item_type="heuristic",
-                    item_id=h.id,
-                    agent=h.agent,
-                    project_id=project_id,
-                    details=details,
-                ))
+                results.append(
+                    PruneResult(
+                        reason=reason,
+                        item_type="heuristic",
+                        item_id=h.id,
+                        agent=h.agent,
+                        project_id=project_id,
+                        details=details,
+                    )
+                )
 
         if not dry_run:
             for h in to_delete:
@@ -326,14 +335,16 @@ class ForgettingEngine:
 
             if reason:
                 to_delete.append(dk)
-                results.append(PruneResult(
-                    reason=reason,
-                    item_type="domain_knowledge",
-                    item_id=dk.id,
-                    agent=dk.agent,
-                    project_id=project_id,
-                    details=details,
-                ))
+                results.append(
+                    PruneResult(
+                        reason=reason,
+                        item_type="domain_knowledge",
+                        item_id=dk.id,
+                        agent=dk.agent,
+                        project_id=project_id,
+                        details=details,
+                    )
+                )
 
         if not dry_run:
             for dk in to_delete:
@@ -362,14 +373,16 @@ class ForgettingEngine:
         for ap in anti_patterns:
             if ap.last_seen < age_cutoff:
                 to_delete.append(ap)
-                results.append(PruneResult(
-                    reason=PruneReason.STALE,
-                    item_type="anti_pattern",
-                    item_id=ap.id,
-                    agent=ap.agent,
-                    project_id=project_id,
-                    details=f"Not seen since {ap.last_seen.date()}",
-                ))
+                results.append(
+                    PruneResult(
+                        reason=PruneReason.STALE,
+                        item_type="anti_pattern",
+                        item_id=ap.id,
+                        agent=ap.agent,
+                        project_id=project_id,
+                        details=f"Not seen since {ap.last_seen.date()}",
+                    )
+                )
 
         if not dry_run:
             for ap in to_delete:
@@ -409,14 +422,16 @@ class ForgettingEngine:
                 to_remove = len(heuristics) - self.policy.max_heuristics_per_agent
 
                 for h in sorted_h[:to_remove]:
-                    results.append(PruneResult(
-                        reason=PruneReason.QUOTA_EXCEEDED,
-                        item_type="heuristic",
-                        item_id=h.id,
-                        agent=ag,
-                        project_id=project_id,
-                        details=f"Exceeded quota of {self.policy.max_heuristics_per_agent}",
-                    ))
+                    results.append(
+                        PruneResult(
+                            reason=PruneReason.QUOTA_EXCEEDED,
+                            item_type="heuristic",
+                            item_id=h.id,
+                            agent=ag,
+                            project_id=project_id,
+                            details=f"Exceeded quota of {self.policy.max_heuristics_per_agent}",
+                        )
+                    )
                     if not dry_run:
                         self.storage.delete_heuristic(h.id)
                     pruned["heuristics"] += 1
@@ -435,14 +450,16 @@ class ForgettingEngine:
                 to_remove = len(outcomes) - self.policy.max_outcomes_per_agent
 
                 for o in sorted_o[:to_remove]:
-                    results.append(PruneResult(
-                        reason=PruneReason.QUOTA_EXCEEDED,
-                        item_type="outcome",
-                        item_id=o.id,
-                        agent=ag,
-                        project_id=project_id,
-                        details=f"Exceeded quota of {self.policy.max_outcomes_per_agent}",
-                    ))
+                    results.append(
+                        PruneResult(
+                            reason=PruneReason.QUOTA_EXCEEDED,
+                            item_type="outcome",
+                            item_id=o.id,
+                            agent=ag,
+                            project_id=project_id,
+                            details=f"Exceeded quota of {self.policy.max_outcomes_per_agent}",
+                        )
+                    )
                     if not dry_run:
                         self.storage.delete_outcome(o.id)
                     pruned["outcomes"] += 1
@@ -476,10 +493,10 @@ class ForgettingEngine:
 
         # Weighted combination
         return (
-            0.3 * age_score +
-            0.3 * confidence +
-            0.2 * success_rate +
-            0.2 * occurrence_score
+            0.3 * age_score
+            + 0.3 * confidence
+            + 0.2 * success_rate
+            + 0.2 * occurrence_score
         )
 
     def identify_candidates(
@@ -520,15 +537,17 @@ class ForgettingEngine:
                 success_rate=h.success_rate,
                 occurrence_count=h.occurrence_count,
             )
-            candidates.append({
-                "type": "heuristic",
-                "id": h.id,
-                "agent": h.agent,
-                "score": score,
-                "age_days": int(age_days),
-                "confidence": h.confidence,
-                "summary": h.strategy[:50],
-            })
+            candidates.append(
+                {
+                    "type": "heuristic",
+                    "id": h.id,
+                    "agent": h.agent,
+                    "score": score,
+                    "age_days": int(age_days),
+                    "confidence": h.confidence,
+                    "summary": h.strategy[:50],
+                }
+            )
 
         # Sort by score (lowest first = best candidates for pruning)
         candidates.sort(key=lambda x: x["score"])
@@ -609,7 +628,9 @@ class LinearDecay(DecayFunction):
 
     def compute_decay(self, days_since_validation: float) -> float:
         """Compute linear decay multiplier."""
-        decay = 1.0 - (days_since_validation / self.decay_period_days) * (1.0 - self.min_value)
+        decay = 1.0 - (days_since_validation / self.decay_period_days) * (
+            1.0 - self.min_value
+        )
         return max(self.min_value, decay)
 
     def get_name(self) -> str:
@@ -673,6 +694,7 @@ class NoDecay(DecayFunction):
 @dataclass
 class DecayResult:
     """Result of applying confidence decay."""
+
     items_processed: int = 0
     items_updated: int = 0
     items_pruned: int = 0
@@ -743,7 +765,7 @@ class ConfidenceDecayer:
             decay_multiplier = self.decay_function.compute_decay(days_since)
 
             new_confidence = h.confidence * decay_multiplier
-            total_decay += (1.0 - decay_multiplier)
+            total_decay += 1.0 - decay_multiplier
 
             if new_confidence != h.confidence:
                 if new_confidence < self.prune_below_confidence:
@@ -770,7 +792,7 @@ class ConfidenceDecayer:
             decay_multiplier = self.decay_function.compute_decay(days_since)
 
             new_confidence = dk.confidence * decay_multiplier
-            total_decay += (1.0 - decay_multiplier)
+            total_decay += 1.0 - decay_multiplier
 
             if new_confidence != dk.confidence:
                 if new_confidence < self.prune_below_confidence:
@@ -802,6 +824,7 @@ class ConfidenceDecayer:
 @dataclass
 class MemoryHealthMetrics:
     """Metrics about memory health and growth."""
+
     total_items: int = 0
     heuristic_count: int = 0
     outcome_count: int = 0
@@ -836,6 +859,7 @@ class MemoryHealthMetrics:
 @dataclass
 class HealthAlert:
     """An alert about memory health issues."""
+
     level: str  # "warning", "critical"
     category: str
     message: str
@@ -847,6 +871,7 @@ class HealthAlert:
 @dataclass
 class HealthThresholds:
     """Thresholds for health monitoring alerts."""
+
     # Warning thresholds
     max_total_items_warning: int = 5000
     max_stale_percentage_warning: float = 0.3
@@ -963,10 +988,10 @@ class MemoryHealthMonitor:
         metrics.anti_pattern_count = len(anti_patterns)
 
         metrics.total_items = (
-            metrics.heuristic_count +
-            metrics.outcome_count +
-            metrics.knowledge_count +
-            metrics.anti_pattern_count
+            metrics.heuristic_count
+            + metrics.outcome_count
+            + metrics.knowledge_count
+            + metrics.anti_pattern_count
         )
 
         # Get agent count
@@ -980,7 +1005,7 @@ class MemoryHealthMonitor:
         # Store in history
         self._metrics_history.append(metrics)
         if len(self._metrics_history) > self._max_history:
-            self._metrics_history = self._metrics_history[-self._max_history:]
+            self._metrics_history = self._metrics_history[-self._max_history :]
 
         return metrics
 
@@ -1000,70 +1025,84 @@ class MemoryHealthMonitor:
 
         # Check total items
         if metrics.total_items >= t.max_total_items_critical:
-            alerts.append(HealthAlert(
-                level="critical",
-                category="total_items",
-                message="Memory item count critically high",
-                current_value=metrics.total_items,
-                threshold=t.max_total_items_critical,
-            ))
+            alerts.append(
+                HealthAlert(
+                    level="critical",
+                    category="total_items",
+                    message="Memory item count critically high",
+                    current_value=metrics.total_items,
+                    threshold=t.max_total_items_critical,
+                )
+            )
         elif metrics.total_items >= t.max_total_items_warning:
-            alerts.append(HealthAlert(
-                level="warning",
-                category="total_items",
-                message="Memory item count approaching limit",
-                current_value=metrics.total_items,
-                threshold=t.max_total_items_warning,
-            ))
+            alerts.append(
+                HealthAlert(
+                    level="warning",
+                    category="total_items",
+                    message="Memory item count approaching limit",
+                    current_value=metrics.total_items,
+                    threshold=t.max_total_items_warning,
+                )
+            )
 
         # Check staleness
         if metrics.heuristic_count > 0:
             stale_percentage = metrics.stale_heuristic_count / metrics.heuristic_count
             if stale_percentage >= t.max_stale_percentage_critical:
-                alerts.append(HealthAlert(
-                    level="critical",
-                    category="staleness",
-                    message="Too many stale heuristics",
-                    current_value=f"{stale_percentage:.0%}",
-                    threshold=f"{t.max_stale_percentage_critical:.0%}",
-                ))
+                alerts.append(
+                    HealthAlert(
+                        level="critical",
+                        category="staleness",
+                        message="Too many stale heuristics",
+                        current_value=f"{stale_percentage:.0%}",
+                        threshold=f"{t.max_stale_percentage_critical:.0%}",
+                    )
+                )
             elif stale_percentage >= t.max_stale_percentage_warning:
-                alerts.append(HealthAlert(
-                    level="warning",
-                    category="staleness",
-                    message="Many heuristics are stale",
-                    current_value=f"{stale_percentage:.0%}",
-                    threshold=f"{t.max_stale_percentage_warning:.0%}",
-                ))
+                alerts.append(
+                    HealthAlert(
+                        level="warning",
+                        category="staleness",
+                        message="Many heuristics are stale",
+                        current_value=f"{stale_percentage:.0%}",
+                        threshold=f"{t.max_stale_percentage_warning:.0%}",
+                    )
+                )
 
         # Check average confidence
         if metrics.heuristic_count > 0:
             if metrics.avg_heuristic_confidence < t.min_avg_confidence_critical:
-                alerts.append(HealthAlert(
-                    level="critical",
-                    category="confidence",
-                    message="Average heuristic confidence critically low",
-                    current_value=f"{metrics.avg_heuristic_confidence:.2f}",
-                    threshold=f"{t.min_avg_confidence_critical:.2f}",
-                ))
+                alerts.append(
+                    HealthAlert(
+                        level="critical",
+                        category="confidence",
+                        message="Average heuristic confidence critically low",
+                        current_value=f"{metrics.avg_heuristic_confidence:.2f}",
+                        threshold=f"{t.min_avg_confidence_critical:.2f}",
+                    )
+                )
             elif metrics.avg_heuristic_confidence < t.min_avg_confidence_warning:
-                alerts.append(HealthAlert(
-                    level="warning",
-                    category="confidence",
-                    message="Average heuristic confidence is low",
-                    current_value=f"{metrics.avg_heuristic_confidence:.2f}",
-                    threshold=f"{t.min_avg_confidence_warning:.2f}",
-                ))
+                alerts.append(
+                    HealthAlert(
+                        level="warning",
+                        category="confidence",
+                        message="Average heuristic confidence is low",
+                        current_value=f"{metrics.avg_heuristic_confidence:.2f}",
+                        threshold=f"{t.min_avg_confidence_warning:.2f}",
+                    )
+                )
 
         # Check storage size
         if metrics.storage_bytes >= t.max_storage_bytes_critical:
-            alerts.append(HealthAlert(
-                level="critical",
-                category="storage",
-                message="Memory storage size critically high",
-                current_value=f"{metrics.storage_bytes / (1024*1024):.1f}MB",
-                threshold=f"{t.max_storage_bytes_critical / (1024*1024):.1f}MB",
-            ))
+            alerts.append(
+                HealthAlert(
+                    level="critical",
+                    category="storage",
+                    message="Memory storage size critically high",
+                    current_value=f"{metrics.storage_bytes / (1024 * 1024):.1f}MB",
+                    threshold=f"{t.max_storage_bytes_critical / (1024 * 1024):.1f}MB",
+                )
+            )
 
         # Notify handlers
         for alert in alerts:
@@ -1122,6 +1161,7 @@ class MemoryHealthMonitor:
 @dataclass
 class CleanupJob:
     """Configuration for a scheduled cleanup job."""
+
     name: str
     project_id: str
     interval_hours: float
@@ -1136,6 +1176,7 @@ class CleanupJob:
 @dataclass
 class CleanupResult:
     """Result of a cleanup job execution."""
+
     job_name: str
     project_id: str
     started_at: datetime
@@ -1198,7 +1239,9 @@ class CleanupScheduler:
             now = datetime.now(timezone.utc)
             job.next_run = now + timedelta(hours=job.interval_hours)
             self._jobs[job.name] = job
-            logger.info(f"Registered cleanup job '{job.name}' for project {job.project_id}")
+            logger.info(
+                f"Registered cleanup job '{job.name}' for project {job.project_id}"
+            )
 
     def unregister_job(self, name: str) -> bool:
         """
@@ -1247,7 +1290,8 @@ class CleanupScheduler:
 
         with self._lock:
             due_jobs = [
-                job for job in self._jobs.values()
+                job
+                for job in self._jobs.values()
                 if job.enabled and job.next_run and job.next_run <= now
             ]
 
@@ -1257,14 +1301,16 @@ class CleanupScheduler:
                 results.append(result)
             except Exception as e:
                 logger.error(f"Error running job '{job.name}': {e}")
-                results.append(CleanupResult(
-                    job_name=job.name,
-                    project_id=job.project_id,
-                    started_at=now,
-                    completed_at=datetime.now(timezone.utc),
-                    success=False,
-                    error=str(e),
-                ))
+                results.append(
+                    CleanupResult(
+                        job_name=job.name,
+                        project_id=job.project_id,
+                        started_at=now,
+                        completed_at=datetime.now(timezone.utc),
+                        success=False,
+                        error=str(e),
+                    )
+                )
 
         return results
 
@@ -1320,7 +1366,7 @@ class CleanupScheduler:
         with self._lock:
             self._history.append(result)
             if len(self._history) > self._max_history:
-                self._history = self._history[-self._max_history:]
+                self._history = self._history[-self._max_history :]
 
         return result
 
@@ -1387,8 +1433,12 @@ class CleanupScheduler:
                         (r.completed_at - r.started_at).total_seconds() * 1000
                     ),
                     "success": r.success,
-                    "items_pruned": r.prune_summary.total_pruned if r.prune_summary else 0,
-                    "items_decayed": r.decay_result.items_updated if r.decay_result else 0,
+                    "items_pruned": (
+                        r.prune_summary.total_pruned if r.prune_summary else 0
+                    ),
+                    "items_decayed": (
+                        r.decay_result.items_updated if r.decay_result else 0
+                    ),
                     "alerts": len(r.alerts),
                     "error": r.error,
                 }

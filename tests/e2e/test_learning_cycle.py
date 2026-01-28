@@ -7,15 +7,15 @@ Tests complete learning workflows:
 3. Repeated failures -> Anti-pattern creation
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+import pytest
+
 from alma import ALMA, MemoryScope
-from alma.storage.file_based import FileBasedStorage
-from alma.retrieval.engine import RetrievalEngine
-from alma.learning.protocols import LearningProtocol
 from alma.integration.helena import HELENA_CATEGORIES
+from alma.learning.protocols import LearningProtocol
+from alma.retrieval.engine import RetrievalEngine
+from alma.storage.file_based import FileBasedStorage
 
 
 class TestCompleteLearnCycle:
@@ -81,7 +81,7 @@ class TestCompleteLearnCycle:
         )
 
         # Then retrieve for a similar task
-        memories = fresh_alma.retrieve(
+        fresh_alma.retrieve(
             task="Test registration form",
             agent="helena",
         )
@@ -191,7 +191,7 @@ class TestLearningProgression:
     def test_similar_tasks_share_learning(self, progression_alma: ALMA):
         """Learning from one task should help with similar tasks."""
         # Learn about authentication
-        for i in range(5):
+        for _i in range(5):
             progression_alma.learn(
                 agent="victor",
                 task="Test JWT authentication",
@@ -209,7 +209,7 @@ class TestLearningProgression:
         )
 
         # Retrieve for a related task
-        memories = progression_alma.retrieve(
+        progression_alma.retrieve(
             task="Test OAuth authentication",
             agent="victor",
         )
@@ -265,7 +265,7 @@ class TestFailurePatternDetection:
     def test_failure_pattern_retrieval(self, failure_alma: ALMA):
         """Failed outcomes should inform future retrievals."""
         # Create failure pattern
-        for i in range(3):
+        for _i in range(3):
             failure_alma.learn(
                 agent="helena",
                 task="Test with position selector",
@@ -276,7 +276,7 @@ class TestFailurePatternDetection:
             )
 
         # Retrieve for similar task
-        memories = failure_alma.retrieve(
+        failure_alma.retrieve(
             task="Find element to click",
             agent="helena",
         )
@@ -326,7 +326,7 @@ class TestForgetMechanism:
         stats_before = forget_alma.get_stats(agent="helena")
 
         # Try to forget with strict criteria
-        pruned = forget_alma.forget(
+        forget_alma.forget(
             agent="helena",
             older_than_days=0,
             below_confidence=0.0,
@@ -335,7 +335,9 @@ class TestForgetMechanism:
         stats_after = forget_alma.get_stats(agent="helena")
 
         # With older_than_days=0, nothing should be pruned (all are recent)
-        assert stats_after.get("outcomes_count", 0) <= stats_before.get("outcomes_count", 5)
+        assert stats_after.get("outcomes_count", 0) <= stats_before.get(
+            "outcomes_count", 5
+        )
 
 
 class TestCacheInvalidation:
@@ -367,7 +369,7 @@ class TestCacheInvalidation:
     def test_cache_invalidated_after_learn(self, cache_alma: ALMA):
         """Cache should be invalidated after learning."""
         # First retrieval
-        memories1 = cache_alma.retrieve(
+        cache_alma.retrieve(
             task="Test form",
             agent="helena",
         )
@@ -382,7 +384,7 @@ class TestCacheInvalidation:
         )
 
         # Second retrieval should include new learning
-        memories2 = cache_alma.retrieve(
+        cache_alma.retrieve(
             task="Test form",
             agent="helena",
         )
@@ -393,7 +395,7 @@ class TestCacheInvalidation:
     def test_cache_invalidated_after_add_knowledge(self, cache_alma: ALMA):
         """Cache should be invalidated after adding domain knowledge."""
         # First retrieval
-        memories1 = cache_alma.retrieve(
+        cache_alma.retrieve(
             task="Selector patterns",
             agent="helena",
         )
@@ -407,7 +409,7 @@ class TestCacheInvalidation:
         )
 
         # Second retrieval should include new knowledge
-        memories2 = cache_alma.retrieve(
+        cache_alma.retrieve(
             task="Selector patterns",
             agent="helena",
         )

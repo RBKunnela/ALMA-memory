@@ -6,15 +6,14 @@ Enables Mem0-style automatic learning from conversations.
 """
 
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from alma.extraction import (
-    create_extractor,
-    FactExtractor,
     ExtractedFact,
+    FactExtractor,
     FactType,
+    create_extractor,
 )
-from alma.types import MemoryScope
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +21,19 @@ logger = logging.getLogger(__name__)
 class AutoLearner:
     """
     Automatic learning from conversations.
-    
+
     This class bridges the gap between Mem0's automatic extraction
     and ALMA's explicit learning protocols. It:
-    
+
     1. Extracts facts from conversations using LLM or rules
     2. Validates facts against agent scopes
     3. Deduplicates against existing memories
     4. Commits valid facts to ALMA storage
-    
+
     Usage:
         alma = ALMA.from_config(".alma/config.yaml")
         auto_learner = AutoLearner(alma)
-        
+
         # After a conversation
         results = auto_learner.learn_from_conversation(
             messages=[
@@ -44,7 +43,7 @@ class AutoLearner:
             agent="helena",
         )
     """
-    
+
     def __init__(
         self,
         alma,  # ALMA instance - avoid circular import
@@ -54,7 +53,7 @@ class AutoLearner:
     ):
         """
         Initialize AutoLearner.
-        
+
         Args:
             alma: ALMA instance for storage and retrieval
             extractor: Custom extractor, or None for auto-detection
@@ -65,7 +64,7 @@ class AutoLearner:
         self.extractor = extractor or create_extractor()
         self.auto_commit = auto_commit
         self.min_confidence = min_confidence
-        
+
     def learn_from_conversation(
         self,
         messages: List[Dict[str, str]],
@@ -75,24 +74,24 @@ class AutoLearner:
     ) -> Dict[str, Any]:
         """
         Extract and learn from a conversation.
-        
+
         Args:
             messages: Conversation messages
             agent: Agent that had the conversation
             user_id: Optional user ID for preferences
             commit: Override auto_commit setting
-            
+
         Returns:
             Dict with extraction results and commit status
         """
         should_commit = commit if commit is not None else self.auto_commit
-        
+
         # Get agent scope for context
         scope = self.alma.scopes.get(agent)
         agent_context = None
         if scope:
             agent_context = f"Agent '{agent}' can learn: {scope.can_learn}. Cannot learn: {scope.cannot_learn}"
-        
+
         # Get existing facts to avoid duplicates
         existing_memories = self.alma.retrieve(
             task=" ".join(m["content"] for m in messages[-3:]),  # Recent context
@@ -106,40 +105,44 @@ class AutoLearner:
             existing_facts.append(f"AVOID: {ap.pattern}")
         for dk in existing_memories.domain_knowledge:
             existing_facts.append(dk.fact)
-            
+
         # Extract facts
         extraction_result = self.extractor.extract(
             messages=messages,
             agent_context=agent_context,
             existing_facts=existing_facts if existing_facts else None,
         )
-        
+
         # Filter by confidence and scope
         valid_facts = []
         rejected_facts = []
-        
+
         for fact in extraction_result.facts:
             # Check confidence
             if fact.confidence < self.min_confidence:
-                rejected_facts.append({
-                    "fact": fact,
-                    "reason": f"Low confidence: {fact.confidence} < {self.min_confidence}",
-                })
+                rejected_facts.append(
+                    {
+                        "fact": fact,
+                        "reason": f"Low confidence: {fact.confidence} < {self.min_confidence}",
+                    }
+                )
                 continue
-                
+
             # Check scope for heuristics and anti-patterns
             if scope and fact.fact_type in (FactType.HEURISTIC, FactType.ANTI_PATTERN):
                 # Infer domain from content
                 inferred_domain = self._infer_domain(fact.content)
                 if inferred_domain and not scope.is_allowed(inferred_domain):
-                    rejected_facts.append({
-                        "fact": fact,
-                        "reason": f"Outside agent scope: {inferred_domain}",
-                    })
+                    rejected_facts.append(
+                        {
+                            "fact": fact,
+                            "reason": f"Outside agent scope: {inferred_domain}",
+                        }
+                    )
                     continue
-                    
+
             valid_facts.append(fact)
-        
+
         # Commit if enabled
         committed = []
         if should_commit:
@@ -150,11 +153,13 @@ class AutoLearner:
                         committed.append({"fact": fact, "id": result})
                 except Exception as e:
                     logger.error(f"Failed to commit fact: {e}")
-                    rejected_facts.append({
-                        "fact": fact,
-                        "reason": f"Commit failed: {str(e)}",
-                    })
-        
+                    rejected_facts.append(
+                        {
+                            "fact": fact,
+                            "reason": f"Commit failed: {str(e)}",
+                        }
+                    )
+
         return {
             "extracted_count": len(extraction_result.facts),
             "valid_count": len(valid_facts),
@@ -166,7 +171,7 @@ class AutoLearner:
             "rejected": rejected_facts,
             "valid_facts": valid_facts,
         }
-    
+
     def _commit_fact(
         self,
         fact: ExtractedFact,
@@ -174,7 +179,7 @@ class AutoLearner:
         user_id: Optional[str],
     ) -> Optional[str]:
         """Commit a single fact to ALMA storage."""
-        
+
         if fact.fact_type == FactType.HEURISTIC:
             # Use learning protocol for heuristics
             return self.alma.learning.add_heuristic_direct(
@@ -185,7 +190,7 @@ class AutoLearner:
                 confidence=fact.confidence,
                 metadata={"source": "auto_extraction"},
             )
-            
+
         elif fact.fact_type == FactType.ANTI_PATTERN:
             return self.alma.learning.add_anti_pattern(
                 agent=agent,
@@ -194,7 +199,7 @@ class AutoLearner:
                 why_bad=fact.condition,
                 better_alternative=fact.strategy,
             )
-            
+
         elif fact.fact_type == FactType.PREFERENCE:
             if user_id:
                 pref = self.alma.add_user_preference(
@@ -204,7 +209,7 @@ class AutoLearner:
                     source="auto_extraction",
                 )
                 return pref.id if pref else None
-                
+
         elif fact.fact_type == FactType.DOMAIN_KNOWLEDGE:
             knowledge = self.alma.add_domain_knowledge(
                 agent=agent,
@@ -213,7 +218,7 @@ class AutoLearner:
                 source="auto_extraction",
             )
             return knowledge.id if knowledge else None
-            
+
         elif fact.fact_type == FactType.OUTCOME:
             # Outcomes need success/failure info we don't have
             # Store as domain knowledge instead
@@ -224,13 +229,13 @@ class AutoLearner:
                 source="auto_extraction",
             )
             return knowledge.id if knowledge else None
-            
+
         return None
-    
+
     def _infer_domain(self, content: str) -> Optional[str]:
         """Infer domain from fact content using keywords."""
         content_lower = content.lower()
-        
+
         domain_keywords = {
             "testing": ["test", "assert", "selenium", "playwright", "cypress"],
             "frontend": ["css", "html", "react", "vue", "ui", "button", "form"],
@@ -238,22 +243,22 @@ class AutoLearner:
             "security": ["auth", "token", "password", "encrypt", "csrf"],
             "performance": ["latency", "cache", "optimize", "slow", "fast"],
         }
-        
+
         for domain, keywords in domain_keywords.items():
             if any(kw in content_lower for kw in keywords):
                 return domain
-                
+
         return None
 
 
 def add_auto_learning_to_alma(alma) -> AutoLearner:
     """
     Convenience function to add auto-learning to an ALMA instance.
-    
+
     Usage:
         alma = ALMA.from_config(".alma/config.yaml")
         auto_learner = add_auto_learning_to_alma(alma)
-        
+
         # Now use auto_learner.learn_from_conversation()
     """
     return AutoLearner(alma)

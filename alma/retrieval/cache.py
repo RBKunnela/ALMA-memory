@@ -5,16 +5,15 @@ Multi-backend caching layer for retrieval results with TTL-based expiration.
 Supports in-memory and Redis backends with performance monitoring.
 """
 
-import time
-import json
 import hashlib
-import threading
+import json
 import logging
+import threading
+import time
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, List, Callable, Tuple
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from contextlib import contextmanager
+from typing import Any, Callable, Dict, List, Optional
 
 from alma.types import MemorySlice
 
@@ -27,6 +26,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CacheEntry:
     """A cached retrieval result with metadata."""
+
     result: MemorySlice
     created_at: float  # time.time() timestamp
     expires_at: float
@@ -41,6 +41,7 @@ class CacheEntry:
 @dataclass
 class CacheStats:
     """Statistics about cache performance."""
+
     hits: int = 0
     misses: int = 0
     evictions: int = 0
@@ -81,6 +82,7 @@ class CacheStats:
 @dataclass
 class PerformanceMetrics:
     """Tracks timing metrics for performance analysis."""
+
     get_times: List[float] = field(default_factory=list)
     set_times: List[float] = field(default_factory=list)
     max_samples: int = 1000
@@ -89,13 +91,13 @@ class PerformanceMetrics:
         """Record a get operation time."""
         self.get_times.append(duration_ms)
         if len(self.get_times) > self.max_samples:
-            self.get_times = self.get_times[-self.max_samples:]
+            self.get_times = self.get_times[-self.max_samples :]
 
     def record_set(self, duration_ms: float):
         """Record a set operation time."""
         self.set_times.append(duration_ms)
         if len(self.set_times) > self.max_samples:
-            self.set_times = self.set_times[-self.max_samples:]
+            self.set_times = self.set_times[-self.max_samples :]
 
     def get_percentile(self, times: List[float], percentile: float) -> float:
         """Calculate percentile from timing data."""
@@ -430,9 +432,7 @@ class RetrievalCache(CacheBackend):
         """Remove all expired entries."""
         now = time.time()
         expired = [
-            (key, entry)
-            for key, entry in self._cache.items()
-            if now > entry.expires_at
+            (key, entry) for key, entry in self._cache.items() if now > entry.expires_at
         ]
 
         for key, entry in expired:
@@ -587,13 +587,12 @@ class RedisCache(CacheBackend):
             # Test connection
             self._redis.ping()
             logger.info(f"Connected to Redis at {host}:{port}")
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
-                "redis package required for RedisCache. "
-                "Install with: pip install redis"
-            )
+                "redis package required for RedisCache. Install with: pip install redis"
+            ) from err
         except Exception as e:
-            raise ConnectionError(f"Failed to connect to Redis: {e}")
+            raise ConnectionError(f"Failed to connect to Redis: {e}") from e
 
     def set_hooks(
         self,
@@ -641,9 +640,9 @@ class RedisCache(CacheBackend):
                     "confidence": h.confidence,
                     "occurrence_count": h.occurrence_count,
                     "success_count": h.success_count,
-                    "last_validated": h.last_validated.isoformat()
-                    if h.last_validated
-                    else None,
+                    "last_validated": (
+                        h.last_validated.isoformat() if h.last_validated else None
+                    ),
                     "created_at": h.created_at.isoformat() if h.created_at else None,
                 }
                 for h in result.heuristics
@@ -703,11 +702,11 @@ class RedisCache(CacheBackend):
     def _deserialize_result(self, data: bytes) -> MemorySlice:
         """Deserialize bytes to MemorySlice."""
         from alma.types import (
+            AntiPattern,
+            DomainKnowledge,
             Heuristic,
             Outcome,
             UserPreference,
-            DomainKnowledge,
-            AntiPattern,
         )
 
         obj = json.loads(data.decode("utf-8"))

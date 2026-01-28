@@ -14,18 +14,18 @@ This module provides Helena-specific memory categories, prompts, and utilities.
 """
 
 import logging
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
 from alma.core import ALMA
-from alma.types import MemorySlice
 from alma.harness.domains import CodingDomain
 from alma.integration.claude_agents import (
+    AgentType,
     ClaudeAgentHooks,
     TaskContext,
     TaskOutcome,
-    AgentType,
 )
+from alma.types import MemorySlice
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,7 @@ class UITestContext(TaskContext):
 
     Extends TaskContext with UI testing-specific fields.
     """
+
     component_type: Optional[str] = None
     page_url: Optional[str] = None
     viewport: Optional[Dict[str, int]] = None
@@ -89,6 +90,7 @@ class UITestOutcome(TaskOutcome):
 
     Extends TaskOutcome with UI testing-specific results.
     """
+
     selectors_used: List[str] = field(default_factory=list)
     accessibility_issues: List[Dict[str, Any]] = field(default_factory=list)
     visual_diffs: List[str] = field(default_factory=list)
@@ -148,11 +150,13 @@ class HelenaHooks(ClaudeAgentHooks):
         patterns = []
         for h in memories.heuristics:
             if "selector" in h.condition.lower():
-                patterns.append({
-                    "pattern": h.strategy,
-                    "confidence": h.confidence,
-                    "occurrences": h.occurrence_count,
-                })
+                patterns.append(
+                    {
+                        "pattern": h.strategy,
+                        "confidence": h.confidence,
+                        "occurrences": h.occurrence_count,
+                    }
+                )
 
         return patterns
 
@@ -171,11 +175,13 @@ class HelenaHooks(ClaudeAgentHooks):
         strategies = []
         for h in memories.heuristics:
             if any(kw in h.condition.lower() for kw in ["form", "validation", "input"]):
-                strategies.append({
-                    "condition": h.condition,
-                    "strategy": h.strategy,
-                    "confidence": h.confidence,
-                })
+                strategies.append(
+                    {
+                        "condition": h.condition,
+                        "strategy": h.strategy,
+                        "confidence": h.confidence,
+                    }
+                )
 
         return strategies
 
@@ -194,18 +200,22 @@ class HelenaHooks(ClaudeAgentHooks):
         patterns = []
         for h in memories.heuristics:
             if any(kw in h.condition.lower() for kw in ["access", "aria", "keyboard"]):
-                patterns.append({
-                    "condition": h.condition,
-                    "strategy": h.strategy,
-                    "confidence": h.confidence,
-                })
+                patterns.append(
+                    {
+                        "condition": h.condition,
+                        "strategy": h.strategy,
+                        "confidence": h.confidence,
+                    }
+                )
 
         for dk in memories.domain_knowledge:
             if dk.domain == "accessibility_testing":
-                patterns.append({
-                    "fact": dk.fact,
-                    "source": dk.source,
-                })
+                patterns.append(
+                    {
+                        "fact": dk.fact,
+                        "source": dk.source,
+                    }
+                )
 
         return patterns
 

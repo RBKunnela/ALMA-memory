@@ -9,23 +9,23 @@ import asyncio
 import json
 import logging
 import sys
-from typing import Dict, Any, Optional, List, Callable
-from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from alma import ALMA
-from alma.mcp.tools import (
-    alma_retrieve,
-    alma_learn,
-    alma_add_preference,
-    alma_add_knowledge,
-    alma_forget,
-    alma_stats,
-    alma_health,
-)
 from alma.mcp.resources import (
-    get_config_resource,
     get_agents_resource,
+    get_config_resource,
     list_resources,
+)
+from alma.mcp.tools import (
+    alma_add_knowledge,
+    alma_add_preference,
+    alma_consolidate,
+    alma_forget,
+    alma_health,
+    alma_learn,
+    alma_retrieve,
+    alma_stats,
 )
 
 logger = logging.getLogger(__name__)
@@ -235,6 +235,41 @@ class ALMAMCPServer:
                     "properties": {},
                 },
             },
+            {
+                "name": "alma_consolidate",
+                "description": "Consolidate similar memories to reduce redundancy. Merges near-duplicate memories based on semantic similarity. Use dry_run=true first to preview what would be merged.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent": {
+                            "type": "string",
+                            "description": "Agent whose memories to consolidate",
+                        },
+                        "memory_type": {
+                            "type": "string",
+                            "enum": [
+                                "heuristics",
+                                "outcomes",
+                                "domain_knowledge",
+                                "anti_patterns",
+                            ],
+                            "description": "Type of memory to consolidate (default: heuristics)",
+                            "default": "heuristics",
+                        },
+                        "similarity_threshold": {
+                            "type": "number",
+                            "description": "Minimum cosine similarity to group memories (0.0-1.0, default: 0.85). Higher values are more conservative.",
+                            "default": 0.85,
+                        },
+                        "dry_run": {
+                            "type": "boolean",
+                            "description": "If true, preview what would be merged without modifying storage (default: true)",
+                            "default": True,
+                        },
+                    },
+                    "required": ["agent"],
+                },
+            },
         ]
 
     async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -281,17 +316,20 @@ class ALMAMCPServer:
         params: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Handle initialize request."""
-        return self._success_response(request_id, {
-            "protocolVersion": "2024-11-05",
-            "serverInfo": {
-                "name": self.server_name,
-                "version": self.server_version,
+        return self._success_response(
+            request_id,
+            {
+                "protocolVersion": "2024-11-05",
+                "serverInfo": {
+                    "name": self.server_name,
+                    "version": self.server_version,
+                },
+                "capabilities": {
+                    "tools": {},
+                    "resources": {},
+                },
             },
-            "capabilities": {
-                "tools": {},
-                "resources": {},
-            },
-        })
+        )
 
     def _handle_tools_list(self, request_id: Optional[int]) -> Dict[str, Any]:
         """Handle tools/list request."""
@@ -351,6 +389,13 @@ class ALMAMCPServer:
                 agent=arguments.get("agent"),
             ),
             "alma_health": lambda: alma_health(self.alma),
+            "alma_consolidate": lambda: alma_consolidate(
+                self.alma,
+                agent=arguments.get("agent", ""),
+                memory_type=arguments.get("memory_type", "heuristics"),
+                similarity_threshold=arguments.get("similarity_threshold", 0.85),
+                dry_run=arguments.get("dry_run", True),
+            ),
         }
 
         if tool_name not in tool_handlers:
@@ -362,14 +407,21 @@ class ALMAMCPServer:
 
         result = tool_handlers[tool_name]()
 
-        return self._success_response(request_id, {
-            "content": [
-                {
-                    "type": "text",
-                    "text": json.dumps(result, indent=2),
-                }
-            ],
-        })
+        # Handle async functions (like alma_consolidate)
+        if asyncio.iscoroutine(result):
+            result = await result
+
+        return self._success_response(
+            request_id,
+            {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": json.dumps(result, indent=2),
+                    }
+                ],
+            },
+        )
 
     def _handle_resources_list(
         self,
@@ -397,15 +449,18 @@ class ALMAMCPServer:
                 f"Unknown resource: {uri}",
             )
 
-        return self._success_response(request_id, {
-            "contents": [
-                {
-                    "uri": resource["uri"],
-                    "mimeType": resource["mimeType"],
-                    "text": json.dumps(resource["content"], indent=2),
-                }
-            ],
-        })
+        return self._success_response(
+            request_id,
+            {
+                "contents": [
+                    {
+                        "uri": resource["uri"],
+                        "mimeType": resource["mimeType"],
+                        "text": json.dumps(resource["content"], indent=2),
+                    }
+                ],
+            },
+        )
 
     def _success_response(
         self,
@@ -437,15 +492,16 @@ class ALMAMCPServer:
 
     async def run_stdio(self):
         """Run the server in stdio mode for Claude Code integration."""
-        logger.info(f"Starting ALMA MCP Server (stdio mode)")
+        logger.info("Starting ALMA MCP Server (stdio mode)")
 
         reader = asyncio.StreamReader()
         protocol = asyncio.StreamReaderProtocol(reader)
-        await asyncio.get_event_loop().connect_read_pipe(
-            lambda: protocol, sys.stdin
-        )
+        await asyncio.get_event_loop().connect_read_pipe(lambda: protocol, sys.stdin)
 
-        writer_transport, writer_protocol = await asyncio.get_event_loop().connect_write_pipe(
+        (
+            writer_transport,
+            writer_protocol,
+        ) = await asyncio.get_event_loop().connect_write_pipe(
             asyncio.streams.FlowControlMixin, sys.stdout
         )
         writer = asyncio.StreamWriter(
@@ -497,7 +553,9 @@ class ALMAMCPServer:
         try:
             from aiohttp import web
         except ImportError:
-            logger.error("aiohttp required for HTTP mode. Install with: pip install aiohttp")
+            logger.error(
+                "aiohttp required for HTTP mode. Install with: pip install aiohttp"
+            )
             return
 
         async def handle_post(request: web.Request) -> web.Response:

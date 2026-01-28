@@ -14,18 +14,18 @@ This module provides Victor-specific memory categories, prompts, and utilities.
 """
 
 import logging
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
 from alma.core import ALMA
-from alma.types import MemorySlice
 from alma.harness.domains import CodingDomain
 from alma.integration.claude_agents import (
+    AgentType,
     ClaudeAgentHooks,
     TaskContext,
     TaskOutcome,
-    AgentType,
 )
+from alma.types import MemorySlice
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,7 @@ class APITestContext(TaskContext):
 
     Extends TaskContext with API/backend testing-specific fields.
     """
+
     endpoint: Optional[str] = None
     method: str = "GET"
     expected_status: Optional[int] = None
@@ -91,6 +92,7 @@ class APITestOutcome(TaskOutcome):
 
     Extends TaskOutcome with API/backend testing-specific results.
     """
+
     response_status: Optional[int] = None
     response_time_ms: Optional[int] = None
     response_body: Optional[Dict[str, Any]] = None
@@ -153,12 +155,14 @@ class VictorHooks(ClaudeAgentHooks):
         patterns = []
         for h in memories.heuristics:
             if "api" in h.condition.lower() or "endpoint" in h.condition.lower():
-                patterns.append({
-                    "pattern": h.strategy,
-                    "condition": h.condition,
-                    "confidence": h.confidence,
-                    "occurrences": h.occurrence_count,
-                })
+                patterns.append(
+                    {
+                        "pattern": h.strategy,
+                        "condition": h.condition,
+                        "confidence": h.confidence,
+                        "occurrences": h.occurrence_count,
+                    }
+                )
 
         return patterns
 
@@ -176,12 +180,16 @@ class VictorHooks(ClaudeAgentHooks):
 
         patterns = []
         for h in memories.heuristics:
-            if any(kw in h.condition.lower() for kw in ["error", "exception", "validation"]):
-                patterns.append({
-                    "condition": h.condition,
-                    "strategy": h.strategy,
-                    "confidence": h.confidence,
-                })
+            if any(
+                kw in h.condition.lower() for kw in ["error", "exception", "validation"]
+            ):
+                patterns.append(
+                    {
+                        "condition": h.condition,
+                        "strategy": h.strategy,
+                        "confidence": h.confidence,
+                    }
+                )
 
         return patterns
 
@@ -199,19 +207,26 @@ class VictorHooks(ClaudeAgentHooks):
 
         strategies = []
         for h in memories.heuristics:
-            if any(kw in h.condition.lower() for kw in ["performance", "cache", "query", "slow"]):
-                strategies.append({
-                    "condition": h.condition,
-                    "strategy": h.strategy,
-                    "confidence": h.confidence,
-                })
+            if any(
+                kw in h.condition.lower()
+                for kw in ["performance", "cache", "query", "slow"]
+            ):
+                strategies.append(
+                    {
+                        "condition": h.condition,
+                        "strategy": h.strategy,
+                        "confidence": h.confidence,
+                    }
+                )
 
         for dk in memories.domain_knowledge:
             if dk.domain in ["performance_optimization", "caching_strategies"]:
-                strategies.append({
-                    "fact": dk.fact,
-                    "source": dk.source,
-                })
+                strategies.append(
+                    {
+                        "fact": dk.fact,
+                        "source": dk.source,
+                    }
+                )
 
         return strategies
 
@@ -229,12 +244,17 @@ class VictorHooks(ClaudeAgentHooks):
 
         patterns = []
         for h in memories.heuristics:
-            if any(kw in h.condition.lower() for kw in ["auth", "token", "permission", "jwt"]):
-                patterns.append({
-                    "condition": h.condition,
-                    "strategy": h.strategy,
-                    "confidence": h.confidence,
-                })
+            if any(
+                kw in h.condition.lower()
+                for kw in ["auth", "token", "permission", "jwt"]
+            ):
+                patterns.append(
+                    {
+                        "condition": h.condition,
+                        "strategy": h.strategy,
+                        "confidence": h.confidence,
+                    }
+                )
 
         return patterns
 
@@ -318,11 +338,15 @@ class VictorHooks(ClaudeAgentHooks):
         sections.append(f"- **Task Type**: {test_context.task_type}")
 
         if test_context.endpoint:
-            sections.append(f"- **Endpoint**: {test_context.method} {test_context.endpoint}")
+            sections.append(
+                f"- **Endpoint**: {test_context.method} {test_context.endpoint}"
+            )
         if test_context.expected_status:
             sections.append(f"- **Expected Status**: {test_context.expected_status}")
         if test_context.request_body:
-            sections.append(f"- **Request Body**: {len(test_context.request_body)} fields")
+            sections.append(
+                f"- **Request Body**: {len(test_context.request_body)} fields"
+            )
 
         if test_context.is_auth_test:
             sections.append("- **Focus**: Authentication/Authorization")

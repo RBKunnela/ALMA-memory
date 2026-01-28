@@ -2,21 +2,21 @@
 Integration tests for Helena with ALMA.
 """
 
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from alma.integration import (
+    HELENA_CATEGORIES,
+    HELENA_FORBIDDEN,
     HelenaHooks,
     UITestContext,
     UITestOutcome,
-    create_helena_hooks,
-    helena_pre_task,
     helena_post_task,
-    HELENA_CATEGORIES,
-    HELENA_FORBIDDEN,
+    helena_pre_task,
 )
-from alma.types import MemorySlice, Heuristic, DomainKnowledge
+from alma.types import DomainKnowledge, Heuristic, MemorySlice
 
 
 class TestHelenaHooks:
@@ -44,7 +44,7 @@ class TestHelenaHooks:
                 ),
             ],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[
                 DomainKnowledge(
                     id="dk1",
@@ -53,10 +53,10 @@ class TestHelenaHooks:
                     domain="selector_patterns",
                     fact="data-testid selectors are most stable",
                     source="test_run:stability=0.95",
-                    created_at=datetime.now(timezone.utc),
+                    last_verified=datetime.now(timezone.utc),
                 ),
             ],
-            user_preferences=[],
+            preferences=[],
         )
 
         alma.learn.return_value = True
@@ -72,6 +72,7 @@ class TestHelenaHooks:
             mock_domain.create_helena.return_value = MagicMock()
             hooks = HelenaHooks(alma=mock_alma)
             hooks.alma = mock_alma  # Ensure mock is used
+            hooks.harness = None  # Disable harness to test direct ALMA retrieval
             return hooks
 
     def test_pre_task_retrieves_memories(self, helena_hooks, mock_alma):
@@ -219,9 +220,9 @@ class TestConvenienceFunctions:
         mock_alma.retrieve.return_value = MemorySlice(
             heuristics=[],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
 
         with patch("alma.integration.helena.CodingDomain"):

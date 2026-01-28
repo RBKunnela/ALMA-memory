@@ -4,19 +4,18 @@ Progress Tracking Types.
 Data models for tracking work items and progress.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Literal
-import uuid
-
+from typing import Any, Dict, List, Literal, Optional
 
 WorkItemStatus = Literal[
-    "pending",      # Not started
+    "pending",  # Not started
     "in_progress",  # Currently being worked on
-    "blocked",      # Waiting on something
-    "review",       # Completed, awaiting review
-    "done",         # Completed and verified
-    "failed",       # Could not complete
+    "blocked",  # Waiting on something
+    "review",  # Completed, awaiting review
+    "done",  # Completed and verified
+    "failed",  # Could not complete
 ]
 
 
@@ -124,10 +123,7 @@ class WorkItem:
 
     def is_actionable(self) -> bool:
         """Check if work item can be worked on."""
-        return (
-            self.status in ("pending", "in_progress")
-            and len(self.blocked_by) == 0
-        )
+        return self.status in ("pending", "in_progress") and len(self.blocked_by) == 0
 
 
 @dataclass
