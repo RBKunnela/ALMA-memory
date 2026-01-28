@@ -3,8 +3,8 @@
 [![PyPI version](https://badge.fury.io/py/alma-memory.svg)](https://pypi.org/project/alma-memory/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/RBKunnela/ALMA-memory/actions)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![CI](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 > Persistent memory for AI agents that learn and improve over time - without model weight updates.
 
@@ -18,44 +18,73 @@ ALMA isn't just another memory framework. Here's what sets it apart from alterna
 |---------|------|------|----------------|
 | **Memory Scoping** | `can_learn` / `cannot_learn` per agent | Basic user/session isolation | Prevents agents from learning outside their domain |
 | **Anti-Pattern Learning** | Explicit with `why_bad` + `better_alternative` | None | Agents learn what NOT to do |
+| **Multi-Agent Sharing** | `inherit_from` + `share_with` scopes | None | Agents can share knowledge hierarchically |
+| **Memory Consolidation** | LLM-powered deduplication | Basic | Intelligent merge of similar memories |
+| **Event System** | Webhooks + in-process callbacks | None | React to memory changes in real-time |
+| **TypeScript SDK** | Full-featured client library | None | First-class JavaScript/TypeScript support |
+| **Vector DB Support** | 6 backends (PostgreSQL, Qdrant, Pinecone, Chroma, SQLite, Azure) | Limited | Deploy anywhere |
+| **Graph Memory** | Pluggable backends (Neo4j, In-memory) | Limited | Entity relationship tracking |
 | **Harness Pattern** | Decouples agent from domain memory | None | Reusable agent architecture |
 | **MCP Integration** | Native stdio/HTTP server | None | Direct Claude Code integration |
 | **Domain Memory Factory** | 6 pre-built schemas | None | Instant setup for any domain |
 | **Multi-Factor Scoring** | Similarity + Recency + Success + Confidence | Primarily vector + recency | More nuanced retrieval |
-| **Session Handoff** | Full context continuity | Minimal | No "starting fresh" problem |
-| **Progress Tracking** | Built-in work item management | None | Agents know what to do next |
 
 **Bottom line:** ALMA is purpose-built for AI agents that need to learn, remember, and improve - not just store and retrieve.
 
 ---
 
-## What's New in v0.4.0
+## What's New in v0.5.0
 
-### Security Fixes
-- **CRIT-001**: Fixed `eval()` vulnerability in Neo4j graph store - now uses safe `json.loads()`
-- Input validation added to all MCP tools
+### Phase 2: Vector Database Backends
 
-### Bug Fixes
-- **CRIT-002**: Fixed SQLite embeddings delete bug (memory_type naming mismatch)
-- Fixed Azure Cosmos DB missing `update_heuristic_confidence()` and `update_knowledge_confidence()` methods
-- Fixed PostgreSQL IVFFlat index creation on empty tables
+- **Qdrant Backend** (`alma/storage/qdrant.py`)
+  - Full StorageBackend implementation with vector similarity search
+  - Metadata filtering for all queries
+  - Optimized `MatchAny` queries for multi-agent memory sharing
 
-### Performance Improvements
-- Added HNSW indexes for PostgreSQL vector search (faster than IVFFlat)
-- Lazy FAISS index rebuild for SQLite (only when needed)
-- Added timestamp indexes for efficient temporal queries
-- Connection pooling improvements for PostgreSQL
+- **Pinecone Backend** (`alma/storage/pinecone.py`)
+  - Namespace-based organization per memory type
+  - Serverless spec support for automatic scaling
+  - Environment variable expansion in configuration
 
-### API Improvements
-- New `batch_save_*()` methods for bulk operations
-- Comprehensive exception hierarchy (`ALMAError`, `StorageError`, `ValidationError`, etc.)
-- Input validation with clear error messages
+- **Chroma Backend** (`alma/storage/chroma.py`)
+  - Persistent, client-server, and ephemeral modes
+  - Native embedding storage and similarity search
+  - Lightweight local development option
 
-### Deprecation Fixes
-- Replaced all `datetime.utcnow()` with timezone-aware `datetime.now(timezone.utc)`
-- Python 3.13+ compatibility ensured
+- **Graph Database Abstraction** (`alma/graph/`)
+  - Pluggable `GraphBackend` interface
+  - Neo4j backend for production
+  - In-memory backend for testing
+  - Factory function `create_graph_backend()` for easy setup
 
-See [CHANGELOG.md](CHANGELOG.md) for the complete list.
+### Phase 1: Core Features
+
+- **Memory Consolidation Engine** (`alma/consolidation/`)
+  - LLM-powered deduplication that merges similar memories
+  - Cosine similarity-based grouping with configurable thresholds
+  - Provenance tracking (merged_from metadata)
+  - Dry-run mode for safety
+
+- **Event System** (`alma/events/`)
+  - In-process callbacks via `EventEmitter`
+  - Webhook delivery with HMAC signatures
+  - Event types: CREATED, UPDATED, DELETED, ACCESSED, CONSOLIDATED
+  - Retry logic with exponential backoff
+
+- **TypeScript/JavaScript SDK** (`packages/alma-memory-js/`)
+  - Full API coverage: retrieve, learn, addPreference, addKnowledge, forget
+  - Type-safe with comprehensive TypeScript definitions
+  - Error hierarchy matching Python SDK
+  - Automatic retry with configurable backoff
+
+- **Multi-Agent Memory Sharing**
+  - `inherit_from`: Read memories from other agents
+  - `share_with`: Make your memories readable by others
+  - Origin tracking via `metadata['shared_from']`
+  - Optimized batch queries across agents
+
+See [CHANGELOG.md](CHANGELOG.md) for the complete history.
 
 ---
 
@@ -93,25 +122,34 @@ pip install alma-memory
 
 **With optional backends:**
 ```bash
+# Local development
 pip install alma-memory[local]     # SQLite + FAISS + local embeddings
+
+# Production databases
 pip install alma-memory[postgres]  # PostgreSQL + pgvector
+pip install alma-memory[qdrant]    # Qdrant vector database
+pip install alma-memory[pinecone]  # Pinecone vector database
+pip install alma-memory[chroma]    # ChromaDB
+
+# Enterprise
 pip install alma-memory[azure]     # Azure Cosmos DB + Azure OpenAI
-pip install alma-memory[all]       # Everything
+
+# Everything
+pip install alma-memory[all]
+```
+
+**TypeScript/JavaScript:**
+```bash
+npm install alma-memory
+# or
+yarn add alma-memory
 ```
 
 ---
 
 ## Quick Start
 
-### 1. Set Up Configuration
-
-```bash
-cp config.yaml.example .alma/config.yaml
-```
-
-Edit `.alma/config.yaml` to configure your project ID, storage backend, and agents.
-
-### 2. Use ALMA in Your Code
+### Python
 
 ```python
 from alma import ALMA
@@ -144,6 +182,46 @@ alma.learn(
 )
 ```
 
+### TypeScript/JavaScript
+
+```typescript
+import { ALMA } from 'alma-memory';
+
+// Create client
+const alma = new ALMA({
+  baseUrl: 'http://localhost:8765',
+  projectId: 'my-project'
+});
+
+// Retrieve memories
+const memories = await alma.retrieve({
+  query: 'authentication flow',
+  agent: 'dev-agent',
+  topK: 5
+});
+
+// Learn from outcomes
+await alma.learn({
+  agent: 'dev-agent',
+  task: 'Implement OAuth',
+  outcome: 'success',
+  strategyUsed: 'Used passport.js middleware'
+});
+
+// Add preferences and knowledge
+await alma.addPreference({
+  userId: 'user-123',
+  category: 'code_style',
+  preference: 'Use TypeScript strict mode'
+});
+
+await alma.addKnowledge({
+  agent: 'dev-agent',
+  domain: 'authentication',
+  fact: 'API uses JWT with 24h expiry'
+});
+```
+
 ---
 
 ## Core Features
@@ -174,14 +252,160 @@ agents:
       - database_queries
 ```
 
+### Multi-Agent Memory Sharing
+
+Enable agents to share knowledge hierarchically:
+
+```yaml
+agents:
+  senior_dev:
+    can_learn: [architecture, best_practices]
+    share_with: [junior_dev, qa_agent]  # Others can read my memories
+
+  junior_dev:
+    can_learn: [coding_patterns]
+    inherit_from: [senior_dev]  # I can read senior's memories
+```
+
+```python
+# Junior dev retrieves memories (includes senior's shared memories)
+memories = alma.retrieve(
+    task="Implement user authentication",
+    agent="junior_dev",
+    include_shared=True  # Include inherited memories
+)
+
+# Shared memories are marked with origin
+for mem in memories.heuristics:
+    if mem.metadata.get('shared_from'):
+        print(f"Learned from {mem.metadata['shared_from']}: {mem.strategy}")
+```
+
 ### Storage Backends
 
 | Backend | Use Case | Vector Search | Production Ready |
 |---------|----------|---------------|------------------|
 | **SQLite + FAISS** | Local development | Yes | Yes |
 | **PostgreSQL + pgvector** | Production, HA | Yes (HNSW) | Yes |
+| **Qdrant** | Managed vector DB | Yes (HNSW) | Yes |
+| **Pinecone** | Serverless vector DB | Yes | Yes |
+| **Chroma** | Lightweight local | Yes | Yes |
 | **Azure Cosmos DB** | Enterprise, Azure-native | Yes (DiskANN) | Yes |
 | **File-based** | Testing | No | No |
+
+---
+
+## Memory Consolidation
+
+Automatically deduplicate and merge similar memories using LLM intelligence:
+
+```python
+from alma.consolidation import ConsolidationEngine
+
+engine = ConsolidationEngine(
+    storage=alma.storage,
+    llm_client=my_llm_client  # Optional: for intelligent merging
+)
+
+# Consolidate heuristics for an agent
+result = await engine.consolidate(
+    agent="helena",
+    project_id="my-project",
+    memory_type="heuristics",
+    similarity_threshold=0.85,  # Group memories above this similarity
+    use_llm=True,               # Use LLM for intelligent merging
+    dry_run=False               # Set True to preview without changes
+)
+
+print(f"Merged {result.merged_count} memories from {result.groups_found} groups")
+```
+
+**Features:**
+- Cosine similarity-based grouping
+- LLM-powered intelligent merging (preserves important nuances)
+- Provenance tracking (`merged_from` metadata)
+- Support for heuristics, domain_knowledge, and anti_patterns
+
+---
+
+## Event System
+
+React to memory changes with webhooks or in-process callbacks:
+
+### In-Process Callbacks
+
+```python
+from alma.events import get_emitter, MemoryEventType
+
+def on_memory_created(event):
+    print(f"Memory created: {event.memory_id} by {event.agent}")
+    # Trigger downstream processes, update caches, etc.
+
+emitter = get_emitter()
+emitter.subscribe(MemoryEventType.CREATED, on_memory_created)
+emitter.subscribe(MemoryEventType.CONSOLIDATED, on_consolidation)
+```
+
+### Webhooks
+
+```python
+from alma.events import WebhookConfig, WebhookManager, get_emitter
+
+manager = WebhookManager()
+manager.add_webhook(WebhookConfig(
+    url="https://your-app.com/alma-webhook",
+    events=[MemoryEventType.CREATED, MemoryEventType.UPDATED],
+    secret="your-webhook-secret",  # For HMAC signature verification
+    retry_count=3,
+    retry_delay=5.0
+))
+manager.start(get_emitter())
+```
+
+**Event Types:**
+- `CREATED` - New memory stored
+- `UPDATED` - Memory modified
+- `DELETED` - Memory removed
+- `ACCESSED` - Memory retrieved
+- `CONSOLIDATED` - Memories merged
+
+---
+
+## Graph Memory
+
+Capture entity relationships for complex reasoning:
+
+```python
+from alma.graph import create_graph_backend, BackendGraphStore, EntityExtractor
+
+# Create graph backend (Neo4j for production, memory for testing)
+backend = create_graph_backend(
+    "neo4j",
+    uri="neo4j+s://xxx.databases.neo4j.io",
+    username="neo4j",
+    password="your-password"
+)
+# Or for testing:
+# backend = create_graph_backend("memory")
+
+# Create store with backend
+graph = BackendGraphStore(backend)
+
+# Extract entities and relationships from text
+extractor = EntityExtractor()
+entities, relationships = extractor.extract(
+    "Alice from Acme Corp reviewed the PR that Bob submitted."
+)
+
+# Store in graph
+for entity in entities:
+    graph.add_entity(entity)
+for rel in relationships:
+    graph.add_relationship(rel)
+
+# Query relationships
+alice_relations = graph.get_relationships("alice", relationship_type="WORKS_FOR")
+```
 
 ---
 
@@ -349,34 +573,6 @@ results = auto_learner.learn_from_conversation(
 print(f"Extracted {results['extracted_count']} facts")
 ```
 
-### Graph Memory
-
-Capture entity relationships for complex reasoning:
-
-```python
-from alma.graph import create_graph_store, EntityExtractor
-
-# Connect to Neo4j
-graph = create_graph_store(
-    "neo4j",
-    uri="neo4j+s://xxx.databases.neo4j.io",
-    username="neo4j",
-    password="your-password",
-)
-
-# Extract entities and relationships from text
-extractor = EntityExtractor()
-entities, relationships = extractor.extract(
-    "Alice from Acme Corp reviewed the PR that Bob submitted."
-)
-
-# Store in graph
-for entity in entities:
-    graph.add_entity(entity)
-for rel in relationships:
-    graph.add_relationship(rel)
-```
-
 ### Confidence Engine
 
 Assess strategies before trying them:
@@ -405,7 +601,7 @@ print(f"Recommendation: {signal.recommendation}")
 
 ```
 +-------------------------------------------------------------------------+
-|                          ALMA v0.4.0                                    |
+|                          ALMA v0.5.0                                    |
 +-------------------------------------------------------------------------+
 |  HARNESS LAYER                                                          |
 |  +-----------+  +-----------+  +-----------+  +----------------+        |
@@ -418,9 +614,13 @@ print(f"Recommendation: {signal.recommendation}")
 |  | Tracking    |  | Handoff       |  | Factory          |               |
 |  +-------------+  +---------------+  +------------------+               |
 |  +-------------+  +---------------+  +------------------+               |
-|  | Auto        |  | Confidence    |  | Graph            |               |
-|  | Learner     |  | Engine        |  | Memory           |               |
+|  | Auto        |  | Confidence    |  | Memory           |               |
+|  | Learner     |  | Engine        |  | Consolidation    |               |
 |  +-------------+  +---------------+  +------------------+               |
+|  +-------------+  +---------------+                                     |
+|  | Event       |  | TypeScript    |                                     |
+|  | System      |  | SDK           |                                     |
+|  +-------------+  +---------------+                                     |
 +-------------------------------------------------------------------------+
 |  CORE LAYER                                                             |
 |  +-------------+  +-------------+  +-------------+  +------------+      |
@@ -432,6 +632,14 @@ print(f"Recommendation: {signal.recommendation}")
 |  +---------------+  +------------------+  +---------------+             |
 |  | SQLite+FAISS  |  | PostgreSQL+pgvec |  | Azure Cosmos  |             |
 |  +---------------+  +------------------+  +---------------+             |
+|  +---------------+  +------------------+  +---------------+             |
+|  |    Qdrant     |  |    Pinecone      |  |    Chroma     |             |
+|  +---------------+  +------------------+  +---------------+             |
++-------------------------------------------------------------------------+
+|  GRAPH LAYER                                                            |
+|  +---------------+  +------------------+                                |
+|  |    Neo4j      |  |   In-Memory      |                                |
+|  +---------------+  +------------------+                                |
 +-------------------------------------------------------------------------+
 |  INTEGRATION LAYER                                                      |
 |  +-------------------------------------------------------------------+  |
@@ -449,7 +657,7 @@ Create `.alma/config.yaml`:
 ```yaml
 alma:
   project_id: "my-project"
-  storage: sqlite  # sqlite | postgres | azure | file
+  storage: sqlite  # sqlite | postgres | qdrant | pinecone | chroma | azure | file
   embedding_provider: local  # local | azure | mock
   storage_dir: .alma
   db_name: alma.db
@@ -464,6 +672,7 @@ alma:
       cannot_learn:
         - backend_logic
       min_occurrences_for_heuristic: 3
+      share_with: [qa_lead]  # Share memories with QA lead
 
     victor:
       domain: coding
@@ -472,6 +681,49 @@ alma:
         - database_queries
       cannot_learn:
         - frontend_selectors
+      inherit_from: [senior_architect]  # Learn from senior architect
+```
+
+### Storage Backend Configuration
+
+**PostgreSQL + pgvector:**
+```yaml
+storage: postgres
+postgres:
+  host: localhost
+  port: 5432
+  database: alma
+  user: alma_user
+  password: ${POSTGRES_PASSWORD}
+  vector_index_type: hnsw  # hnsw | ivfflat
+```
+
+**Qdrant:**
+```yaml
+storage: qdrant
+qdrant:
+  url: http://localhost:6333
+  api_key: ${QDRANT_API_KEY}  # Optional for cloud
+  collection_prefix: alma
+```
+
+**Pinecone:**
+```yaml
+storage: pinecone
+pinecone:
+  api_key: ${PINECONE_API_KEY}
+  environment: us-east-1-aws
+  index_name: alma-memories
+```
+
+**Chroma:**
+```yaml
+storage: chroma
+chroma:
+  persist_directory: .alma/chroma
+  # Or for client-server mode:
+  # host: localhost
+  # port: 8000
 ```
 
 ### Embedding Providers
@@ -503,6 +755,14 @@ alma:
 | Domain Factory | Any-domain support | Done |
 | Confidence Engine | Strategy assessment | Done |
 | Technical Debt Sprint | Security & performance fixes | Done |
+| Multi-Agent Sharing | Cross-agent memory access | Done |
+| Memory Consolidation | LLM-powered deduplication | Done |
+| Event System | Webhooks and callbacks | Done |
+| TypeScript SDK | JavaScript/TypeScript client | Done |
+| Qdrant Backend | Vector database support | Done |
+| Pinecone Backend | Serverless vector DB | Done |
+| Chroma Backend | Lightweight vector DB | Done |
+| Graph Abstraction | Pluggable graph backends | Done |
 
 ---
 
@@ -519,6 +779,16 @@ pip install alma-memory[local]
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
+
+**Qdrant connection refused**
+```bash
+# Start Qdrant with Docker
+docker run -p 6333:6333 qdrant/qdrant
+```
+
+**Pinecone index not found**
+- Ensure your index exists in the Pinecone console
+- Check that `index_name` in config matches your index
 
 **Embeddings dimension mismatch**
 - Ensure `embedding_dim` in config matches your embedding provider
@@ -540,27 +810,27 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 **What we need most:**
 - Documentation improvements
 - Test coverage for edge cases
-- Storage backend integrations (MongoDB, Pinecone)
-- TypeScript/JavaScript SDK
-- LLM provider integrations (Ollama, Groq)
+- Additional LLM provider integrations (Ollama, Groq)
+- Frontend dashboard for memory visualization
 
 ---
 
 ## Roadmap
 
-Based on our [competitive analysis](docs/architecture/competitive-analysis-mem0.md):
-
-**Next Quarter:**
+**Completed:**
 - Multi-agent memory sharing
 - Memory consolidation engine
 - Event system / webhooks
 - TypeScript SDK
+- Qdrant, Pinecone, Chroma backends
+- Graph database abstraction
 
-**Future:**
-- Expanded vector database support (Qdrant, Pinecone, Chroma)
+**Next:**
 - Memory compression / summarization
-- Temporal reasoning
+- Temporal reasoning (time-aware retrieval)
 - Proactive memory suggestions
+- Visual memory explorer dashboard
+- Additional graph backends (Neptune, TigerGraph)
 
 ---
 
