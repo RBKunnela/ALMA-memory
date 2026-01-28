@@ -18,7 +18,7 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from alma.graph.base import GraphBackend
@@ -133,7 +133,7 @@ class GraphStore(ABC):
         """Delete an entity and its relationships."""
         pass
 
-    def close(self) -> None:
+    def close(self) -> None:  # noqa: B027
         """Close the store connection. Override in subclasses if needed."""
         pass
 

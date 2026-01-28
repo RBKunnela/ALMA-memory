@@ -9,8 +9,8 @@ Available backends:
 - memory: In-memory backend for testing and development
 """
 
-from alma.graph.backends.neo4j import Neo4jBackend
 from alma.graph.backends.memory import InMemoryBackend
+from alma.graph.backends.neo4j import Neo4jBackend
 
 __all__ = [
     "Neo4jBackend",

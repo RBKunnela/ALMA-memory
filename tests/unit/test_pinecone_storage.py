@@ -7,7 +7,7 @@ see tests/integration/test_pinecone_integration.py
 """
 
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -563,7 +563,7 @@ class TestPineconeStorageReadOps:
 
         index.query.return_value = {"matches": []}
 
-        results = storage.get_heuristics(
+        storage.get_heuristics(
             project_id="test-project",
             agent="Helena",
             min_confidence=0.5,
@@ -581,7 +581,7 @@ class TestPineconeStorageReadOps:
 
         index.query.return_value = {"matches": []}
 
-        results = storage.get_outcomes(
+        storage.get_outcomes(
             project_id="test-project",
             success_only=True,
         )

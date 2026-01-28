@@ -7,7 +7,7 @@ tests/integration/test_chroma_integration.py
 """
 
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 

@@ -473,7 +473,7 @@ class QdrantStorage(StorageBackend):
         category: Optional[str] = None,
         success_only: bool = False,
         min_confidence: float = 0.0,
-    ) -> Optional[models.Filter]:
+    ) -> Optional[Any]:  # Returns models.Filter when qdrant-client is installed
         """Build a Qdrant filter from parameters."""
         conditions = []
 
