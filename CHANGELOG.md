@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.1] - 2026-01-29
+
+### Added - Phase 2: Graph Database Backends
+
+- **Memgraph Backend** (`alma/graph/backends/memgraph.py`)
+  - Neo4j Bolt protocol compatible graph database
+  - Supports authenticated and unauthenticated connections
+  - Full `GraphBackend` interface implementation
+  - 32 unit tests
+
+- **Kuzu Backend** (`alma/graph/backends/kuzu.py`)
+  - Embedded graph database (no server required, like SQLite for graphs)
+  - In-memory mode with `:memory:` for testing
+  - Persistent mode with file path for production
+  - Full `GraphBackend` interface implementation
+  - 23 unit tests
+
+- **Testing Module** (`alma/testing/`)
+  - `MockStorage`: Full in-memory `StorageBackend` implementation
+  - `MockEmbedder`: Deterministic hash-based embeddings for testing
+  - Factory functions: `create_test_heuristic()`, `create_test_outcome()`,
+    `create_test_preference()`, `create_test_knowledge()`, `create_test_anti_pattern()`
+  - 27+ unit tests
+
+### Changed
+
+- Updated `create_graph_backend()` factory to support `"memgraph"` and `"kuzu"` backends
+- Added coverage exclusions for optional graph backends
+- Version bump to 0.5.1
+
+---
+
 ## [0.5.0] - 2026-01-28
 
 ### Added - Phase 2: Vector Database Backends

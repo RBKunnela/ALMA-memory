@@ -348,6 +348,242 @@ ALMA doesn't provide automatic migration. To migrate:
 
 ---
 
+## Graph Database Backends
+
+ALMA supports graph database backends for storing entity relationships. These are separate from the main storage backends and are used by the Graph Memory system.
+
+### Quick Comparison (Graph Backends)
+
+| Backend | Best For | Deployment | Setup Complexity | Cost |
+|---------|----------|------------|------------------|------|
+| In-Memory | Testing | None | Zero | Free |
+| Neo4j | Production | Server/Cloud | Medium | Free tier available |
+| Memgraph | High-performance | Server/Docker | Medium | Free |
+| Kuzu | Embedded/Local | File-based | Low | Free |
+
+---
+
+## Memgraph
+
+In-memory graph database compatible with Neo4j's Bolt protocol. Excellent for high-performance graph operations.
+
+### Installation
+
+```bash
+pip install alma-memory[memgraph]
+# Note: Uses the neo4j Python driver
+pip install neo4j
+```
+
+### Starting Memgraph
+
+Using Docker:
+```bash
+docker run -p 7687:7687 memgraph/memgraph-mage
+```
+
+### Configuration
+
+```python
+from alma.graph.backends.memgraph import MemgraphBackend
+
+# Basic connection (no auth)
+backend = MemgraphBackend(
+    uri="bolt://localhost:7687",
+)
+
+# With authentication (if enabled)
+backend = MemgraphBackend(
+    uri="bolt://localhost:7687",
+    username="memgraph",
+    password="your-password",
+)
+```
+
+### Features
+
+- **In-Memory Performance**: All data kept in RAM for fast queries
+- **Cypher Compatible**: Uses same query language as Neo4j
+- **MAGE Extensions**: Optional analytics algorithms (PageRank, community detection)
+- **Bolt Protocol**: Uses standard Neo4j driver
+
+### Usage Example
+
+```python
+from alma.graph.backends.memgraph import MemgraphBackend
+from alma.graph.store import Entity, Relationship
+
+# Create backend
+backend = MemgraphBackend(uri="bolt://localhost:7687")
+
+# Add entities
+entity = Entity(
+    id="user-123",
+    name="Alice",
+    entity_type="Person",
+    properties={"role": "developer", "project_id": "my-project"}
+)
+backend.add_entity(entity)
+
+# Add relationships
+rel = Relationship(
+    id="rel-1",
+    source_id="user-123",
+    target_id="team-456",
+    relation_type="MEMBER_OF",
+    confidence=1.0
+)
+backend.add_relationship(rel)
+
+# Query relationships
+relationships = backend.get_relationships("user-123")
+
+# Search entities by name
+results = backend.search_entities("Alice", top_k=10)
+
+# Get entities by type
+people = backend.get_entities(entity_type="Person", limit=100)
+
+# Clean up
+backend.close()
+```
+
+### Notes
+
+- Memgraph typically runs without authentication by default
+- Use empty strings for username/password if auth is disabled
+- Vector similarity search requires Memgraph MAGE extensions
+- Falls back to text search when vector operations unavailable
+
+---
+
+## Kuzu
+
+Embedded graph database - like SQLite but for graph data. No server required.
+
+### Installation
+
+```bash
+pip install alma-memory[kuzu]
+pip install kuzu
+```
+
+### Configuration
+
+```python
+from alma.graph.backends.kuzu import KuzuBackend
+
+# Persistent mode (data saved to disk)
+backend = KuzuBackend(database_path="./my_graph_db")
+
+# In-memory mode (data lost when closed)
+backend = KuzuBackend()  # No path = in-memory
+
+# Read-only mode
+backend = KuzuBackend(
+    database_path="./my_graph_db",
+    read_only=True
+)
+```
+
+### Features
+
+- **Embedded**: No server required, runs in-process
+- **Persistent or In-Memory**: Choose based on your needs
+- **Cypher-Compatible**: Familiar query syntax
+- **Lightweight**: Minimal resource footprint
+- **Thread-Safe**: Safe for concurrent access
+
+### Usage Example
+
+```python
+from alma.graph.backends.kuzu import KuzuBackend
+from alma.graph.store import Entity, Relationship
+
+# Create persistent backend
+backend = KuzuBackend(database_path="./graph_data")
+
+# Add entities
+alice = Entity(
+    id="alice-1",
+    name="Alice",
+    entity_type="Person",
+    properties={"department": "Engineering"}
+)
+backend.add_entity(alice)
+
+project = Entity(
+    id="proj-1",
+    name="ALMA",
+    entity_type="Project",
+    properties={"status": "active"}
+)
+backend.add_entity(project)
+
+# Add relationship
+rel = Relationship(
+    id="works-on-1",
+    source_id="alice-1",
+    target_id="proj-1",
+    relation_type="WORKS_ON",
+    confidence=1.0
+)
+backend.add_relationship(rel)
+
+# Query relationships with direction
+outgoing = backend.get_relationships_directional(
+    entity_id="alice-1",
+    direction="outgoing"
+)
+
+# Search entities
+results = backend.search_entities("alice", top_k=5)
+
+# Filter by type
+projects = backend.get_entities(
+    entity_type="Project",
+    project_id="my-project",
+    limit=50
+)
+
+# Clear all data
+backend.clear()
+
+# Close connection
+backend.close()
+```
+
+### Schema
+
+Kuzu automatically creates this schema on first use:
+
+```
+Entity Node Table:
+- id (STRING, PRIMARY KEY)
+- name (STRING)
+- entity_type (STRING)
+- properties (STRING, JSON)
+- project_id (STRING)
+- agent (STRING)
+- created_at (STRING)
+
+RELATES_TO Edge Table:
+- id (STRING)
+- relation_type (STRING)
+- properties (STRING, JSON)
+- confidence (DOUBLE)
+- created_at (STRING)
+```
+
+### Best Practices
+
+- Use persistent mode for production workloads
+- In-memory mode is ideal for testing
+- The database directory is created automatically
+- Call `close()` to ensure data is properly flushed
+
+---
+
 ## Performance Tips
 
 ### General

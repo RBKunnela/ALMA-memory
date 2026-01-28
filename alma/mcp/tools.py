@@ -172,7 +172,7 @@ def alma_learn(
         return {"success": False, "error": "strategy_used cannot be empty"}
 
     try:
-        result = alma.learn(
+        outcome_record = alma.learn(
             agent=agent,
             task=task,
             outcome=outcome,
@@ -185,10 +185,14 @@ def alma_learn(
 
         return {
             "success": True,
-            "learned": result,
-            "message": (
-                "Outcome recorded" if result else "Learning rejected (scope violation)"
-            ),
+            "learned": True,
+            "outcome": {
+                "id": outcome_record.id,
+                "agent": outcome_record.agent,
+                "task_type": outcome_record.task_type,
+                "success": outcome_record.success,
+            },
+            "message": "Outcome recorded successfully",
         }
 
     except Exception as e:
@@ -289,12 +293,6 @@ def alma_add_knowledge(
             fact=fact,
             source=source,
         )
-
-        if knowledge is None:
-            return {
-                "success": False,
-                "error": f"Agent '{agent}' not allowed to learn in domain '{domain}'",
-            }
 
         return {
             "success": True,

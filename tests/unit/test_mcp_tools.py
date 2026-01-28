@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from alma import ALMA, MemorySlice
+from alma.exceptions import ScopeViolationError
 from alma.mcp.tools import (
     alma_add_knowledge,
     alma_add_preference,
@@ -17,7 +18,7 @@ from alma.mcp.tools import (
     alma_retrieve,
     alma_stats,
 )
-from alma.types import DomainKnowledge, Heuristic, UserPreference
+from alma.types import DomainKnowledge, Heuristic, Outcome, UserPreference
 
 
 class TestAlmaRetrieve:
@@ -120,9 +121,21 @@ class TestAlmaLearn:
 
     @pytest.fixture
     def mock_alma(self):
-        """Create mock ALMA instance."""
+        """Create mock ALMA instance with Outcome return value."""
         alma = MagicMock(spec=ALMA)
-        alma.learn.return_value = True
+        now = datetime.now(timezone.utc)
+
+        # learn() now returns an Outcome object
+        alma.learn.return_value = Outcome(
+            id="out-test-1",
+            agent="helena",
+            project_id="test-project",
+            task_type="form_testing",
+            task_description="Test login form",
+            success=True,
+            strategy_used="validate inputs first",
+            timestamp=now,
+        )
         return alma
 
     def test_learn_success(self, mock_alma):
@@ -138,10 +151,26 @@ class TestAlmaLearn:
 
         assert result["success"] is True
         assert result["learned"] is True
+        assert "outcome" in result
+        assert result["outcome"]["id"] == "out-test-1"
         mock_alma.learn.assert_called_once()
 
     def test_learn_failure_outcome(self, mock_alma):
         """Test learning with failure outcome."""
+        now = datetime.now(timezone.utc)
+        # Update mock to return failure outcome
+        mock_alma.learn.return_value = Outcome(
+            id="out-test-2",
+            agent="helena",
+            project_id="test-project",
+            task_type="general",
+            task_description="Test modal",
+            success=False,
+            strategy_used="click without wait",
+            error_message="Element not found",
+            timestamp=now,
+        )
+
         result = alma_learn(
             alma=mock_alma,
             agent="helena",
@@ -152,6 +181,7 @@ class TestAlmaLearn:
         )
 
         assert result["success"] is True
+        assert result["outcome"]["success"] is False
         mock_alma.learn.assert_called_with(
             agent="helena",
             task="Test modal",
@@ -164,8 +194,10 @@ class TestAlmaLearn:
         )
 
     def test_learn_scope_rejection(self, mock_alma):
-        """Test learning rejected due to scope."""
-        mock_alma.learn.return_value = False
+        """Test learning rejected due to scope - now raises ScopeViolationError."""
+        mock_alma.learn.side_effect = ScopeViolationError(
+            "Agent 'helena' is not allowed in this scope"
+        )
 
         result = alma_learn(
             alma=mock_alma,
@@ -175,9 +207,9 @@ class TestAlmaLearn:
             strategy_used="some strategy",
         )
 
-        assert result["success"] is True
-        assert result["learned"] is False
-        assert "scope" in result["message"].lower()
+        assert result["success"] is False
+        assert "error" in result
+        assert "scope" in result["error"].lower() or "not allowed" in result["error"].lower()
 
 
 class TestAlmaAddPreference:
@@ -267,8 +299,10 @@ class TestAlmaAddKnowledge:
         assert result["knowledge"]["fact"] == "Use data-testid"
 
     def test_add_knowledge_scope_rejection(self, mock_alma):
-        """Test knowledge rejected due to scope."""
-        mock_alma.add_domain_knowledge.return_value = None
+        """Test knowledge rejected due to scope - now raises ScopeViolationError."""
+        mock_alma.add_domain_knowledge.side_effect = ScopeViolationError(
+            "Agent 'helena' is not allowed to learn in domain 'backend'"
+        )
 
         result = alma_add_knowledge(
             alma=mock_alma,

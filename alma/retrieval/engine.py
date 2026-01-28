@@ -8,12 +8,17 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
+from alma.observability.logging import get_logger
+from alma.observability.metrics import get_metrics
+from alma.observability.tracing import SpanKind, get_tracer, trace_method
 from alma.retrieval.cache import NullCache, RetrievalCache
 from alma.retrieval.scoring import MemoryScorer, ScoredItem, ScoringWeights
 from alma.storage.base import StorageBackend
 from alma.types import MemoryScope, MemorySlice
 
 logger = logging.getLogger(__name__)
+structured_logger = get_logger(__name__)
+tracer = get_tracer(__name__)
 
 
 class RetrievalEngine:
@@ -285,7 +290,19 @@ class RetrievalEngine:
         if self._embedder is None:
             self._embedder = self._init_embedder()
 
-        return self._embedder.encode(text)
+        start_time = time.time()
+        embedding = self._embedder.encode(text)
+        duration_ms = (time.time() - start_time) * 1000
+
+        # Record embedding generation metrics
+        metrics = get_metrics()
+        metrics.record_embedding_latency(
+            duration_ms=duration_ms,
+            provider=self.embedding_provider,
+            batch_size=1,
+        )
+
+        return embedding
 
     def _init_embedder(self):
         """Initialize the embedding model based on provider config."""

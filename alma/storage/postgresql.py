@@ -27,6 +27,7 @@ except ImportError:
     NUMPY_AVAILABLE = False
 
 from alma.storage.base import StorageBackend
+from alma.storage.constants import MemoryType, POSTGRESQL_TABLE_NAMES
 from alma.types import (
     AntiPattern,
     DomainKnowledge,
@@ -57,7 +58,7 @@ class PostgreSQLStorage(StorageBackend):
     Uses native PostgreSQL vector operations for efficient similarity search.
     Falls back to application-level cosine similarity if pgvector is not installed.
 
-    Database schema:
+    Database schema (uses canonical memory type names with alma_ prefix):
         - alma_heuristics: id, agent, project_id, condition, strategy, ...
         - alma_outcomes: id, agent, project_id, task_type, ...
         - alma_preferences: id, user_id, category, preference, ...
@@ -67,7 +68,13 @@ class PostgreSQLStorage(StorageBackend):
     Vector search:
         - Uses pgvector extension if available
         - Embeddings stored as VECTOR type with cosine distance operator (<=>)
+
+    Table names are derived from alma.storage.constants.POSTGRESQL_TABLE_NAMES
+    for consistency across all storage backends.
     """
+
+    # Table names from constants for consistent naming
+    TABLE_NAMES = POSTGRESQL_TABLE_NAMES
 
     def __init__(
         self,
@@ -80,6 +87,7 @@ class PostgreSQLStorage(StorageBackend):
         pool_size: int = 10,
         schema: str = "public",
         ssl_mode: str = "prefer",
+        auto_migrate: bool = True,
     ):
         """
         Initialize PostgreSQL storage.
@@ -94,6 +102,7 @@ class PostgreSQLStorage(StorageBackend):
             pool_size: Connection pool size
             schema: Database schema (default: public)
             ssl_mode: SSL mode (disable, allow, prefer, require, verify-ca, verify-full)
+            auto_migrate: If True, automatically apply pending migrations on startup
         """
         if not PSYCOPG_AVAILABLE:
             raise ImportError(
@@ -103,6 +112,10 @@ class PostgreSQLStorage(StorageBackend):
         self.embedding_dim = embedding_dim
         self.schema = schema
         self._pgvector_available = False
+
+        # Migration support (lazy-loaded)
+        self._migration_runner = None
+        self._version_store = None
 
         # Build connection string
         conninfo = (
@@ -120,6 +133,10 @@ class PostgreSQLStorage(StorageBackend):
 
         # Initialize database
         self._init_database()
+
+        # Auto-migrate if enabled
+        if auto_migrate:
+            self._ensure_migrated()
 
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> "PostgreSQLStorage":
@@ -176,8 +193,9 @@ class PostgreSQLStorage(StorageBackend):
             )
 
             # Heuristics table
+            heuristics_table = self.TABLE_NAMES[MemoryType.HEURISTICS]
             conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS {self.schema}.alma_heuristics (
+                CREATE TABLE IF NOT EXISTS {self.schema}.{heuristics_table} (
                     id TEXT PRIMARY KEY,
                     agent TEXT NOT NULL,
                     project_id TEXT NOT NULL,
@@ -194,17 +212,18 @@ class PostgreSQLStorage(StorageBackend):
             """)
             conn.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_heuristics_project_agent
-                ON {self.schema}.alma_heuristics(project_id, agent)
+                ON {self.schema}.{heuristics_table}(project_id, agent)
             """)
             # Confidence index for efficient filtering by confidence score
             conn.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_heuristics_confidence
-                ON {self.schema}.alma_heuristics(project_id, confidence DESC)
+                ON {self.schema}.{heuristics_table}(project_id, confidence DESC)
             """)
 
             # Outcomes table
+            outcomes_table = self.TABLE_NAMES[MemoryType.OUTCOMES]
             conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS {self.schema}.alma_outcomes (
+                CREATE TABLE IF NOT EXISTS {self.schema}.{outcomes_table} (
                     id TEXT PRIMARY KEY,
                     agent TEXT NOT NULL,
                     project_id TEXT NOT NULL,
@@ -222,20 +241,21 @@ class PostgreSQLStorage(StorageBackend):
             """)
             conn.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_outcomes_project_agent
-                ON {self.schema}.alma_outcomes(project_id, agent)
+                ON {self.schema}.{outcomes_table}(project_id, agent)
             """)
             conn.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_outcomes_task_type
-                ON {self.schema}.alma_outcomes(project_id, agent, task_type)
+                ON {self.schema}.{outcomes_table}(project_id, agent, task_type)
             """)
             conn.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_outcomes_timestamp
-                ON {self.schema}.alma_outcomes(project_id, timestamp DESC)
+                ON {self.schema}.{outcomes_table}(project_id, timestamp DESC)
             """)
 
             # User preferences table
+            preferences_table = self.TABLE_NAMES[MemoryType.PREFERENCES]
             conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS {self.schema}.alma_preferences (
+                CREATE TABLE IF NOT EXISTS {self.schema}.{preferences_table} (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
                     category TEXT,
@@ -248,12 +268,13 @@ class PostgreSQLStorage(StorageBackend):
             """)
             conn.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_preferences_user
-                ON {self.schema}.alma_preferences(user_id)
+                ON {self.schema}.{preferences_table}(user_id)
             """)
 
             # Domain knowledge table
+            domain_knowledge_table = self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]
             conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS {self.schema}.alma_domain_knowledge (
+                CREATE TABLE IF NOT EXISTS {self.schema}.{domain_knowledge_table} (
                     id TEXT PRIMARY KEY,
                     agent TEXT NOT NULL,
                     project_id TEXT NOT NULL,
@@ -268,17 +289,18 @@ class PostgreSQLStorage(StorageBackend):
             """)
             conn.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_domain_knowledge_project_agent
-                ON {self.schema}.alma_domain_knowledge(project_id, agent)
+                ON {self.schema}.{domain_knowledge_table}(project_id, agent)
             """)
             # Confidence index for efficient filtering by confidence score
             conn.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_domain_knowledge_confidence
-                ON {self.schema}.alma_domain_knowledge(project_id, confidence DESC)
+                ON {self.schema}.{domain_knowledge_table}(project_id, confidence DESC)
             """)
 
             # Anti-patterns table
+            anti_patterns_table = self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]
             conn.execute(f"""
-                CREATE TABLE IF NOT EXISTS {self.schema}.alma_anti_patterns (
+                CREATE TABLE IF NOT EXISTS {self.schema}.{anti_patterns_table} (
                     id TEXT PRIMARY KEY,
                     agent TEXT NOT NULL,
                     project_id TEXT NOT NULL,
@@ -294,19 +316,18 @@ class PostgreSQLStorage(StorageBackend):
             """)
             conn.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_anti_patterns_project_agent
-                ON {self.schema}.alma_anti_patterns(project_id, agent)
+                ON {self.schema}.{anti_patterns_table}(project_id, agent)
             """)
 
             # Create vector indexes if pgvector available
             # Using HNSW instead of IVFFlat because HNSW can be built on empty tables
             # IVFFlat requires existing data to build, which causes silent failures on fresh databases
             if self._pgvector_available:
-                for table in [
-                    "alma_heuristics",
-                    "alma_outcomes",
-                    "alma_domain_knowledge",
-                    "alma_anti_patterns",
-                ]:
+                # Vector-enabled tables use canonical memory type names
+                vector_tables = [
+                    self.TABLE_NAMES[mt] for mt in MemoryType.VECTOR_ENABLED
+                ]
+                for table in vector_tables:
                     try:
                         conn.execute(f"""
                             CREATE INDEX IF NOT EXISTS idx_{table}_embedding
@@ -369,7 +390,7 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             conn.execute(
                 f"""
-                INSERT INTO {self.schema}.alma_heuristics
+                INSERT INTO {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                 (id, agent, project_id, condition, strategy, confidence,
                  occurrence_count, success_count, last_validated, created_at, metadata, embedding)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -408,7 +429,7 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             conn.execute(
                 f"""
-                INSERT INTO {self.schema}.alma_outcomes
+                INSERT INTO {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]}
                 (id, agent, project_id, task_type, task_description, success,
                  strategy_used, duration_ms, error_message, user_feedback, timestamp, metadata, embedding)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -448,7 +469,7 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             conn.execute(
                 f"""
-                INSERT INTO {self.schema}.alma_preferences
+                INSERT INTO {self.schema}.{self.TABLE_NAMES[MemoryType.PREFERENCES]}
                 (id, user_id, category, preference, source, confidence, timestamp, metadata)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
@@ -478,7 +499,7 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             conn.execute(
                 f"""
-                INSERT INTO {self.schema}.alma_domain_knowledge
+                INSERT INTO {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]}
                 (id, agent, project_id, domain, fact, source, confidence, last_verified, metadata, embedding)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
@@ -512,7 +533,7 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             conn.execute(
                 f"""
-                INSERT INTO {self.schema}.alma_anti_patterns
+                INSERT INTO {self.schema}.{self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]}
                 (id, agent, project_id, pattern, why_bad, better_alternative,
                  occurrence_count, last_seen, created_at, metadata, embedding)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -558,7 +579,7 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             conn.executemany(
                 f"""
-                INSERT INTO {self.schema}.alma_heuristics
+                INSERT INTO {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                 (id, agent, project_id, condition, strategy, confidence,
                  occurrence_count, success_count, last_validated, created_at, metadata, embedding)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -603,7 +624,7 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             conn.executemany(
                 f"""
-                INSERT INTO {self.schema}.alma_outcomes
+                INSERT INTO {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]}
                 (id, agent, project_id, task_type, task_description, success,
                  strategy_used, duration_ms, error_message, user_feedback, timestamp, metadata, embedding)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -651,7 +672,7 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             conn.executemany(
                 f"""
-                INSERT INTO {self.schema}.alma_domain_knowledge
+                INSERT INTO {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]}
                 (id, agent, project_id, domain, fact, source, confidence, last_verified, metadata, embedding)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
@@ -699,7 +720,7 @@ class PostgreSQLStorage(StorageBackend):
                 # Use pgvector similarity search
                 query = f"""
                     SELECT *, 1 - (embedding <=> %s::vector) as similarity
-                    FROM {self.schema}.alma_heuristics
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                     WHERE project_id = %s AND confidence >= %s
                 """
                 params: List[Any] = [
@@ -718,7 +739,7 @@ class PostgreSQLStorage(StorageBackend):
                 # Standard query
                 query = f"""
                     SELECT *
-                    FROM {self.schema}.alma_heuristics
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                     WHERE project_id = %s AND confidence >= %s
                 """
                 params = [project_id, min_confidence]
@@ -755,14 +776,14 @@ class PostgreSQLStorage(StorageBackend):
             if embedding and self._pgvector_available:
                 query = f"""
                     SELECT *, 1 - (embedding <=> %s::vector) as similarity
-                    FROM {self.schema}.alma_outcomes
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]}
                     WHERE project_id = %s
                 """
                 params: List[Any] = [self._embedding_to_db(embedding), project_id]
             else:
                 query = f"""
                     SELECT *
-                    FROM {self.schema}.alma_outcomes
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]}
                     WHERE project_id = %s
                 """
                 params = [project_id]
@@ -801,7 +822,7 @@ class PostgreSQLStorage(StorageBackend):
     ) -> List[UserPreference]:
         """Get user preferences."""
         with self._get_connection() as conn:
-            query = f"SELECT * FROM {self.schema}.alma_preferences WHERE user_id = %s"
+            query = f"SELECT * FROM {self.schema}.{self.TABLE_NAMES[MemoryType.PREFERENCES]} WHERE user_id = %s"
             params: List[Any] = [user_id]
 
             if category:
@@ -826,14 +847,14 @@ class PostgreSQLStorage(StorageBackend):
             if embedding and self._pgvector_available:
                 query = f"""
                     SELECT *, 1 - (embedding <=> %s::vector) as similarity
-                    FROM {self.schema}.alma_domain_knowledge
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]}
                     WHERE project_id = %s
                 """
                 params: List[Any] = [self._embedding_to_db(embedding), project_id]
             else:
                 query = f"""
                     SELECT *
-                    FROM {self.schema}.alma_domain_knowledge
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]}
                     WHERE project_id = %s
                 """
                 params = [project_id]
@@ -874,14 +895,14 @@ class PostgreSQLStorage(StorageBackend):
             if embedding and self._pgvector_available:
                 query = f"""
                     SELECT *, 1 - (embedding <=> %s::vector) as similarity
-                    FROM {self.schema}.alma_anti_patterns
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]}
                     WHERE project_id = %s
                 """
                 params: List[Any] = [self._embedding_to_db(embedding), project_id]
             else:
                 query = f"""
                     SELECT *
-                    FROM {self.schema}.alma_anti_patterns
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]}
                     WHERE project_id = %s
                 """
                 params = [project_id]
@@ -944,7 +965,7 @@ class PostgreSQLStorage(StorageBackend):
             if embedding and self._pgvector_available:
                 query = f"""
                     SELECT *, 1 - (embedding <=> %s::vector) as similarity
-                    FROM {self.schema}.alma_heuristics
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                     WHERE project_id = %s AND confidence >= %s AND agent = ANY(%s)
                     ORDER BY similarity DESC LIMIT %s
                 """
@@ -958,7 +979,7 @@ class PostgreSQLStorage(StorageBackend):
             else:
                 query = f"""
                     SELECT *
-                    FROM {self.schema}.alma_heuristics
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                     WHERE project_id = %s AND confidence >= %s AND agent = ANY(%s)
                     ORDER BY confidence DESC LIMIT %s
                 """
@@ -993,7 +1014,7 @@ class PostgreSQLStorage(StorageBackend):
             if embedding and self._pgvector_available:
                 query = f"""
                     SELECT *, 1 - (embedding <=> %s::vector) as similarity
-                    FROM {self.schema}.alma_outcomes
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
                 params: List[Any] = [
@@ -1004,7 +1025,7 @@ class PostgreSQLStorage(StorageBackend):
             else:
                 query = f"""
                     SELECT *
-                    FROM {self.schema}.alma_outcomes
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
                 params = [project_id, agents]
@@ -1050,7 +1071,7 @@ class PostgreSQLStorage(StorageBackend):
             if embedding and self._pgvector_available:
                 query = f"""
                     SELECT *, 1 - (embedding <=> %s::vector) as similarity
-                    FROM {self.schema}.alma_domain_knowledge
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
                 params: List[Any] = [
@@ -1061,7 +1082,7 @@ class PostgreSQLStorage(StorageBackend):
             else:
                 query = f"""
                     SELECT *
-                    FROM {self.schema}.alma_domain_knowledge
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
                 params = [project_id, agents]
@@ -1103,7 +1124,7 @@ class PostgreSQLStorage(StorageBackend):
             if embedding and self._pgvector_available:
                 query = f"""
                     SELECT *, 1 - (embedding <=> %s::vector) as similarity
-                    FROM {self.schema}.alma_anti_patterns
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
                 params: List[Any] = [
@@ -1114,7 +1135,7 @@ class PostgreSQLStorage(StorageBackend):
             else:
                 query = f"""
                     SELECT *
-                    FROM {self.schema}.alma_anti_patterns
+                    FROM {self.schema}.{self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
                 params = [project_id, agents]
@@ -1160,7 +1181,7 @@ class PostgreSQLStorage(StorageBackend):
 
         with self._get_connection() as conn:
             cursor = conn.execute(
-                f"UPDATE {self.schema}.alma_heuristics SET {', '.join(set_clauses)} WHERE id = %s",
+                f"UPDATE {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]} SET {', '.join(set_clauses)} WHERE id = %s",
                 params,
             )
             conn.commit()
@@ -1176,7 +1197,7 @@ class PostgreSQLStorage(StorageBackend):
             if success:
                 cursor = conn.execute(
                     f"""
-                    UPDATE {self.schema}.alma_heuristics
+                    UPDATE {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                     SET occurrence_count = occurrence_count + 1,
                         success_count = success_count + 1,
                         last_validated = %s
@@ -1187,7 +1208,7 @@ class PostgreSQLStorage(StorageBackend):
             else:
                 cursor = conn.execute(
                     f"""
-                    UPDATE {self.schema}.alma_heuristics
+                    UPDATE {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                     SET occurrence_count = occurrence_count + 1,
                         last_validated = %s
                     WHERE id = %s
@@ -1205,7 +1226,7 @@ class PostgreSQLStorage(StorageBackend):
         """Update confidence score for a heuristic."""
         with self._get_connection() as conn:
             cursor = conn.execute(
-                f"UPDATE {self.schema}.alma_heuristics SET confidence = %s WHERE id = %s",
+                f"UPDATE {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]} SET confidence = %s WHERE id = %s",
                 (new_confidence, heuristic_id),
             )
             conn.commit()
@@ -1219,7 +1240,7 @@ class PostgreSQLStorage(StorageBackend):
         """Update confidence score for domain knowledge."""
         with self._get_connection() as conn:
             cursor = conn.execute(
-                f"UPDATE {self.schema}.alma_domain_knowledge SET confidence = %s WHERE id = %s",
+                f"UPDATE {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]} SET confidence = %s WHERE id = %s",
                 (new_confidence, knowledge_id),
             )
             conn.commit()
@@ -1231,7 +1252,7 @@ class PostgreSQLStorage(StorageBackend):
         """Delete a heuristic by ID."""
         with self._get_connection() as conn:
             cursor = conn.execute(
-                f"DELETE FROM {self.schema}.alma_heuristics WHERE id = %s",
+                f"DELETE FROM {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]} WHERE id = %s",
                 (heuristic_id,),
             )
             conn.commit()
@@ -1241,7 +1262,7 @@ class PostgreSQLStorage(StorageBackend):
         """Delete an outcome by ID."""
         with self._get_connection() as conn:
             cursor = conn.execute(
-                f"DELETE FROM {self.schema}.alma_outcomes WHERE id = %s",
+                f"DELETE FROM {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]} WHERE id = %s",
                 (outcome_id,),
             )
             conn.commit()
@@ -1251,7 +1272,7 @@ class PostgreSQLStorage(StorageBackend):
         """Delete domain knowledge by ID."""
         with self._get_connection() as conn:
             cursor = conn.execute(
-                f"DELETE FROM {self.schema}.alma_domain_knowledge WHERE id = %s",
+                f"DELETE FROM {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]} WHERE id = %s",
                 (knowledge_id,),
             )
             conn.commit()
@@ -1261,7 +1282,7 @@ class PostgreSQLStorage(StorageBackend):
         """Delete an anti-pattern by ID."""
         with self._get_connection() as conn:
             cursor = conn.execute(
-                f"DELETE FROM {self.schema}.alma_anti_patterns WHERE id = %s",
+                f"DELETE FROM {self.schema}.{self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]} WHERE id = %s",
                 (anti_pattern_id,),
             )
             conn.commit()
@@ -1275,7 +1296,7 @@ class PostgreSQLStorage(StorageBackend):
     ) -> int:
         """Delete old outcomes."""
         with self._get_connection() as conn:
-            query = f"DELETE FROM {self.schema}.alma_outcomes WHERE project_id = %s AND timestamp < %s"
+            query = f"DELETE FROM {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]} WHERE project_id = %s AND timestamp < %s"
             params: List[Any] = [project_id, older_than]
 
             if agent:
@@ -1297,7 +1318,7 @@ class PostgreSQLStorage(StorageBackend):
     ) -> int:
         """Delete low-confidence heuristics."""
         with self._get_connection() as conn:
-            query = f"DELETE FROM {self.schema}.alma_heuristics WHERE project_id = %s AND confidence < %s"
+            query = f"DELETE FROM {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]} WHERE project_id = %s AND confidence < %s"
             params: List[Any] = [project_id, below_confidence]
 
             if agent:
@@ -1327,29 +1348,25 @@ class PostgreSQLStorage(StorageBackend):
         }
 
         with self._get_connection() as conn:
-            tables = [
-                ("heuristics", "alma_heuristics"),
-                ("outcomes", "alma_outcomes"),
-                ("domain_knowledge", "alma_domain_knowledge"),
-                ("anti_patterns", "alma_anti_patterns"),
-            ]
-
-            for stat_name, table in tables:
-                query = f"SELECT COUNT(*) as count FROM {self.schema}.{table} WHERE project_id = %s"
-                params: List[Any] = [project_id]
-                if agent:
-                    query += " AND agent = %s"
-                    params.append(agent)
-                cursor = conn.execute(query, params)
-                row = cursor.fetchone()
-                stats[f"{stat_name}_count"] = row["count"] if row else 0
-
-            # Preferences don't have project_id
-            cursor = conn.execute(
-                f"SELECT COUNT(*) as count FROM {self.schema}.alma_preferences"
-            )
-            row = cursor.fetchone()
-            stats["preferences_count"] = row["count"] if row else 0
+            # Use canonical memory types for stats
+            for memory_type in MemoryType.ALL:
+                table = self.TABLE_NAMES[memory_type]
+                if memory_type == MemoryType.PREFERENCES:
+                    # Preferences don't have project_id
+                    cursor = conn.execute(
+                        f"SELECT COUNT(*) as count FROM {self.schema}.{table}"
+                    )
+                    row = cursor.fetchone()
+                    stats[f"{memory_type}_count"] = row["count"] if row else 0
+                else:
+                    query = f"SELECT COUNT(*) as count FROM {self.schema}.{table} WHERE project_id = %s"
+                    params: List[Any] = [project_id]
+                    if agent:
+                        query += " AND agent = %s"
+                        params.append(agent)
+                    cursor = conn.execute(query, params)
+                    row = cursor.fetchone()
+                    stats[f"{memory_type}_count"] = row["count"] if row else 0
 
         stats["total_count"] = sum(
             stats.get(k, 0) for k in stats if k.endswith("_count")
@@ -1460,3 +1477,83 @@ class PostgreSQLStorage(StorageBackend):
         """Close connection pool."""
         if self._pool:
             self._pool.close()
+
+    # ==================== MIGRATION SUPPORT ====================
+
+    def _get_version_store(self):
+        """Get or create the version store."""
+        if self._version_store is None:
+            from alma.storage.migrations.version_stores import PostgreSQLVersionStore
+
+            self._version_store = PostgreSQLVersionStore(self._pool, self.schema)
+        return self._version_store
+
+    def _get_migration_runner(self):
+        """Get or create the migration runner."""
+        if self._migration_runner is None:
+            from alma.storage.migrations.runner import MigrationRunner
+            from alma.storage.migrations.versions import v1_0_0  # noqa: F401
+
+            self._migration_runner = MigrationRunner(
+                version_store=self._get_version_store(),
+                backend="postgresql",
+            )
+        return self._migration_runner
+
+    def _ensure_migrated(self) -> None:
+        """Ensure database is migrated to latest version."""
+        runner = self._get_migration_runner()
+        if runner.needs_migration():
+            with self._get_connection() as conn:
+                applied = runner.migrate(conn)
+                if applied:
+                    logger.info(f"Applied {len(applied)} migrations: {applied}")
+
+    def get_schema_version(self) -> Optional[str]:
+        """Get the current schema version."""
+        return self._get_version_store().get_current_version()
+
+    def get_migration_status(self) -> Dict[str, Any]:
+        """Get migration status information."""
+        runner = self._get_migration_runner()
+        status = runner.get_status()
+        status["migration_supported"] = True
+        return status
+
+    def migrate(
+        self,
+        target_version: Optional[str] = None,
+        dry_run: bool = False,
+    ) -> List[str]:
+        """
+        Apply pending schema migrations.
+
+        Args:
+            target_version: Optional target version (applies all if not specified)
+            dry_run: If True, show what would be done without making changes
+
+        Returns:
+            List of applied migration versions
+        """
+        runner = self._get_migration_runner()
+        with self._get_connection() as conn:
+            return runner.migrate(conn, target_version=target_version, dry_run=dry_run)
+
+    def rollback(
+        self,
+        target_version: str,
+        dry_run: bool = False,
+    ) -> List[str]:
+        """
+        Roll back schema to a previous version.
+
+        Args:
+            target_version: Version to roll back to
+            dry_run: If True, show what would be done without making changes
+
+        Returns:
+            List of rolled back migration versions
+        """
+        runner = self._get_migration_runner()
+        with self._get_connection() as conn:
+            return runner.rollback(conn, target_version=target_version, dry_run=dry_run)

@@ -67,7 +67,7 @@ class LearningProtocol:
         duration_ms: Optional[int] = None,
         error_message: Optional[str] = None,
         feedback: Optional[str] = None,
-    ) -> bool:
+    ) -> Outcome:
         """
         Learn from a task outcome.
 
@@ -85,7 +85,7 @@ class LearningProtocol:
             feedback: User feedback
 
         Returns:
-            True if learning was accepted
+            The created Outcome record
         """
         # Validate agent has a scope (warn but don't block)
         scope = self.scopes.get(agent)
@@ -133,7 +133,7 @@ class LearningProtocol:
                 error=error_message,
             )
 
-        return True
+        return outcome_record
 
     def _maybe_create_heuristic(
         self,

@@ -1,22 +1,38 @@
 """
 ALMA Core - Main interface for the Agent Learning Memory Architecture.
+
+API Return Type Conventions:
+- Create operations: Return created object or raise exception
+- Update operations: Return updated object or raise exception
+- Delete operations: Return bool (success) or int (count), raise on failure
+- Query operations: Return list (empty if none) or object
+
+All scope violations raise ScopeViolationError for consistent error handling.
 """
 
 import logging
-from typing import Any, Dict, Optional
+import time
+from typing import Any, Dict, List, Optional
 
 from alma.config.loader import ConfigLoader
+from alma.exceptions import ScopeViolationError
 from alma.learning.protocols import LearningProtocol
+from alma.observability.logging import get_logger
+from alma.observability.metrics import get_metrics
+from alma.observability.tracing import SpanKind, get_tracer, trace_method
 from alma.retrieval.engine import RetrievalEngine
 from alma.storage.base import StorageBackend
 from alma.types import (
     DomainKnowledge,
     MemoryScope,
     MemorySlice,
+    Outcome,
     UserPreference,
 )
 
 logger = logging.getLogger(__name__)
+structured_logger = get_logger(__name__)
+tracer = get_tracer(__name__)
 
 
 class ALMA:
@@ -124,6 +140,7 @@ class ALMA:
 
             return FileBasedStorage.from_config(config)
 
+    @trace_method(name="ALMA.retrieve", kind=SpanKind.INTERNAL)
     def retrieve(
         self,
         task: str,
@@ -143,11 +160,19 @@ class ALMA:
         Returns:
             MemorySlice with relevant memories for context injection
         """
+        start_time = time.time()
+        metrics = get_metrics()
+
         # Validate agent has a defined scope
         if agent not in self.scopes:
             logger.warning(f"Agent '{agent}' has no defined scope, using defaults")
+            structured_logger.warning(
+                "Agent has no defined scope, using defaults",
+                agent=agent,
+                project_id=self.project_id,
+            )
 
-        return self.retrieval.retrieve(
+        result = self.retrieval.retrieve(
             query=task,
             agent=agent,
             project_id=self.project_id,
@@ -156,6 +181,30 @@ class ALMA:
             scope=self.scopes.get(agent),
         )
 
+        # Record metrics
+        duration_ms = (time.time() - start_time) * 1000
+        cache_hit = result.retrieval_time_ms < 10  # Approximate cache hit detection
+        metrics.record_retrieve_latency(
+            duration_ms=duration_ms,
+            agent=agent,
+            project_id=self.project_id,
+            cache_hit=cache_hit,
+            items_returned=result.total_items,
+        )
+
+        structured_logger.info(
+            "Memory retrieval completed",
+            agent=agent,
+            project_id=self.project_id,
+            task_preview=task[:50] if task else "",
+            items_returned=result.total_items,
+            duration_ms=duration_ms,
+            cache_hit=cache_hit,
+        )
+
+        return result
+
+    @trace_method(name="ALMA.learn", kind=SpanKind.INTERNAL)
     def learn(
         self,
         agent: str,
@@ -166,7 +215,7 @@ class ALMA:
         duration_ms: Optional[int] = None,
         error_message: Optional[str] = None,
         feedback: Optional[str] = None,
-    ) -> bool:
+    ) -> Outcome:
         """
         Learn from a task outcome.
 
@@ -184,9 +233,15 @@ class ALMA:
             feedback: User feedback if provided
 
         Returns:
-            True if learning was accepted, False if rejected (scope violation)
+            The created Outcome record
+
+        Raises:
+            ScopeViolationError: If learning is outside agent's scope
         """
-        result = self.learning.learn(
+        start_time = time.time()
+        metrics = get_metrics()
+
+        outcome_record = self.learning.learn(
             agent=agent,
             project_id=self.project_id,
             task=task,
@@ -199,10 +254,28 @@ class ALMA:
         )
 
         # Invalidate cache for this agent/project after learning
-        if result:
-            self.retrieval.invalidate_cache(agent=agent, project_id=self.project_id)
+        self.retrieval.invalidate_cache(agent=agent, project_id=self.project_id)
 
-        return result
+        # Record metrics
+        learn_duration_ms = (time.time() - start_time) * 1000
+        metrics.record_learn_operation(
+            duration_ms=learn_duration_ms,
+            agent=agent,
+            project_id=self.project_id,
+            memory_type="outcome",
+            success=True,
+        )
+
+        structured_logger.info(
+            "Learning operation completed",
+            agent=agent,
+            project_id=self.project_id,
+            task_type=task_type,
+            outcome=outcome,
+            duration_ms=learn_duration_ms,
+        )
+
+        return outcome_record
 
     def add_user_preference(
         self,
@@ -241,7 +314,7 @@ class ALMA:
         domain: str,
         fact: str,
         source: str = "user_stated",
-    ) -> Optional[DomainKnowledge]:
+    ) -> DomainKnowledge:
         """
         Add domain knowledge within agent's scope.
 
@@ -252,13 +325,17 @@ class ALMA:
             source: How this was learned
 
         Returns:
-            The created DomainKnowledge or None if scope violation
+            The created DomainKnowledge
+
+        Raises:
+            ScopeViolationError: If agent is not allowed to learn in this domain
         """
         # Check scope
         scope = self.scopes.get(agent)
         if scope and not scope.is_allowed(domain):
-            logger.warning(f"Agent '{agent}' not allowed to learn in domain '{domain}'")
-            return None
+            raise ScopeViolationError(
+                f"Agent '{agent}' is not allowed to learn in domain '{domain}'"
+            )
 
         result = self.learning.add_domain_knowledge(
             agent=agent,
@@ -269,11 +346,11 @@ class ALMA:
         )
 
         # Invalidate cache for this agent/project after adding knowledge
-        if result:
-            self.retrieval.invalidate_cache(agent=agent, project_id=self.project_id)
+        self.retrieval.invalidate_cache(agent=agent, project_id=self.project_id)
 
         return result
 
+    @trace_method(name="ALMA.forget", kind=SpanKind.INTERNAL)
     def forget(
         self,
         agent: Optional[str] = None,
@@ -283,7 +360,8 @@ class ALMA:
         """
         Prune stale or low-confidence memories.
 
-        Invalidates cache after pruning to ensure fresh retrieval results.
+        This is a delete operation that invalidates cache after pruning
+        to ensure fresh retrieval results.
 
         Args:
             agent: Specific agent to prune, or None for all
@@ -291,8 +369,14 @@ class ALMA:
             below_confidence: Remove heuristics below this confidence
 
         Returns:
-            Number of items pruned
+            Number of items pruned (0 if nothing was pruned)
+
+        Raises:
+            StorageError: If the delete operation fails
         """
+        start_time = time.time()
+        metrics = get_metrics()
+
         count = self.learning.forget(
             project_id=self.project_id,
             agent=agent,
@@ -304,17 +388,41 @@ class ALMA:
         if count > 0:
             self.retrieval.invalidate_cache(agent=agent, project_id=self.project_id)
 
+        # Record metrics
+        duration_ms = (time.time() - start_time) * 1000
+        metrics.record_forget_operation(
+            duration_ms=duration_ms,
+            agent=agent,
+            project_id=self.project_id,
+            items_removed=count,
+        )
+
+        structured_logger.info(
+            "Forget operation completed",
+            agent=agent or "all",
+            project_id=self.project_id,
+            items_removed=count,
+            older_than_days=older_than_days,
+            below_confidence=below_confidence,
+            duration_ms=duration_ms,
+        )
+
         return count
 
     def get_stats(self, agent: Optional[str] = None) -> Dict[str, Any]:
         """
         Get memory statistics.
 
+        This is a query operation that returns statistics about stored memories.
+
         Args:
             agent: Specific agent or None for all
 
         Returns:
-            Dict with counts and metadata
+            Dict with counts and metadata (always returns a dict, may be empty)
+
+        Raises:
+            StorageError: If the query operation fails
         """
         return self.storage.get_stats(
             project_id=self.project_id,
