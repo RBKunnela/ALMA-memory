@@ -292,15 +292,59 @@ class RetrievalEngine:
         if self.embedding_provider == "azure":
             from alma.retrieval.embeddings import AzureEmbedder
 
-            return AzureEmbedder()
+            embedder = AzureEmbedder()
         elif self.embedding_provider == "mock":
             from alma.retrieval.embeddings import MockEmbedder
 
-            return MockEmbedder()
+            embedder = MockEmbedder()
         else:
             from alma.retrieval.embeddings import LocalEmbedder
 
-            return LocalEmbedder()
+            embedder = LocalEmbedder()
+
+        # Validate embedding dimension matches storage configuration
+        self._validate_embedding_dimension(embedder)
+        return embedder
+
+    def _validate_embedding_dimension(self, embedder) -> None:
+        """
+        Validate that embedding provider dimension matches storage configuration.
+
+        Raises:
+            ValueError: If dimensions don't match
+        """
+        provider_dim = embedder.dimension
+
+        # Check if storage has embedding_dim attribute
+        storage_dim = getattr(self.storage, "embedding_dim", None)
+        if storage_dim is None:
+            logger.debug(
+                "Storage backend doesn't specify embedding_dim, skipping validation"
+            )
+            return
+
+        # Skip validation if storage_dim is not an integer (e.g., mock objects)
+        if not isinstance(storage_dim, int):
+            logger.debug(
+                f"Storage embedding_dim is not an integer ({type(storage_dim)}), "
+                "skipping validation"
+            )
+            return
+
+        if provider_dim != storage_dim:
+            raise ValueError(
+                f"Embedding dimension mismatch: provider '{self.embedding_provider}' "
+                f"outputs {provider_dim} dimensions, but storage is configured for "
+                f"{storage_dim} dimensions. Update your config's embedding_dim to "
+                f"match the provider, or use a different embedding provider.\n"
+                f"  - local (all-MiniLM-L6-v2): 384 dimensions\n"
+                f"  - azure (text-embedding-3-small): 1536 dimensions"
+            )
+
+        logger.info(
+            f"Embedding dimension validated: {provider_dim} "
+            f"(provider: {self.embedding_provider})"
+        )
 
     def invalidate_cache(
         self,
