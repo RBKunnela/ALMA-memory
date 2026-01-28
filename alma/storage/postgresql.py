@@ -196,6 +196,11 @@ class PostgreSQLStorage(StorageBackend):
                 CREATE INDEX IF NOT EXISTS idx_heuristics_project_agent
                 ON {self.schema}.alma_heuristics(project_id, agent)
             """)
+            # Confidence index for efficient filtering by confidence score
+            conn.execute(f"""
+                CREATE INDEX IF NOT EXISTS idx_heuristics_confidence
+                ON {self.schema}.alma_heuristics(project_id, confidence DESC)
+            """)
 
             # Outcomes table
             conn.execute(f"""
@@ -264,6 +269,11 @@ class PostgreSQLStorage(StorageBackend):
             conn.execute(f"""
                 CREATE INDEX IF NOT EXISTS idx_domain_knowledge_project_agent
                 ON {self.schema}.alma_domain_knowledge(project_id, agent)
+            """)
+            # Confidence index for efficient filtering by confidence score
+            conn.execute(f"""
+                CREATE INDEX IF NOT EXISTS idx_domain_knowledge_confidence
+                ON {self.schema}.alma_domain_knowledge(project_id, confidence DESC)
             """)
 
             # Anti-patterns table
