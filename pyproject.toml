@@ -134,6 +134,11 @@ branch = true
 omit = [
     "alma/__main__.py",
     "alma/mcp/__main__.py",
+    # Optional backends - require external packages not installed in CI
+    "alma/storage/qdrant.py",
+    "alma/storage/pinecone.py",
+    "alma/storage/chroma.py",
+    "alma/graph/backends/neo4j.py",
 ]
 
 [tool.coverage.report]
