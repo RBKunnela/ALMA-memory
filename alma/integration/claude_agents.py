@@ -212,8 +212,8 @@ class ClaudeAgentHooks:
             self.harness.post_run(harness_context, run_result)
             return True
         else:
-            # Direct ALMA learning
-            return self.alma.learn(
+            # Direct ALMA learning - now returns Outcome object
+            self.alma.learn(
                 agent=self.agent_name,
                 task=context.task_description,
                 outcome="success" if outcome.success else "failure",
@@ -223,6 +223,7 @@ class ClaudeAgentHooks:
                 error_message=outcome.error_message,
                 feedback=outcome.feedback,
             )
+            return True
 
     def format_memories_for_prompt(
         self,
@@ -312,15 +313,26 @@ class ClaudeAgentHooks:
             source: How this was discovered
 
         Returns:
-            True if knowledge was added, False if scope violation
+            True if knowledge was added
+
+        Raises:
+            ScopeViolationError: If domain is not within agent's scope
         """
-        result = self.alma.add_domain_knowledge(
-            agent=self.agent_name,
-            domain=domain,
-            fact=fact,
-            source=source,
-        )
-        return result is not None
+        from alma.exceptions import ScopeViolationError
+
+        try:
+            self.alma.add_domain_knowledge(
+                agent=self.agent_name,
+                domain=domain,
+                fact=fact,
+                source=source,
+            )
+            return True
+        except ScopeViolationError:
+            logger.warning(
+                f"[{self.agent_name}] Scope violation: cannot add knowledge in domain '{domain}'"
+            )
+            return False
 
 
 class AgentIntegration:

@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from alma.storage.base import StorageBackend
+from alma.storage.constants import MemoryType, SQLITE_TABLE_NAMES
 from alma.types import (
     AntiPattern,
     DomainKnowledge,
@@ -56,6 +57,7 @@ class SQLiteStorage(StorageBackend):
         self,
         db_path: Path,
         embedding_dim: int = 384,  # Default for all-MiniLM-L6-v2
+        auto_migrate: bool = True,
     ):
         """
         Initialize SQLite storage.
@@ -63,10 +65,15 @@ class SQLiteStorage(StorageBackend):
         Args:
             db_path: Path to SQLite database file
             embedding_dim: Dimension of embedding vectors
+            auto_migrate: If True, automatically apply pending migrations on startup
         """
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.embedding_dim = embedding_dim
+
+        # Migration support (lazy-loaded)
+        self._migration_runner = None
+        self._version_store = None
 
         # Initialize database
         self._init_database()
@@ -76,6 +83,10 @@ class SQLiteStorage(StorageBackend):
         self._id_maps: Dict[str, List[str]] = {}  # memory_type -> [memory_ids]
         self._index_dirty: Dict[str, bool] = {}  # Track which indexes need rebuilding
         self._load_faiss_indices()
+
+        # Auto-migrate if enabled
+        if auto_migrate:
+            self._ensure_migrated()
 
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> "SQLiteStorage":
@@ -236,12 +247,7 @@ class SQLiteStorage(StorageBackend):
             memory_types: List of memory types to load. If None, loads all types.
         """
         if memory_types is None:
-            memory_types = [
-                "heuristics",
-                "outcomes",
-                "domain_knowledge",
-                "anti_patterns",
-            ]
+            memory_types = list(MemoryType.VECTOR_ENABLED)
 
         for memory_type in memory_types:
             if FAISS_AVAILABLE:
@@ -401,7 +407,7 @@ class SQLiteStorage(StorageBackend):
             )
 
         # Add embedding to index
-        self._add_to_index("heuristics", heuristic.id, heuristic.embedding)
+        self._add_to_index(MemoryType.HEURISTICS, heuristic.id, heuristic.embedding)
         logger.debug(f"Saved heuristic: {heuristic.id}")
         return heuristic.id
 
@@ -433,7 +439,7 @@ class SQLiteStorage(StorageBackend):
             )
 
         # Add embedding to index
-        self._add_to_index("outcomes", outcome.id, outcome.embedding)
+        self._add_to_index(MemoryType.OUTCOMES, outcome.id, outcome.embedding)
         logger.debug(f"Saved outcome: {outcome.id}")
         return outcome.id
 
@@ -489,7 +495,7 @@ class SQLiteStorage(StorageBackend):
             )
 
         # Add embedding to index
-        self._add_to_index("domain_knowledge", knowledge.id, knowledge.embedding)
+        self._add_to_index(MemoryType.DOMAIN_KNOWLEDGE, knowledge.id, knowledge.embedding)
         logger.debug(f"Saved domain knowledge: {knowledge.id}")
         return knowledge.id
 
@@ -531,7 +537,7 @@ class SQLiteStorage(StorageBackend):
             )
 
         # Add embedding to index
-        self._add_to_index("anti_patterns", anti_pattern.id, anti_pattern.embedding)
+        self._add_to_index(MemoryType.ANTI_PATTERNS, anti_pattern.id, anti_pattern.embedding)
         logger.debug(f"Saved anti-pattern: {anti_pattern.id}")
         return anti_pattern.id
 
@@ -571,7 +577,7 @@ class SQLiteStorage(StorageBackend):
 
         # Add embeddings to index
         for h in heuristics:
-            self._add_to_index("heuristics", h.id, h.embedding)
+            self._add_to_index(MemoryType.HEURISTICS, h.id, h.embedding)
 
         logger.debug(f"Batch saved {len(heuristics)} heuristics")
         return [h.id for h in heuristics]
@@ -611,7 +617,7 @@ class SQLiteStorage(StorageBackend):
 
         # Add embeddings to index
         for o in outcomes:
-            self._add_to_index("outcomes", o.id, o.embedding)
+            self._add_to_index(MemoryType.OUTCOMES, o.id, o.embedding)
 
         logger.debug(f"Batch saved {len(outcomes)} outcomes")
         return [o.id for o in outcomes]
@@ -649,7 +655,7 @@ class SQLiteStorage(StorageBackend):
 
         # Add embeddings to index
         for k in knowledge_items:
-            self._add_to_index("domain_knowledge", k.id, k.embedding)
+            self._add_to_index(MemoryType.DOMAIN_KNOWLEDGE, k.id, k.embedding)
 
         logger.debug(f"Batch saved {len(knowledge_items)} domain knowledge items")
         return [k.id for k in knowledge_items]
@@ -668,7 +674,7 @@ class SQLiteStorage(StorageBackend):
         # If embedding provided, use vector search to get candidate IDs
         candidate_ids = None
         if embedding:
-            search_results = self._search_index("heuristics", embedding, top_k * 2)
+            search_results = self._search_index(MemoryType.HEURISTICS, embedding, top_k * 2)
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -706,7 +712,7 @@ class SQLiteStorage(StorageBackend):
         """Get outcomes with optional vector search."""
         candidate_ids = None
         if embedding:
-            search_results = self._search_index("outcomes", embedding, top_k * 2)
+            search_results = self._search_index(MemoryType.OUTCOMES, embedding, top_k * 2)
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -772,7 +778,7 @@ class SQLiteStorage(StorageBackend):
         candidate_ids = None
         if embedding:
             search_results = self._search_index(
-                "domain_knowledge", embedding, top_k * 2
+                MemoryType.DOMAIN_KNOWLEDGE, embedding, top_k * 2
             )
             candidate_ids = [id for id, _ in search_results]
 
@@ -813,7 +819,7 @@ class SQLiteStorage(StorageBackend):
         """Get anti-patterns with optional vector search."""
         candidate_ids = None
         if embedding:
-            search_results = self._search_index("anti_patterns", embedding, top_k * 2)
+            search_results = self._search_index(MemoryType.ANTI_PATTERNS, embedding, top_k * 2)
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -856,7 +862,7 @@ class SQLiteStorage(StorageBackend):
         candidate_ids = None
         if embedding:
             search_results = self._search_index(
-                "heuristics", embedding, top_k * 2 * len(agents)
+                MemoryType.HEURISTICS, embedding, top_k * 2 * len(agents)
             )
             candidate_ids = [id for id, _ in search_results]
 
@@ -896,7 +902,7 @@ class SQLiteStorage(StorageBackend):
         candidate_ids = None
         if embedding:
             search_results = self._search_index(
-                "outcomes", embedding, top_k * 2 * len(agents)
+                MemoryType.OUTCOMES, embedding, top_k * 2 * len(agents)
             )
             candidate_ids = [id for id, _ in search_results]
 
@@ -942,7 +948,7 @@ class SQLiteStorage(StorageBackend):
         candidate_ids = None
         if embedding:
             search_results = self._search_index(
-                "domain_knowledge", embedding, top_k * 2 * len(agents)
+                MemoryType.DOMAIN_KNOWLEDGE, embedding, top_k * 2 * len(agents)
             )
             candidate_ids = [id for id, _ in search_results]
 
@@ -984,7 +990,7 @@ class SQLiteStorage(StorageBackend):
         candidate_ids = None
         if embedding:
             search_results = self._search_index(
-                "anti_patterns", embedding, top_k * 2 * len(agents)
+                MemoryType.ANTI_PATTERNS, embedding, top_k * 2 * len(agents)
             )
             candidate_ids = [id for id, _ in search_results]
 
@@ -1138,19 +1144,22 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            tables = ["heuristics", "outcomes", "domain_knowledge", "anti_patterns"]
-            for table in tables:
-                query = f"SELECT COUNT(*) FROM {table} WHERE project_id = ?"
-                params: List[Any] = [project_id]
-                if agent:
-                    query += " AND agent = ?"
-                    params.append(agent)
-                cursor.execute(query, params)
-                stats[f"{table}_count"] = cursor.fetchone()[0]
-
-            # Preferences don't have project_id
-            cursor.execute("SELECT COUNT(*) FROM preferences")
-            stats["preferences_count"] = cursor.fetchone()[0]
+            # Use canonical memory types for stats
+            for memory_type in MemoryType.ALL:
+                if memory_type == MemoryType.PREFERENCES:
+                    # Preferences don't have project_id
+                    cursor.execute(
+                        f"SELECT COUNT(*) FROM {SQLITE_TABLE_NAMES[memory_type]}"
+                    )
+                    stats[f"{memory_type}_count"] = cursor.fetchone()[0]
+                else:
+                    query = f"SELECT COUNT(*) FROM {SQLITE_TABLE_NAMES[memory_type]} WHERE project_id = ?"
+                    params: List[Any] = [project_id]
+                    if agent:
+                        query += " AND agent = ?"
+                        params.append(agent)
+                    cursor.execute(query, params)
+                    stats[f"{memory_type}_count"] = cursor.fetchone()[0]
 
             # Embedding counts
             cursor.execute("SELECT COUNT(*) FROM embeddings")
@@ -1290,16 +1299,16 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                "DELETE FROM embeddings WHERE memory_type = 'heuristics' AND memory_id = ?",
-                (heuristic_id,),
+                f"DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
+                (MemoryType.HEURISTICS, heuristic_id),
             )
             cursor = conn.execute(
-                "DELETE FROM heuristics WHERE id = ?",
+                f"DELETE FROM {SQLITE_TABLE_NAMES[MemoryType.HEURISTICS]} WHERE id = ?",
                 (heuristic_id,),
             )
             if cursor.rowcount > 0:
                 # Mark index as dirty for lazy rebuild on next search
-                self._index_dirty["heuristics"] = True
+                self._index_dirty[MemoryType.HEURISTICS] = True
                 return True
             return False
 
@@ -1308,16 +1317,16 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                "DELETE FROM embeddings WHERE memory_type = 'outcomes' AND memory_id = ?",
-                (outcome_id,),
+                f"DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
+                (MemoryType.OUTCOMES, outcome_id),
             )
             cursor = conn.execute(
-                "DELETE FROM outcomes WHERE id = ?",
+                f"DELETE FROM {SQLITE_TABLE_NAMES[MemoryType.OUTCOMES]} WHERE id = ?",
                 (outcome_id,),
             )
             if cursor.rowcount > 0:
                 # Mark index as dirty for lazy rebuild on next search
-                self._index_dirty["outcomes"] = True
+                self._index_dirty[MemoryType.OUTCOMES] = True
                 return True
             return False
 
@@ -1326,16 +1335,16 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                "DELETE FROM embeddings WHERE memory_type = 'domain_knowledge' AND memory_id = ?",
-                (knowledge_id,),
+                f"DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
+                (MemoryType.DOMAIN_KNOWLEDGE, knowledge_id),
             )
             cursor = conn.execute(
-                "DELETE FROM domain_knowledge WHERE id = ?",
+                f"DELETE FROM {SQLITE_TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]} WHERE id = ?",
                 (knowledge_id,),
             )
             if cursor.rowcount > 0:
                 # Mark index as dirty for lazy rebuild on next search
-                self._index_dirty["domain_knowledge"] = True
+                self._index_dirty[MemoryType.DOMAIN_KNOWLEDGE] = True
                 return True
             return False
 
@@ -1344,15 +1353,95 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             # Also remove from embedding index
             conn.execute(
-                "DELETE FROM embeddings WHERE memory_type = 'anti_patterns' AND memory_id = ?",
-                (anti_pattern_id,),
+                f"DELETE FROM embeddings WHERE memory_type = ? AND memory_id = ?",
+                (MemoryType.ANTI_PATTERNS, anti_pattern_id),
             )
             cursor = conn.execute(
-                "DELETE FROM anti_patterns WHERE id = ?",
+                f"DELETE FROM {SQLITE_TABLE_NAMES[MemoryType.ANTI_PATTERNS]} WHERE id = ?",
                 (anti_pattern_id,),
             )
             if cursor.rowcount > 0:
                 # Mark index as dirty for lazy rebuild on next search
-                self._index_dirty["anti_patterns"] = True
+                self._index_dirty[MemoryType.ANTI_PATTERNS] = True
                 return True
             return False
+
+    # ==================== MIGRATION SUPPORT ====================
+
+    def _get_version_store(self):
+        """Get or create the version store."""
+        if self._version_store is None:
+            from alma.storage.migrations.version_stores import SQLiteVersionStore
+
+            self._version_store = SQLiteVersionStore(self.db_path)
+        return self._version_store
+
+    def _get_migration_runner(self):
+        """Get or create the migration runner."""
+        if self._migration_runner is None:
+            from alma.storage.migrations.runner import MigrationRunner
+            from alma.storage.migrations.versions import v1_0_0  # noqa: F401
+
+            self._migration_runner = MigrationRunner(
+                version_store=self._get_version_store(),
+                backend="sqlite",
+            )
+        return self._migration_runner
+
+    def _ensure_migrated(self) -> None:
+        """Ensure database is migrated to latest version."""
+        runner = self._get_migration_runner()
+        if runner.needs_migration():
+            with self._get_connection() as conn:
+                applied = runner.migrate(conn)
+                if applied:
+                    logger.info(f"Applied {len(applied)} migrations: {applied}")
+
+    def get_schema_version(self) -> Optional[str]:
+        """Get the current schema version."""
+        return self._get_version_store().get_current_version()
+
+    def get_migration_status(self) -> Dict[str, Any]:
+        """Get migration status information."""
+        runner = self._get_migration_runner()
+        status = runner.get_status()
+        status["migration_supported"] = True
+        return status
+
+    def migrate(
+        self,
+        target_version: Optional[str] = None,
+        dry_run: bool = False,
+    ) -> List[str]:
+        """
+        Apply pending schema migrations.
+
+        Args:
+            target_version: Optional target version (applies all if not specified)
+            dry_run: If True, show what would be done without making changes
+
+        Returns:
+            List of applied migration versions
+        """
+        runner = self._get_migration_runner()
+        with self._get_connection() as conn:
+            return runner.migrate(conn, target_version=target_version, dry_run=dry_run)
+
+    def rollback(
+        self,
+        target_version: str,
+        dry_run: bool = False,
+    ) -> List[str]:
+        """
+        Roll back schema to a previous version.
+
+        Args:
+            target_version: Version to roll back to
+            dry_run: If True, show what would be done without making changes
+
+        Returns:
+            List of rolled back migration versions
+        """
+        runner = self._get_migration_runner()
+        with self._get_connection() as conn:
+            return runner.rollback(conn, target_version=target_version, dry_run=dry_run)

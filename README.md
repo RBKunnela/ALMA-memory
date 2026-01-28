@@ -23,7 +23,7 @@ ALMA isn't just another memory framework. Here's what sets it apart from alterna
 | **Event System** | Webhooks + in-process callbacks | None | React to memory changes in real-time |
 | **TypeScript SDK** | Full-featured client library | None | First-class JavaScript/TypeScript support |
 | **Vector DB Support** | 6 backends (PostgreSQL, Qdrant, Pinecone, Chroma, SQLite, Azure) | Limited | Deploy anywhere |
-| **Graph Memory** | Pluggable backends (Neo4j, In-memory) | Limited | Entity relationship tracking |
+| **Graph Memory** | Pluggable backends (Neo4j, Memgraph, Kuzu, In-memory) | Limited | Entity relationship tracking |
 | **Harness Pattern** | Decouples agent from domain memory | None | Reusable agent architecture |
 | **MCP Integration** | Native stdio/HTTP server | None | Direct Claude Code integration |
 | **Domain Memory Factory** | 6 pre-built schemas | None | Instant setup for any domain |
@@ -55,8 +55,15 @@ ALMA isn't just another memory framework. Here's what sets it apart from alterna
 - **Graph Database Abstraction** (`alma/graph/`)
   - Pluggable `GraphBackend` interface
   - Neo4j backend for production
+  - Memgraph backend for high-performance in-memory graphs
+  - Kuzu backend for embedded graph storage (no server required)
   - In-memory backend for testing
   - Factory function `create_graph_backend()` for easy setup
+
+- **Testing Module** (`alma/testing/`)
+  - `MockStorage` - In-memory storage backend for isolated testing
+  - `MockEmbedder` - Deterministic fake embedding provider
+  - Factory functions for creating test data with sensible defaults
 
 ### Phase 1: Core Features
 
@@ -378,14 +385,23 @@ Capture entity relationships for complex reasoning:
 ```python
 from alma.graph import create_graph_backend, BackendGraphStore, EntityExtractor
 
-# Create graph backend (Neo4j for production, memory for testing)
+# Create graph backend - multiple options available:
+
+# Neo4j (production, hosted)
 backend = create_graph_backend(
     "neo4j",
     uri="neo4j+s://xxx.databases.neo4j.io",
     username="neo4j",
     password="your-password"
 )
-# Or for testing:
+
+# Memgraph (high-performance, in-memory)
+# backend = create_graph_backend("memgraph", uri="bolt://localhost:7687")
+
+# Kuzu (embedded, no server required)
+# backend = create_graph_backend("kuzu", database_path="./my_graph_db")
+
+# In-memory (testing)
 # backend = create_graph_backend("memory")
 
 # Create store with backend
@@ -637,9 +653,12 @@ print(f"Recommendation: {signal.recommendation}")
 |  +---------------+  +------------------+  +---------------+             |
 +-------------------------------------------------------------------------+
 |  GRAPH LAYER                                                            |
-|  +---------------+  +------------------+                                |
-|  |    Neo4j      |  |   In-Memory      |                                |
-|  +---------------+  +------------------+                                |
+|  +---------------+  +------------------+  +---------------+             |
+|  |    Neo4j      |  |    Memgraph      |  |     Kuzu      |             |
+|  +---------------+  +------------------+  +---------------+             |
+|  +---------------+                                                      |
+|  |   In-Memory   |                                                      |
+|  +---------------+                                                      |
 +-------------------------------------------------------------------------+
 |  INTEGRATION LAYER                                                      |
 |  +-------------------------------------------------------------------+  |
@@ -763,6 +782,7 @@ chroma:
 | Pinecone Backend | Serverless vector DB | Done |
 | Chroma Backend | Lightweight vector DB | Done |
 | Graph Abstraction | Pluggable graph backends | Done |
+| Testing Module | Mocks and factories for testing | Done |
 
 ---
 
@@ -793,6 +813,16 @@ docker run -p 6333:6333 qdrant/qdrant
 **Embeddings dimension mismatch**
 - Ensure `embedding_dim` in config matches your embedding provider
 - Local: 384, Azure text-embedding-3-small: 1536
+
+**Memgraph connection refused**
+```bash
+# Start Memgraph with Docker
+docker run -p 7687:7687 memgraph/memgraph-mage
+```
+
+**Kuzu database locked**
+- Ensure only one process accesses the database at a time
+- Use `read_only=True` for concurrent read access
 
 ### Debug Logging
 

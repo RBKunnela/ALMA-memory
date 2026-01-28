@@ -5,12 +5,16 @@ Tests for scenarios involving multiple agents working together,
 including scope enforcement and cross-agent isolation.
 """
 
+import pytest
+
 from alma import ALMA, MemoryScope
+from alma.exceptions import ScopeViolationError
 from alma.integration.helena import HELENA_CATEGORIES
 from alma.integration.victor import VICTOR_CATEGORIES
 from alma.learning.protocols import LearningProtocol
 from alma.retrieval.engine import RetrievalEngine
 from alma.storage.file_based import FileBasedStorage
+from alma.types import Outcome
 
 
 class TestScopeEnforcement:
@@ -18,25 +22,29 @@ class TestScopeEnforcement:
 
     def test_helena_cannot_learn_backend_logic(self, seeded_alma: ALMA):
         """Helena should not be able to learn in backend_logic domain."""
-        result = seeded_alma.add_domain_knowledge(
-            agent="helena",
-            domain="backend_logic",  # Forbidden for Helena
-            fact="Database connections should use pooling",
-            source="test",
-        )
+        with pytest.raises(ScopeViolationError) as exc_info:
+            seeded_alma.add_domain_knowledge(
+                agent="helena",
+                domain="backend_logic",  # Forbidden for Helena
+                fact="Database connections should use pooling",
+                source="test",
+            )
 
-        assert result is None, "Helena should not be able to learn backend_logic"
+        assert "helena" in str(exc_info.value)
+        assert "backend_logic" in str(exc_info.value)
 
     def test_victor_cannot_learn_frontend_styling(self, seeded_alma: ALMA):
         """Victor should not be able to learn in frontend_styling domain."""
-        result = seeded_alma.add_domain_knowledge(
-            agent="victor",
-            domain="frontend_styling",  # Forbidden for Victor
-            fact="Use CSS Grid for layouts",
-            source="test",
-        )
+        with pytest.raises(ScopeViolationError) as exc_info:
+            seeded_alma.add_domain_knowledge(
+                agent="victor",
+                domain="frontend_styling",  # Forbidden for Victor
+                fact="Use CSS Grid for layouts",
+                source="test",
+            )
 
-        assert result is None, "Victor should not be able to learn frontend_styling"
+        assert "victor" in str(exc_info.value)
+        assert "frontend_styling" in str(exc_info.value)
 
     def test_helena_can_learn_testing_strategies(self, seeded_alma: ALMA):
         """Helena should be able to learn in testing_strategies domain."""
@@ -112,7 +120,7 @@ class TestAgentIsolation:
     def test_shared_project_different_agents(self, temp_storage_dir, scopes):
         """Two agents in same project should have isolated memories."""
         storage = FileBasedStorage(storage_dir=temp_storage_dir)
-        retrieval = RetrievalEngine(storage=storage, embedding_provider="local")
+        retrieval = RetrievalEngine(storage=storage, embedding_provider="mock")
         learning = LearningProtocol(storage=storage, scopes=scopes)
 
         alma = ALMA(
@@ -154,7 +162,7 @@ class TestConcurrentAgentOperations:
 
     def test_simultaneous_learning(self, seeded_alma: ALMA):
         """Both agents can learn in the same project simultaneously."""
-        # Helena learns
+        # Helena learns - now returns Outcome object
         helena_result = seeded_alma.learn(
             agent="helena",
             task="Concurrent test 1",
@@ -163,7 +171,7 @@ class TestConcurrentAgentOperations:
             task_type="form_testing",
         )
 
-        # Victor learns
+        # Victor learns - now returns Outcome object
         victor_result = seeded_alma.learn(
             agent="victor",
             task="Concurrent test 2",
@@ -172,8 +180,14 @@ class TestConcurrentAgentOperations:
             task_type="api_design_patterns",
         )
 
-        assert helena_result is True
-        assert victor_result is True
+        # Verify Outcome objects are returned with correct data
+        assert isinstance(helena_result, Outcome)
+        assert helena_result.agent == "helena"
+        assert helena_result.success is True
+
+        assert isinstance(victor_result, Outcome)
+        assert victor_result.agent == "victor"
+        assert victor_result.success is True
 
         # Both should see their outcomes
         helena_memories = seeded_alma.retrieve(
@@ -214,7 +228,7 @@ class TestHeuristicGeneration:
     def test_heuristic_created_after_min_occurrences(self, temp_storage_dir, scopes):
         """Heuristic should be created after min_occurrences threshold."""
         storage = FileBasedStorage(storage_dir=temp_storage_dir)
-        retrieval = RetrievalEngine(storage=storage, embedding_provider="local")
+        retrieval = RetrievalEngine(storage=storage, embedding_provider="mock")
         learning = LearningProtocol(storage=storage, scopes=scopes)
 
         alma = ALMA(

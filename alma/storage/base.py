@@ -508,6 +508,62 @@ class StorageBackend(ABC):
         """
         pass
 
+    # ==================== MIGRATION SUPPORT ====================
+
+    def get_schema_version(self) -> Optional[str]:
+        """
+        Get the current schema version.
+
+        Returns:
+            Current schema version string, or None if not tracked
+        """
+        # Default implementation returns None (no version tracking)
+        return None
+
+    def get_migration_status(self) -> Dict[str, Any]:
+        """
+        Get migration status information.
+
+        Returns:
+            Dict with current version, pending migrations, etc.
+        """
+        return {
+            "current_version": self.get_schema_version(),
+            "target_version": None,
+            "pending_count": 0,
+            "pending_versions": [],
+            "needs_migration": False,
+            "migration_supported": False,
+        }
+
+    def migrate(self, target_version: Optional[str] = None, dry_run: bool = False) -> List[str]:
+        """
+        Apply pending schema migrations.
+
+        Args:
+            target_version: Optional target version (applies all if not specified)
+            dry_run: If True, show what would be done without making changes
+
+        Returns:
+            List of applied migration versions
+        """
+        # Default implementation does nothing
+        return []
+
+    def rollback(self, target_version: str, dry_run: bool = False) -> List[str]:
+        """
+        Roll back schema to a previous version.
+
+        Args:
+            target_version: Version to roll back to
+            dry_run: If True, show what would be done without making changes
+
+        Returns:
+            List of rolled back migration versions
+        """
+        # Default implementation does nothing
+        return []
+
     # ==================== UTILITY ====================
 
     @classmethod

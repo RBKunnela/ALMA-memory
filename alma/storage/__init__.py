@@ -1,7 +1,22 @@
 """ALMA Storage Backends."""
 
 from alma.storage.base import StorageBackend
+from alma.storage.constants import (
+    AZURE_COSMOS_CONTAINER_NAMES,
+    POSTGRESQL_TABLE_NAMES,
+    SQLITE_TABLE_NAMES,
+    MemoryType,
+    get_table_name,
+    get_table_names,
+)
 from alma.storage.file_based import FileBasedStorage
+from alma.storage.migrations import (
+    Migration,
+    MigrationError,
+    MigrationRegistry,
+    MigrationRunner,
+    SchemaVersion,
+)
 from alma.storage.sqlite_local import SQLiteStorage
 
 # Azure Cosmos DB is optional - requires azure-cosmos package
@@ -50,6 +65,7 @@ except ImportError:
     _HAS_PINECONE = False
 
 __all__ = [
+    # Storage backends
     "StorageBackend",
     "FileBasedStorage",
     "SQLiteStorage",
@@ -58,4 +74,17 @@ __all__ = [
     "QdrantStorage",
     "ChromaStorage",
     "PineconeStorage",
+    # Migration framework
+    "Migration",
+    "MigrationError",
+    "MigrationRegistry",
+    "MigrationRunner",
+    "SchemaVersion",
+    # Constants for consistent naming
+    "MemoryType",
+    "get_table_name",
+    "get_table_names",
+    "POSTGRESQL_TABLE_NAMES",
+    "SQLITE_TABLE_NAMES",
+    "AZURE_COSMOS_CONTAINER_NAMES",
 ]

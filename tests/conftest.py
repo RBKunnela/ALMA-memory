@@ -70,7 +70,7 @@ def test_config(temp_storage_dir: Path) -> Dict[str, Any]:
         "project_id": "test-project",
         "storage": "file",
         "storage_dir": str(temp_storage_dir),
-        "embedding_provider": "local",
+        "embedding_provider": "mock",
         "agents": {
             "helena": {
                 "can_learn": HELENA_CATEGORIES,
@@ -129,7 +129,7 @@ def retrieval_engine(storage: FileBasedStorage) -> RetrievalEngine:
     """Create a retrieval engine for testing."""
     return RetrievalEngine(
         storage=storage,
-        embedding_provider="local",
+        embedding_provider="mock",
     )
 
 
@@ -483,7 +483,7 @@ def seeded_alma(
     """Create ALMA instance with pre-seeded data."""
     retrieval = RetrievalEngine(
         storage=seeded_storage,
-        embedding_provider="local",
+        embedding_provider="mock",
     )
 
     learning = LearningProtocol(

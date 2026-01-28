@@ -16,6 +16,7 @@ from alma.integration.helena import HELENA_CATEGORIES
 from alma.learning.protocols import LearningProtocol
 from alma.retrieval.engine import RetrievalEngine
 from alma.storage.file_based import FileBasedStorage
+from alma.types import Outcome
 
 
 class TestCompleteLearnCycle:
@@ -54,7 +55,7 @@ class TestCompleteLearnCycle:
         assert memories.total_items == 0
 
     def test_learning_creates_outcome(self, fresh_alma: ALMA):
-        """Learning should create an outcome record."""
+        """Learning should create an outcome record and return it."""
         result = fresh_alma.learn(
             agent="helena",
             task="Test login form validation",
@@ -64,7 +65,13 @@ class TestCompleteLearnCycle:
             duration_ms=1500,
         )
 
-        assert result is True
+        # learn() now returns the created Outcome object
+        assert isinstance(result, Outcome)
+        assert result.agent == "helena"
+        assert result.success is True
+        assert result.strategy_used == "check inputs first"
+        assert result.task_type == "form_testing"
+        assert result.duration_ms == 1500
 
         stats = fresh_alma.get_stats(agent="helena")
         assert stats.get("outcomes_count", 0) >= 1

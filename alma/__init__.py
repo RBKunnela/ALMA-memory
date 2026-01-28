@@ -29,7 +29,7 @@ Testing Support:
     - create_test_heuristic(), create_test_outcome(), etc.
 """
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 # Core
 # Confidence Engine (Phase 12)
@@ -78,6 +78,16 @@ from alma.exceptions import (
     RetrievalError,
     ScopeViolationError,
     StorageError,
+)
+
+# Observability (Phase 20)
+from alma.observability import (
+    ALMAMetrics,
+    configure_observability,
+    get_logger,
+    get_metrics,
+    get_tracer,
+    trace_method,
 )
 
 # Harness Pattern
@@ -206,4 +216,11 @@ __all__ = [
     "EmbeddingError",
     "RetrievalError",
     "ExtractionError",
+    # Observability
+    "configure_observability",
+    "get_tracer",
+    "get_logger",
+    "get_metrics",
+    "ALMAMetrics",
+    "trace_method",
 ]

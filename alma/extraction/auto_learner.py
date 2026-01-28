@@ -208,16 +208,17 @@ class AutoLearner:
                     preference=fact.content,
                     source="auto_extraction",
                 )
-                return pref.id if pref else None
+                return pref.id
 
         elif fact.fact_type == FactType.DOMAIN_KNOWLEDGE:
+            # add_domain_knowledge now raises ScopeViolationError instead of returning None
             knowledge = self.alma.add_domain_knowledge(
                 agent=agent,
                 domain=fact.domain or "general",
                 fact=fact.content,
                 source="auto_extraction",
             )
-            return knowledge.id if knowledge else None
+            return knowledge.id
 
         elif fact.fact_type == FactType.OUTCOME:
             # Outcomes need success/failure info we don't have
@@ -228,7 +229,7 @@ class AutoLearner:
                 fact=fact.content,
                 source="auto_extraction",
             )
-            return knowledge.id if knowledge else None
+            return knowledge.id
 
         return None
 

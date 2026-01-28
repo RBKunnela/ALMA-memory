@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from alma.storage.base import StorageBackend
+from alma.storage.constants import MemoryType
 from alma.types import (
     AntiPattern,
     DomainKnowledge,
@@ -49,13 +50,9 @@ class FileBasedStorage(StorageBackend):
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
-        # File paths
+        # File paths (using canonical memory type names)
         self._files = {
-            "heuristics": self.storage_dir / "heuristics.json",
-            "outcomes": self.storage_dir / "outcomes.json",
-            "preferences": self.storage_dir / "preferences.json",
-            "domain_knowledge": self.storage_dir / "domain_knowledge.json",
-            "anti_patterns": self.storage_dir / "anti_patterns.json",
+            mt: self.storage_dir / f"{mt}.json" for mt in MemoryType.ALL
         }
 
         # Initialize empty files if they don't exist

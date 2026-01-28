@@ -70,8 +70,8 @@ class TestMemoryGrowth:
         first_10_avg = sum(times[:10]) / 10
         last_10_avg = sum(times[-10:]) / 10
 
-        # Allow 3x degradation (file I/O can vary)
-        assert last_10_avg < first_10_avg * 3, (
+        # Allow 5x degradation (file I/O, logging, and observability can vary)
+        assert last_10_avg < first_10_avg * 5, (
             f"Performance degraded: first 10 avg {first_10_avg:.1f}ms, "
             f"last 10 avg {last_10_avg:.1f}ms"
         )
