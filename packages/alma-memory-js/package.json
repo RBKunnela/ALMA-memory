@@ -47,13 +47,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/ALMA-memory.git",
+    "url": "https://github.com/RBKunnela/ALMA-memory.git",
     "directory": "packages/alma-memory-js"
   },
   "bugs": {
-    "url": "https://github.com/your-org/ALMA-memory/issues"
+    "url": "https://github.com/RBKunnela/ALMA-memory/issues"
   },
-  "homepage": "https://github.com/your-org/ALMA-memory#readme",
+  "homepage": "https://github.com/RBKunnela/ALMA-memory#readme",
   "engines": {
     "node": ">=18.0.0"
   },
