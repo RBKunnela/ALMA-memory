@@ -247,20 +247,12 @@ jobs:
       - name: Run integration tests
         run: |
           pytest tests/integration/ \
-            --cov=alma \
-            --cov-report=xml:coverage-integration.xml \
-            --cov-report=term-missing \
             -v \
             --tb=short
         env:
           ALMA_TEST_MODE: "true"
-
-      - name: Upload integration coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report-integration
-          path: coverage-integration.xml
-          retention-days: 30
+        # Note: Integration tests don't have coverage requirement
+        # Coverage is measured in unit tests
 
   # ===========================================================================
   # Build Verification
