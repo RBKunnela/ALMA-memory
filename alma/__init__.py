@@ -12,9 +12,24 @@ The Harness Pattern:
 
 This makes any tool-using agent appear to "learn" by injecting relevant
 memory slices before each run and updating memory after.
+
+Testing Support:
+    For testing ALMA integrations, use the `alma.testing` module:
+
+        from alma.testing import MockStorage, create_test_heuristic
+
+        def test_my_integration():
+            storage = MockStorage()
+            heuristic = create_test_heuristic(agent="test-agent")
+            storage.save_heuristic(heuristic)
+
+    Available utilities:
+    - MockStorage: In-memory storage backend
+    - MockEmbedder: Deterministic fake embeddings
+    - create_test_heuristic(), create_test_outcome(), etc.
 """
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 # Core
 # Confidence Engine (Phase 12)

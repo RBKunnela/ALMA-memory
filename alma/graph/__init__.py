@@ -48,7 +48,7 @@ def create_graph_backend(backend: str = "neo4j", **config) -> GraphBackend:
     Factory function to create a graph backend.
 
     Args:
-        backend: Backend type ("neo4j" or "memory")
+        backend: Backend type ("neo4j", "memgraph", "kuzu", or "memory")
         **config: Backend-specific configuration options
 
     Returns:
@@ -66,6 +66,23 @@ def create_graph_backend(backend: str = "neo4j", **config) -> GraphBackend:
             password="password"
         )
 
+        # Create Memgraph backend
+        backend = create_graph_backend(
+            backend="memgraph",
+            uri="bolt://localhost:7687",
+            username="",
+            password=""
+        )
+
+        # Create Kuzu embedded backend (persistent)
+        backend = create_graph_backend(
+            backend="kuzu",
+            database_path="./my_graph_db"
+        )
+
+        # Create Kuzu embedded backend (in-memory)
+        backend = create_graph_backend(backend="kuzu")
+
         # Create in-memory backend for testing
         backend = create_graph_backend(backend="memory")
     """
@@ -73,6 +90,14 @@ def create_graph_backend(backend: str = "neo4j", **config) -> GraphBackend:
         from alma.graph.backends.neo4j import Neo4jBackend
 
         return Neo4jBackend(**config)
+    elif backend == "memgraph":
+        from alma.graph.backends.memgraph import MemgraphBackend
+
+        return MemgraphBackend(**config)
+    elif backend == "kuzu":
+        from alma.graph.backends.kuzu import KuzuBackend
+
+        return KuzuBackend(**config)
     elif backend == "memory":
         from alma.graph.backends.memory import InMemoryBackend
 

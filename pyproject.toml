@@ -139,6 +139,8 @@ omit = [
     "alma/storage/pinecone.py",
     "alma/storage/chroma.py",
     "alma/graph/backends/neo4j.py",
+    "alma/graph/backends/memgraph.py",
+    "alma/graph/backends/kuzu.py",
 ]
 
 [tool.coverage.report]
