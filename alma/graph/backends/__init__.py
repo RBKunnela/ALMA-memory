@@ -11,8 +11,8 @@ Available backends:
 - memory: In-memory backend for testing and development
 """
 
-from alma.graph.backends.memory import InMemoryBackend
 from alma.graph.backends.memgraph import MemgraphBackend
+from alma.graph.backends.memory import InMemoryBackend
 from alma.graph.backends.neo4j import Neo4jBackend
 
 # Kuzu is an optional dependency

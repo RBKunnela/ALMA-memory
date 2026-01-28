@@ -80,16 +80,6 @@ from alma.exceptions import (
     StorageError,
 )
 
-# Observability (Phase 20)
-from alma.observability import (
-    ALMAMetrics,
-    configure_observability,
-    get_logger,
-    get_metrics,
-    get_tracer,
-    trace_method,
-)
-
 # Harness Pattern
 from alma.harness.base import (
     Agent,
@@ -115,6 +105,16 @@ from alma.initializer import (
     InitializationResult,
     RulesOfEngagement,
     SessionInitializer,
+)
+
+# Observability (Phase 20)
+from alma.observability import (
+    ALMAMetrics,
+    configure_observability,
+    get_logger,
+    get_metrics,
+    get_tracer,
+    trace_method,
 )
 
 # Progress Tracking (Phase 10)

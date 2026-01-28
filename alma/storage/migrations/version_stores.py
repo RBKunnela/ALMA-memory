@@ -8,7 +8,7 @@ import json
 import logging
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -244,7 +244,7 @@ class PostgreSQLVersionStore:
     def has_version_table(self) -> bool:
         """Check if the version table exists."""
         with self._get_connection() as conn:
-            cursor = conn.execute(f"""
+            cursor = conn.execute("""
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables
                     WHERE table_schema = %s

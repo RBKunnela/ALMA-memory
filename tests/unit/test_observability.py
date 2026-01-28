@@ -7,9 +7,7 @@ Tests structured logging, metrics collection, and tracing functionality.
 import json
 import logging
 import time
-from datetime import datetime
-from io import StringIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -23,7 +21,6 @@ from alma.observability import (
     TracingContext,
     configure_observability,
     get_logger,
-    get_meter,
     get_metrics,
     get_tracer,
     setup_logging,
@@ -31,8 +28,7 @@ from alma.observability import (
     trace_async,
     trace_method,
 )
-from alma.observability.metrics import InMemoryMetricsCollector, Timer
-
+from alma.observability.metrics import InMemoryMetricsCollector
 
 # =============================================================================
 # Logging Tests
@@ -489,7 +485,7 @@ class TestTracingContext:
         """Test creating span with specific kind."""
         ctx = TracingContext("test-tracer")
 
-        with ctx.span("test-operation", kind=SpanKind.CLIENT) as span:
+        with ctx.span("test-operation", kind=SpanKind.CLIENT) as _span:
             pass
 
     def test_span_with_attributes(self):
@@ -593,7 +589,7 @@ class TestGetTracer:
         """Test tracer can create spans."""
         tracer = get_tracer("test.module")
 
-        with tracer.start_as_current_span("test-span") as span:
+        with tracer.start_as_current_span("test-span") as _span:
             pass
 
 
@@ -688,7 +684,7 @@ class TestObservabilityIntegration:
     def test_full_observability_flow(self):
         """Test complete observability flow."""
         # Configure
-        config = configure_observability(
+        _config = configure_observability(
             service_name="integration-test",
             enable_tracing=True,
             enable_metrics=True,
@@ -724,7 +720,7 @@ class TestObservabilityIntegration:
 
     def test_observability_disabled(self):
         """Test with observability features disabled."""
-        config = configure_observability(
+        _config = configure_observability(
             service_name="disabled-test",
             enable_tracing=False,
             enable_metrics=False,
@@ -733,7 +729,7 @@ class TestObservabilityIntegration:
 
         # Components should still work (no-op)
         logger = get_logger("disabled.test")
-        metrics = get_metrics()
+        _metrics = get_metrics()
         tracer = get_tracer("disabled.test")
 
         logger.info("This should not cause errors")

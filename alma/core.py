@@ -12,7 +12,7 @@ All scope violations raise ScopeViolationError for consistent error handling.
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from alma.config.loader import ConfigLoader
 from alma.exceptions import ScopeViolationError

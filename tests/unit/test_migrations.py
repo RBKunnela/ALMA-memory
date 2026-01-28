@@ -13,11 +13,8 @@ import pytest
 
 from alma.storage.migrations.base import (
     Migration,
-    MigrationError,
     MigrationRegistry,
     SchemaVersion,
-    get_registry,
-    register_migration,
 )
 from alma.storage.migrations.runner import MigrationRunner
 from alma.storage.migrations.version_stores import (

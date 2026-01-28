@@ -27,7 +27,7 @@ except ImportError:
     NUMPY_AVAILABLE = False
 
 from alma.storage.base import StorageBackend
-from alma.storage.constants import MemoryType, POSTGRESQL_TABLE_NAMES
+from alma.storage.constants import POSTGRESQL_TABLE_NAMES, MemoryType
 from alma.types import (
     AntiPattern,
     DomainKnowledge,

@@ -5,6 +5,8 @@ Tests the KuzuBackend implementation of the GraphBackend interface.
 Tests are skipped if kuzu package is not installed.
 """
 
+# Check if kuzu is available
+import importlib.util
 import os
 import tempfile
 from datetime import datetime, timezone
@@ -20,13 +22,7 @@ from alma.graph import (
     create_graph_backend,
 )
 
-# Check if kuzu is available
-try:
-    import kuzu
-
-    KUZU_AVAILABLE = True
-except ImportError:
-    KUZU_AVAILABLE = False
+KUZU_AVAILABLE = importlib.util.find_spec("kuzu") is not None
 
 pytestmark = pytest.mark.skipif(not KUZU_AVAILABLE, reason="kuzu package not installed")
 

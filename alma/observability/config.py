@@ -8,7 +8,7 @@ tracing, metrics, and logging setup.
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 # Global state for observability configuration
 _observability_initialized = False
@@ -241,7 +241,9 @@ def _setup_metrics(config: ObservabilityConfig):
                 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (
                     OTLPMetricExporter,
                 )
-                from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+                from opentelemetry.sdk.metrics.export import (
+                    PeriodicExportingMetricReader,
+                )
 
                 otlp_exporter = OTLPMetricExporter(
                     endpoint=config.otlp_endpoint,
