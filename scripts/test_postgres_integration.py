@@ -16,8 +16,12 @@ from datetime import datetime, timezone
 # Add alma to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from alma.storage.postgresql import PostgreSQLStorage, PSYCOPG_AVAILABLE, NUMPY_AVAILABLE
-from alma.types import Heuristic, Outcome, DomainKnowledge, AntiPattern, UserPreference
+from alma.storage.postgresql import (
+    NUMPY_AVAILABLE,
+    PSYCOPG_AVAILABLE,
+    PostgreSQLStorage,
+)
+from alma.types import AntiPattern, DomainKnowledge, Heuristic, Outcome, UserPreference
 
 # Azure PostgreSQL credentials
 POSTGRES_HOST = "psql-agentictestari-dev.postgres.database.azure.com"
@@ -34,7 +38,7 @@ def test_connection():
     print("ALMA PostgreSQL Backend Integration Test")
     print("=" * 60)
 
-    print(f"\n📦 Dependencies:")
+    print("\n📦 Dependencies:")
     print(f"   psycopg available: {PSYCOPG_AVAILABLE}")
     print(f"   numpy available: {NUMPY_AVAILABLE}")
 
@@ -42,7 +46,7 @@ def test_connection():
         print("\n❌ psycopg not installed. Run: pip install 'psycopg[binary,pool]'")
         return False
 
-    print(f"\n🔌 Connecting to Azure PostgreSQL...")
+    print("\n🔌 Connecting to Azure PostgreSQL...")
     print(f"   Host: {POSTGRES_HOST}")
     print(f"   Database: {POSTGRES_DATABASE}")
     print(f"   User: {POSTGRES_USER}")
@@ -206,7 +210,7 @@ def test_crud_operations(storage: PostgreSQLStorage):
     print("\n📊 Test 8: Get Stats")
     try:
         stats = storage.get_stats(project_id=project_id)
-        print(f"   ✅ Stats retrieved:")
+        print("   ✅ Stats retrieved:")
         print(f"      - Storage type: {stats['storage_type']}")
         print(f"      - pgvector: {stats['pgvector_available']}")
         print(f"      - Heuristics: {stats['heuristics_count']}")

@@ -4,19 +4,20 @@ End-to-end integration tests for Claude Code agents with ALMA.
 Tests the full flow from agent initialization through memory operations.
 """
 
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from alma.integration import (
+    AgentIntegration,
     AgentType,
+    ClaudeAgentHooks,
     TaskContext,
     TaskOutcome,
-    ClaudeAgentHooks,
-    AgentIntegration,
     create_integration,
 )
-from alma.types import MemorySlice, Heuristic, Outcome
+from alma.types import Heuristic, MemorySlice
 
 
 class TestAgentIntegration:
@@ -29,9 +30,9 @@ class TestAgentIntegration:
         alma.retrieve.return_value = MemorySlice(
             heuristics=[],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
         alma.learn.return_value = True
         alma.get_stats.return_value = {"heuristics": 0, "outcomes": 0}
@@ -111,9 +112,9 @@ class TestClaudeAgentHooks:
                 ),
             ],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
         alma.learn.return_value = True
         alma.add_domain_knowledge.return_value = MagicMock(id="dk1")
@@ -194,9 +195,9 @@ class TestClaudeAgentHooks:
         memories = MemorySlice(
             heuristics=[],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
 
         prompt = hooks.format_memories_for_prompt(memories)
@@ -235,12 +236,12 @@ class TestCreateIntegration:
         mock_alma.retrieve.return_value = MemorySlice(
             heuristics=[],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
 
-        with patch("alma.integration.claude_agents.CodingDomain") as mock_domain:
+        with patch("alma.harness.domains.CodingDomain") as mock_domain:
             mock_domain.create_helena.return_value = MagicMock()
             mock_domain.create_victor.return_value = MagicMock()
 
@@ -256,12 +257,12 @@ class TestCreateIntegration:
         mock_alma.retrieve.return_value = MemorySlice(
             heuristics=[],
             anti_patterns=[],
-            recent_outcomes=[],
+            outcomes=[],
             domain_knowledge=[],
-            user_preferences=[],
+            preferences=[],
         )
 
-        with patch("alma.integration.claude_agents.CodingDomain") as mock_domain:
+        with patch("alma.harness.domains.CodingDomain") as mock_domain:
             mock_domain.create_helena.return_value = MagicMock()
 
             integration = create_integration(mock_alma, agents=[AgentType.HELENA])
@@ -307,9 +308,9 @@ class TestEndToEndFlow:
                         ),
                     ],
                     anti_patterns=[],
-                    recent_outcomes=[],
+                    outcomes=[],
                     domain_knowledge=[],
-                    user_preferences=[],
+                    preferences=[],
                 )
             else:
                 return MemorySlice(
@@ -328,9 +329,9 @@ class TestEndToEndFlow:
                         ),
                     ],
                     anti_patterns=[],
-                    recent_outcomes=[],
+                    outcomes=[],
                     domain_knowledge=[],
-                    user_preferences=[],
+                    preferences=[],
                 )
 
         alma.retrieve.side_effect = retrieve_side_effect

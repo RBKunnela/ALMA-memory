@@ -1,0 +1,255 @@
+# ALMA Configuration Template
+# Copy this to your project as .alma/config.yaml
+
+alma:
+  # Unique project identifier
+  project_id: "your-project-name"
+
+  # Storage backend: "azure" | "postgres" | "sqlite" | "file"
+  storage: "sqlite"  # Use "postgres" or "azure" for production
+
+  # ==========================================================================
+  # EMBEDDING CONFIGURATION
+  # ==========================================================================
+  # ALMA uses embeddings for semantic memory retrieval.
+  # Choose a provider based on your needs:
+  #
+  # | Provider | Model                  | Dims | Cost              | Best For              |
+  # |----------|------------------------|------|-------------------|-----------------------|
+  # | local    | all-MiniLM-L6-v2       | 384  | Free              | Development, offline  |
+  # | local    | all-mpnet-base-v2      | 768  | Free              | Better local quality  |
+  # | azure    | text-embedding-3-small | 1536 | ~$0.02/1M tokens  | Production            |
+  # | azure    | text-embedding-3-large | 3072 | ~$0.13/1M tokens  | Maximum quality       |
+  # | mock     | (hash-based)           | 384  | Free              | Testing only          |
+  #
+  # IMPORTANT: Update embedding_dim below to match your model's dimensions.
+
+  embedding_provider: "local"  # Options: "local" | "azure" | "mock"
+  embedding_dim: 384  # Must match model: 384 for MiniLM, 1536 for text-embedding-3-small
+
+  # ==========================================================================
+  # AZURE CONFIGURATION (only needed if storage: azure or embedding_provider: azure)
+  # ==========================================================================
+  azure:
+    cosmos_endpoint: ${AZURE_COSMOS_ENDPOINT}
+    cosmos_key: ${KEYVAULT:alma-cosmos-key}  # Fetched from Azure Key Vault
+    cosmos_database: "alma"
+    openai_endpoint: ${AZURE_OPENAI_ENDPOINT}
+    openai_key: ${KEYVAULT:alma-openai-key}
+    openai_deployment: "text-embedding-3-small"
+
+  # ==========================================================================
+  # POSTGRESQL CONFIGURATION (only needed if storage: postgres)
+  # ==========================================================================
+  # PostgreSQL with pgvector extension for production deployments.
+  # Works with: Azure PostgreSQL, AWS RDS, self-hosted, etc.
+  #
+  # Prerequisites:
+  #   1. Install pgvector extension: CREATE EXTENSION vector;
+  #   2. Install ALMA with postgres support: pip install 'alma-memory[postgres]'
+  #
+  postgres:
+    host: ${POSTGRES_HOST}          # e.g., localhost or psql-xxx.postgres.database.azure.com
+    port: 5432
+    database: "alma_memory"
+    user: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}  # Or use: ${KEYVAULT:alma-postgres-password}
+    pool_size: 10                   # Connection pool size
+    schema: "public"                # Database schema
+    ssl_mode: "prefer"              # disable, allow, prefer, require, verify-ca, verify-full
+
+  # ==========================================================================
+  # DOMAINS - Define what types of workflows this project supports
+  # ==========================================================================
+  # Each domain has its own memory schema and learning scope.
+  # This is the core of the "harness pattern" - agents learn within domains.
+
+  domains:
+    # Coding domain - for development and testing agents
+    coding:
+      enabled: true
+      schemas:
+        - testing
+        - api_development
+      agents:
+        - helena
+        - victor
+
+    # Research domain - for analysis and intelligence agents
+    research:
+      enabled: false  # Enable if using research workflows
+      schemas:
+        - market_research
+        - competitive_intelligence
+      agents:
+        - researcher
+
+    # Content domain - for creation and documentation agents
+    content:
+      enabled: false  # Enable if using content workflows
+      schemas:
+        - marketing_content
+        - documentation
+      agents:
+        - copywriter
+        - documenter
+
+    # Operations domain - for support and automation agents
+    operations:
+      enabled: false  # Enable if using ops workflows
+      schemas:
+        - customer_support
+        - automation
+      agents:
+        - support
+
+  # ==========================================================================
+  # AGENTS - Define learning scopes for each agent
+  # ==========================================================================
+  # Each agent can only learn within its defined categories.
+  # This prevents over-scoping and knowledge bleed.
+
+  agents:
+    # Frontend testing specialist
+    helena:
+      domain: coding
+      can_learn:
+        - testing_strategies
+        - selector_patterns
+        - ui_component_patterns
+        - form_testing
+        - accessibility_testing
+      cannot_learn:
+        - backend_logic
+        - database_operations
+        - api_implementation
+      min_occurrences_for_heuristic: 3
+
+    # Backend testing specialist
+    victor:
+      domain: coding
+      can_learn:
+        - api_testing_patterns
+        - database_validation
+        - error_handling_patterns
+        - performance_testing
+        - security_testing
+      cannot_learn:
+        - frontend_logic
+        - ui_testing
+        - css_styling
+      min_occurrences_for_heuristic: 3
+
+    # UI/UX designer
+    clara:
+      domain: content
+      can_learn:
+        - design_patterns
+        - color_schemes
+        - typography_rules
+        - component_layouts
+        - branding_guidelines
+      cannot_learn:
+        - testing
+        - backend_logic
+        - database
+      min_occurrences_for_heuristic: 3
+
+    # Market researcher
+    researcher:
+      domain: research
+      can_learn:
+        - trend_patterns
+        - source_reliability
+        - query_refinements
+        - data_synthesis_patterns
+      cannot_learn:
+        - code_implementation
+        - ui_design
+      min_occurrences_for_heuristic: 5  # Higher for research patterns
+
+    # Marketing copywriter
+    copywriter:
+      domain: content
+      can_learn:
+        - headline_patterns
+        - call_to_action_patterns
+        - audience_preferences
+        - engagement_metrics
+        - tone_effectiveness
+      cannot_learn:
+        - technical_implementation
+        - pricing_decisions
+        - legal_claims
+      min_occurrences_for_heuristic: 5
+
+    # Customer support
+    support:
+      domain: operations
+      can_learn:
+        - issue_patterns
+        - resolution_steps
+        - customer_preferences
+        - escalation_triggers
+      cannot_learn:
+        - billing_modifications
+        - security_overrides
+        - contract_changes
+      min_occurrences_for_heuristic: 5
+
+  # ==========================================================================
+  # MEMORY MANAGEMENT
+  # ==========================================================================
+
+  memory:
+    # Maximum items per memory type before pruning
+    max_heuristics_per_agent: 100
+    max_outcomes_per_agent: 500
+    max_anti_patterns_per_agent: 50
+
+    # Automatic pruning settings
+    prune_outcomes_older_than_days: 90
+    prune_heuristics_below_confidence: 0.3
+
+    # Global memory (shared across agents)
+    global_categories:
+      - error_handling
+      - logging_patterns
+      - security_practices
+
+  # ==========================================================================
+  # RETRIEVAL SETTINGS
+  # ==========================================================================
+
+  retrieval:
+    # Maximum tokens for context injection
+    max_context_tokens: 2000
+
+    # Cache TTL in seconds
+    cache_ttl_seconds: 300
+
+    # Default top_k for each memory type
+    default_top_k: 5
+
+    # Weighting for retrieval scoring
+    weights:
+      recency: 0.3
+      success_rate: 0.4
+      similarity: 0.3
+
+  # ==========================================================================
+  # HARNESS SETTINGS
+  # ==========================================================================
+
+  harness:
+    # Default setting constraints (applied to all agents)
+    global_constraints:
+      - "Log all actions for learning"
+      - "Stay within defined scope"
+      - "Respect rate limits"
+
+    # Enable reflection logging (agents log what they learned)
+    enable_reflections: true
+
+    # Auto-create heuristics from successful patterns
+    auto_heuristic_creation: true

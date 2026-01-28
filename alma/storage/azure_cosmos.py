@@ -17,20 +17,18 @@ Configuration (config.yaml):
         embedding_dim: 384
 """
 
-import json
 import logging
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Tuple
-from dataclasses import asdict
+from typing import Any, Dict, List, Optional
 
+from alma.storage.base import StorageBackend
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
 )
-from alma.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +37,7 @@ try:
     from azure.cosmos import CosmosClient, PartitionKey, exceptions
     from azure.cosmos.container import ContainerProxy
     from azure.cosmos.database import DatabaseProxy
+
     AZURE_COSMOS_AVAILABLE = True
 except ImportError:
     AZURE_COSMOS_AVAILABLE = False
@@ -49,8 +48,7 @@ except ImportError:
     ContainerProxy = Any  # type: ignore
     DatabaseProxy = Any  # type: ignore
     logger.warning(
-        "azure-cosmos package not installed. "
-        "Install with: pip install azure-cosmos"
+        "azure-cosmos package not installed. Install with: pip install azure-cosmos"
     )
 
 
@@ -111,9 +109,7 @@ class AzureCosmosStorage(StorageBackend):
 
         # Get or create database
         if create_if_not_exists:
-            self.database = self.client.create_database_if_not_exists(
-                id=database_name
-            )
+            self.database = self.client.create_database_if_not_exists(id=database_name)
             self._init_containers()
         else:
             self.database = self.client.get_database_client(database_name)
@@ -195,7 +191,7 @@ class AzureCosmosStorage(StorageBackend):
             if cfg["vector_indexes"] and cfg["vector_path"]:
                 # Exclude vector path from regular indexing
                 indexing_policy["excludedPaths"].append(
-                    {"path": f'{cfg["vector_path"]}/*'}
+                    {"path": f"{cfg['vector_path']}/*"}
                 )
 
                 # Vector embedding policy for DiskANN
@@ -250,12 +246,14 @@ class AzureCosmosStorage(StorageBackend):
             "confidence": heuristic.confidence,
             "occurrence_count": heuristic.occurrence_count,
             "success_count": heuristic.success_count,
-            "last_validated": heuristic.last_validated.isoformat()
-            if heuristic.last_validated
-            else None,
-            "created_at": heuristic.created_at.isoformat()
-            if heuristic.created_at
-            else None,
+            "last_validated": (
+                heuristic.last_validated.isoformat()
+                if heuristic.last_validated
+                else None
+            ),
+            "created_at": (
+                heuristic.created_at.isoformat() if heuristic.created_at else None
+            ),
             "metadata": heuristic.metadata or {},
             "embedding": heuristic.embedding,
             "type": "heuristic",
@@ -301,9 +299,9 @@ class AzureCosmosStorage(StorageBackend):
             "preference": preference.preference,
             "source": preference.source,
             "confidence": preference.confidence,
-            "timestamp": preference.timestamp.isoformat()
-            if preference.timestamp
-            else None,
+            "timestamp": (
+                preference.timestamp.isoformat() if preference.timestamp else None
+            ),
             "metadata": preference.metadata or {},
             "type": "preference",
         }
@@ -324,9 +322,9 @@ class AzureCosmosStorage(StorageBackend):
             "fact": knowledge.fact,
             "source": knowledge.source,
             "confidence": knowledge.confidence,
-            "last_verified": knowledge.last_verified.isoformat()
-            if knowledge.last_verified
-            else None,
+            "last_verified": (
+                knowledge.last_verified.isoformat() if knowledge.last_verified else None
+            ),
             "metadata": knowledge.metadata or {},
             "embedding": knowledge.embedding,
             "type": "domain_knowledge",
@@ -348,12 +346,12 @@ class AzureCosmosStorage(StorageBackend):
             "why_bad": anti_pattern.why_bad,
             "better_alternative": anti_pattern.better_alternative,
             "occurrence_count": anti_pattern.occurrence_count,
-            "last_seen": anti_pattern.last_seen.isoformat()
-            if anti_pattern.last_seen
-            else None,
-            "created_at": anti_pattern.created_at.isoformat()
-            if anti_pattern.created_at
-            else None,
+            "last_seen": (
+                anti_pattern.last_seen.isoformat() if anti_pattern.last_seen else None
+            ),
+            "created_at": (
+                anti_pattern.created_at.isoformat() if anti_pattern.created_at else None
+            ),
             "metadata": anti_pattern.metadata or {},
             "embedding": anti_pattern.embedding,
             "type": "anti_pattern",
@@ -668,7 +666,7 @@ class AzureCosmosStorage(StorageBackend):
             return False
 
         doc = items[0]
-        project_id = doc["project_id"]
+        doc["project_id"]
 
         # Apply updates
         for key, value in updates.items():
@@ -708,6 +706,78 @@ class AzureCosmosStorage(StorageBackend):
         doc["last_validated"] = datetime.now(timezone.utc).isoformat()
 
         container.replace_item(item=heuristic_id, body=doc)
+        return True
+
+    def update_heuristic_confidence(
+        self,
+        heuristic_id: str,
+        new_confidence: float,
+    ) -> bool:
+        """
+        Update confidence score for a heuristic.
+
+        Note: This requires a cross-partition query since we only have the ID.
+        For better performance, consider using update_heuristic() with the
+        project_id if available, which enables point reads.
+        """
+        container = self._get_container("heuristics")
+
+        # Find the heuristic (cross-partition query required without project_id)
+        query = "SELECT * FROM c WHERE c.id = @id"
+        items = list(
+            container.query_items(
+                query=query,
+                parameters=[{"name": "@id", "value": heuristic_id}],
+                enable_cross_partition_query=True,
+            )
+        )
+
+        if not items:
+            return False
+
+        doc = items[0]
+        doc["confidence"] = new_confidence
+
+        container.replace_item(item=heuristic_id, body=doc)
+        logger.debug(
+            f"Updated heuristic confidence: {heuristic_id} -> {new_confidence}"
+        )
+        return True
+
+    def update_knowledge_confidence(
+        self,
+        knowledge_id: str,
+        new_confidence: float,
+    ) -> bool:
+        """
+        Update confidence score for domain knowledge.
+
+        Note: This requires a cross-partition query since we only have the ID.
+        For better performance when project_id is known, fetch the document
+        directly using point read and update via save_domain_knowledge().
+        """
+        container = self._get_container("knowledge")
+
+        # Find the knowledge item (cross-partition query required without project_id)
+        query = "SELECT * FROM c WHERE c.id = @id"
+        items = list(
+            container.query_items(
+                query=query,
+                parameters=[{"name": "@id", "value": knowledge_id}],
+                enable_cross_partition_query=True,
+            )
+        )
+
+        if not items:
+            return False
+
+        doc = items[0]
+        doc["confidence"] = new_confidence
+
+        container.replace_item(item=knowledge_id, body=doc)
+        logger.debug(
+            f"Updated knowledge confidence: {knowledge_id} -> {new_confidence}"
+        )
         return True
 
     # ==================== DELETE OPERATIONS ====================

@@ -6,18 +6,17 @@ integration and E2E testing scenarios.
 """
 
 import uuid
-from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Dict, Any
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List
 
-from alma import ALMA
+from alma.storage.base import StorageBackend
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
 )
-from alma.storage.base import StorageBackend
 
 
 def seed_helena_memories(
@@ -46,7 +45,10 @@ def seed_helena_memories(
 
     # Helena heuristics - UI testing strategies
     helena_heuristics = [
-        ("form with multiple required fields", "validate each field individually before full form submit"),
+        (
+            "form with multiple required fields",
+            "validate each field individually before full form submit",
+        ),
         ("modal dialog testing", "wait for animation to complete before interacting"),
         ("dropdown selection", "use keyboard navigation for more reliable selection"),
         ("table with pagination", "verify total count before and after page change"),

@@ -4,18 +4,19 @@ Retrieval Performance Tests.
 Benchmarks for memory retrieval under various conditions.
 """
 
-import pytest
 import time
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List
 
+import pytest
+
 from alma import ALMA, MemoryScope
-from alma.storage.file_based import FileBasedStorage
-from alma.retrieval.engine import RetrievalEngine
 from alma.learning.protocols import LearningProtocol
-from alma.types import Heuristic, DomainKnowledge, Outcome
+from alma.retrieval.engine import RetrievalEngine
+from alma.storage.file_based import FileBasedStorage
+from alma.types import DomainKnowledge, Heuristic
 
 
 class TestRetrievalLatency:
@@ -240,7 +241,7 @@ class TestCachePerformance:
 
         # Next retrieval should reflect new learning
         start = time.perf_counter()
-        memories = cache_alma.retrieve(task=task, agent="helena", top_k=5)
+        cache_alma.retrieve(task=task, agent="helena", top_k=5)
         elapsed = (time.perf_counter() - start) * 1000
 
         # Should still be reasonably fast

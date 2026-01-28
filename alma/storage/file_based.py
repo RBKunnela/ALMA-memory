@@ -6,21 +6,19 @@ No vector search - uses basic text matching for retrieval.
 """
 
 import json
-import uuid
 import logging
-from pathlib import Path
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
-from dataclasses import asdict
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+from alma.storage.base import StorageBackend
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
 )
-from alma.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
 
@@ -74,46 +72,86 @@ class FileBasedStorage(StorageBackend):
     # ==================== WRITE OPERATIONS ====================
 
     def save_heuristic(self, heuristic: Heuristic) -> str:
-        """Save a heuristic."""
+        """Save a heuristic (UPSERT - update if exists, insert if new)."""
         data = self._read_json(self._files["heuristics"])
         record = self._to_dict(heuristic)
-        data.append(record)
+        # Find and replace existing, or append new
+        found = False
+        for i, existing in enumerate(data):
+            if existing.get("id") == record["id"]:
+                data[i] = record
+                found = True
+                break
+        if not found:
+            data.append(record)
         self._write_json(self._files["heuristics"], data)
         logger.debug(f"Saved heuristic: {heuristic.id}")
         return heuristic.id
 
     def save_outcome(self, outcome: Outcome) -> str:
-        """Save an outcome."""
+        """Save an outcome (UPSERT - update if exists, insert if new)."""
         data = self._read_json(self._files["outcomes"])
         record = self._to_dict(outcome)
-        data.append(record)
+        # Find and replace existing, or append new
+        found = False
+        for i, existing in enumerate(data):
+            if existing.get("id") == record["id"]:
+                data[i] = record
+                found = True
+                break
+        if not found:
+            data.append(record)
         self._write_json(self._files["outcomes"], data)
         logger.debug(f"Saved outcome: {outcome.id}")
         return outcome.id
 
     def save_user_preference(self, preference: UserPreference) -> str:
-        """Save a user preference."""
+        """Save a user preference (UPSERT - update if exists, insert if new)."""
         data = self._read_json(self._files["preferences"])
         record = self._to_dict(preference)
-        data.append(record)
+        # Find and replace existing, or append new
+        found = False
+        for i, existing in enumerate(data):
+            if existing.get("id") == record["id"]:
+                data[i] = record
+                found = True
+                break
+        if not found:
+            data.append(record)
         self._write_json(self._files["preferences"], data)
         logger.debug(f"Saved preference: {preference.id}")
         return preference.id
 
     def save_domain_knowledge(self, knowledge: DomainKnowledge) -> str:
-        """Save domain knowledge."""
+        """Save domain knowledge (UPSERT - update if exists, insert if new)."""
         data = self._read_json(self._files["domain_knowledge"])
         record = self._to_dict(knowledge)
-        data.append(record)
+        # Find and replace existing, or append new
+        found = False
+        for i, existing in enumerate(data):
+            if existing.get("id") == record["id"]:
+                data[i] = record
+                found = True
+                break
+        if not found:
+            data.append(record)
         self._write_json(self._files["domain_knowledge"], data)
         logger.debug(f"Saved domain knowledge: {knowledge.id}")
         return knowledge.id
 
     def save_anti_pattern(self, anti_pattern: AntiPattern) -> str:
-        """Save an anti-pattern."""
+        """Save an anti-pattern (UPSERT - update if exists, insert if new)."""
         data = self._read_json(self._files["anti_patterns"])
         record = self._to_dict(anti_pattern)
-        data.append(record)
+        # Find and replace existing, or append new
+        found = False
+        for i, existing in enumerate(data):
+            if existing.get("id") == record["id"]:
+                data[i] = record
+                found = True
+                break
+        if not found:
+            data.append(record)
         self._write_json(self._files["anti_patterns"], data)
         logger.debug(f"Saved anti-pattern: {anti_pattern.id}")
         return anti_pattern.id
@@ -451,9 +489,7 @@ class FileBasedStorage(StorageBackend):
                         count += 1
             stats[f"{name}_count"] = count
 
-        stats["total_count"] = sum(
-            stats[k] for k in stats if k.endswith("_count")
-        )
+        stats["total_count"] = sum(stats[k] for k in stats if k.endswith("_count"))
 
         return stats
 

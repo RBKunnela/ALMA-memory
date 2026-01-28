@@ -2,22 +2,22 @@
 Unit tests for ALMA MCP tools.
 """
 
-import pytest
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
-import uuid
+from unittest.mock import MagicMock
+
+import pytest
 
 from alma import ALMA, MemorySlice
-from alma.types import Heuristic, DomainKnowledge, UserPreference
 from alma.mcp.tools import (
-    alma_retrieve,
-    alma_learn,
-    alma_add_preference,
     alma_add_knowledge,
+    alma_add_preference,
     alma_forget,
-    alma_stats,
     alma_health,
+    alma_learn,
+    alma_retrieve,
+    alma_stats,
 )
+from alma.types import DomainKnowledge, Heuristic, UserPreference
 
 
 class TestAlmaRetrieve:

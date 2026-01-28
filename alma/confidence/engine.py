@@ -95,11 +95,13 @@ class ConfidenceEngine:
 
         # 1. Load historical data from heuristic
         if heuristic:
-            signal.occurrence_count = getattr(heuristic, 'occurrence_count', 0)
-            success_count = getattr(heuristic, 'success_count', 0)
+            signal.occurrence_count = getattr(heuristic, "occurrence_count", 0)
+            success_count = getattr(heuristic, "success_count", 0)
             if signal.occurrence_count > 0:
                 signal.historical_success_rate = success_count / signal.occurrence_count
-            signal.metadata["heuristic_confidence"] = getattr(heuristic, 'confidence', 0.5)
+            signal.metadata["heuristic_confidence"] = getattr(
+                heuristic, "confidence", 0.5
+            )
 
         # 2. Analyze context similarity
         signal.context_similarity = self._compute_context_similarity(
@@ -214,30 +216,43 @@ class ConfidenceEngine:
                     top_k=10,
                 )
 
-                if memories and hasattr(memories, 'anti_patterns'):
+                if memories and hasattr(memories, "anti_patterns"):
                     for ap in memories.anti_patterns[:3]:
                         # Check if this anti-pattern relates to our strategy
                         if self._is_similar(strategy, ap.strategy):
-                            risks.append(RiskSignal(
-                                signal_type="similar_to_failure",
-                                description=f"Similar to known anti-pattern: {ap.reason[:100]}",
-                                severity=0.7,
-                                source=f"anti_pattern:{ap.id}",
-                                related_memories=[ap.id],
-                            ))
+                            risks.append(
+                                RiskSignal(
+                                    signal_type="similar_to_failure",
+                                    description=f"Similar to known anti-pattern: {ap.reason[:100]}",
+                                    severity=0.7,
+                                    source=f"anti_pattern:{ap.id}",
+                                    related_memories=[ap.id],
+                                )
+                            )
             except Exception as e:
                 logger.warning(f"Failed to check anti-patterns: {e}")
 
         # Check for complexity indicators
-        complexity_keywords = ["complex", "multiple", "all", "every", "entire", "complete"]
-        complexity_score = sum(1 for kw in complexity_keywords if kw in strategy.lower())
+        complexity_keywords = [
+            "complex",
+            "multiple",
+            "all",
+            "every",
+            "entire",
+            "complete",
+        ]
+        complexity_score = sum(
+            1 for kw in complexity_keywords if kw in strategy.lower()
+        )
         if complexity_score >= 2:
-            risks.append(RiskSignal(
-                signal_type="high_complexity",
-                description="Strategy appears complex - consider breaking into smaller steps",
-                severity=0.4,
-                source="context_analysis",
-            ))
+            risks.append(
+                RiskSignal(
+                    signal_type="high_complexity",
+                    description="Strategy appears complex - consider breaking into smaller steps",
+                    severity=0.4,
+                    source="context_analysis",
+                )
+            )
 
         # Check for risky patterns
         risky_patterns = [
@@ -248,12 +263,14 @@ class ConfidenceEngine:
         ]
         for pattern, description, severity in risky_patterns:
             if pattern in strategy.lower():
-                risks.append(RiskSignal(
-                    signal_type="risky_pattern",
-                    description=description,
-                    severity=severity,
-                    source="pattern_match",
-                ))
+                risks.append(
+                    RiskSignal(
+                        signal_type="risky_pattern",
+                        description=description,
+                        severity=severity,
+                        source="pattern_match",
+                    )
+                )
 
         return risks
 
@@ -291,34 +308,43 @@ class ConfidenceEngine:
                     top_k=10,
                 )
 
-                if memories and hasattr(memories, 'heuristics'):
+                if memories and hasattr(memories, "heuristics"):
                     for h in memories.heuristics[:3]:
                         # Check success rate
                         if h.occurrence_count >= self.min_occurrences_for_confidence:
-                            success_rate = h.success_count / h.occurrence_count if h.occurrence_count > 0 else 0
+                            success_rate = (
+                                h.success_count / h.occurrence_count
+                                if h.occurrence_count > 0
+                                else 0
+                            )
                             if success_rate >= 0.8:
-                                opportunities.append(OpportunitySignal(
-                                    signal_type="proven_pattern",
-                                    description=f"Proven strategy with {success_rate:.0%} success rate over {h.occurrence_count} uses",
-                                    strength=min(0.9, success_rate),
-                                    source=f"heuristic:{h.id}",
-                                    related_memories=[h.id],
-                                ))
+                                opportunities.append(
+                                    OpportunitySignal(
+                                        signal_type="proven_pattern",
+                                        description=f"Proven strategy with {success_rate:.0%} success rate over {h.occurrence_count} uses",
+                                        strength=min(0.9, success_rate),
+                                        source=f"heuristic:{h.id}",
+                                        related_memories=[h.id],
+                                    )
+                                )
 
                 # Check for recent successes in outcomes
-                if hasattr(memories, 'outcomes'):
+                if hasattr(memories, "outcomes"):
                     recent_successes = [
-                        o for o in memories.outcomes
-                        if getattr(o, 'outcome', '') == 'success'
+                        o
+                        for o in memories.outcomes
+                        if getattr(o, "outcome", "") == "success"
                     ][:3]
                     if recent_successes:
-                        opportunities.append(OpportunitySignal(
-                            signal_type="recent_success",
-                            description=f"Similar approach succeeded recently ({len(recent_successes)} recent successes)",
-                            strength=0.6,
-                            source="outcome_analysis",
-                            related_memories=[o.id for o in recent_successes],
-                        ))
+                        opportunities.append(
+                            OpportunitySignal(
+                                signal_type="recent_success",
+                                description=f"Similar approach succeeded recently ({len(recent_successes)} recent successes)",
+                                strength=0.6,
+                                source="outcome_analysis",
+                                related_memories=[o.id for o in recent_successes],
+                            )
+                        )
 
             except Exception as e:
                 logger.warning(f"Failed to check opportunities: {e}")
@@ -332,12 +358,14 @@ class ConfidenceEngine:
         ]
         for pattern, description, strength in best_practices:
             if pattern in strategy.lower():
-                opportunities.append(OpportunitySignal(
-                    signal_type="best_practice",
-                    description=description,
-                    strength=strength,
-                    source="pattern_match",
-                ))
+                opportunities.append(
+                    OpportunitySignal(
+                        signal_type="best_practice",
+                        description=description,
+                        strength=strength,
+                        source="pattern_match",
+                    )
+                )
 
         return opportunities
 
@@ -363,19 +391,21 @@ class ConfidenceEngine:
                 return 0.3  # Low similarity for novel contexts
 
             # Check if any outcomes match our strategy
-            if hasattr(memories, 'outcomes'):
+            if hasattr(memories, "outcomes"):
                 matching_outcomes = [
-                    o for o in memories.outcomes
-                    if self._is_similar(strategy, getattr(o, 'strategy_used', ''))
+                    o
+                    for o in memories.outcomes
+                    if self._is_similar(strategy, getattr(o, "strategy_used", ""))
                 ]
                 if matching_outcomes:
                     return 0.8  # High similarity
 
             # Check heuristics
-            if hasattr(memories, 'heuristics'):
+            if hasattr(memories, "heuristics"):
                 matching_heuristics = [
-                    h for h in memories.heuristics
-                    if self._is_similar(strategy, getattr(h, 'strategy', ''))
+                    h
+                    for h in memories.heuristics
+                    if self._is_similar(strategy, getattr(h, "strategy", ""))
                 ]
                 if matching_heuristics:
                     return 0.7
@@ -489,7 +519,9 @@ class ConfidenceEngine:
 
         # Context similarity
         if signal.context_similarity >= 0.7:
-            parts.append("Current context is highly similar to past successful applications.")
+            parts.append(
+                "Current context is highly similar to past successful applications."
+            )
         elif signal.context_similarity <= 0.3:
             parts.append("Current context is quite different from past applications.")
 
@@ -501,6 +533,8 @@ class ConfidenceEngine:
         # Key opportunities
         strong_opps = [o for o in signal.opportunity_signals if o.strength >= 0.6]
         if strong_opps:
-            parts.append(f"POSITIVE: {len(strong_opps)} strong opportunity signal(s) detected.")
+            parts.append(
+                f"POSITIVE: {len(strong_opps)} strong opportunity signal(s) detected."
+            )
 
         return " ".join(parts)

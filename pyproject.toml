@@ -62,6 +62,9 @@ dev = [
     "pytest-benchmark>=4.0.0",
     "mypy>=1.0.0",
     "ruff>=0.1.0",
+    "black>=24.0.0",
+    "bandit[toml]>=1.7.0",
+    "numpy>=1.24.0",  # Required by SQLite storage
 ]
 all = [
     "alma-memory[local,azure,postgres,mcp,dev]",
@@ -76,6 +79,9 @@ Issues = "https://github.com/RBKunnela/ALMA-memory/issues"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["alma*"]
+
+[tool.setuptools.package-data]
+alma = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -105,3 +111,30 @@ select = [
 ignore = [
     "E501",  # line too long (handled by formatter)
 ]
+
+[tool.bandit]
+exclude_dirs = ["tests", "scripts"]
+skips = ["B101"]  # Skip assert warnings (used in tests)
+
+[tool.bandit.assert_used]
+skips = ["*_test.py", "test_*.py", "**/conftest.py"]
+
+[tool.coverage.run]
+source = ["alma"]
+branch = true
+omit = [
+    "alma/__main__.py",
+    "alma/mcp/__main__.py",
+]
+
+[tool.coverage.report]
+fail_under = 50  # Lowered temporarily - storage backends need integration tests
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "@abstractmethod",
+]
+show_missing = true

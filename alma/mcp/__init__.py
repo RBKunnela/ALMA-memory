@@ -24,13 +24,13 @@ Integration with Claude Code (.mcp.json):
 
 from alma.mcp.server import ALMAMCPServer
 from alma.mcp.tools import (
-    alma_retrieve,
-    alma_learn,
-    alma_add_preference,
     alma_add_knowledge,
+    alma_add_preference,
     alma_forget,
-    alma_stats,
     alma_health,
+    alma_learn,
+    alma_retrieve,
+    alma_stats,
 )
 
 __all__ = [

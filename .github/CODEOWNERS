@@ -1,0 +1,20 @@
+# CODEOWNERS - Require review from code owners for critical paths
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @RBKunnela
+
+# Critical security files - require owner review
+/alma/graph/store.py @RBKunnela
+/alma/mcp/ @RBKunnela
+/alma/storage/ @RBKunnela
+
+# Configuration and build files
+/pyproject.toml @RBKunnela
+/setup.py @RBKunnela
+/.github/ @RBKunnela
+
+# Documentation that affects public perception
+/README.md @RBKunnela
+/CHANGELOG.md @RBKunnela
+/CONTRIBUTING.md @RBKunnela

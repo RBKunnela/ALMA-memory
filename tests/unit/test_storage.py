@@ -2,21 +2,22 @@
 Unit tests for ALMA storage backends.
 """
 
-import pytest
-import tempfile
 import shutil
+import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from datetime import datetime, timezone, timedelta
 
+import pytest
+
+from alma.storage.file_based import FileBasedStorage
+from alma.storage.sqlite_local import SQLiteStorage
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
 )
-from alma.storage.file_based import FileBasedStorage
-from alma.storage.sqlite_local import SQLiteStorage
 
 
 class TestFileBasedStorage:
@@ -92,7 +93,7 @@ class TestFileBasedStorage:
 
         assert len(outcomes) == 1
         assert outcomes[0].id == sample_outcome.id
-        assert outcomes[0].success == True
+        assert outcomes[0].success
         assert outcomes[0].strategy_used == sample_outcome.strategy_used
 
     def test_filter_by_agent(self, storage, sample_heuristic):
@@ -310,7 +311,7 @@ class TestSQLiteStorage:
 
         assert len(outcomes) == 1
         assert outcomes[0].id == sample_outcome.id
-        assert outcomes[0].success == True
+        assert outcomes[0].success
 
     def test_vector_search_heuristics(self, storage):
         """Test vector similarity search for heuristics."""

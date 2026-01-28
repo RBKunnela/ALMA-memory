@@ -10,39 +10,38 @@ Tests cover:
 - Prune Policy
 """
 
-import pytest
 import time
-import math
-from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, patch, call
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
+
+import pytest
 
 from alma.learning.forgetting import (
-    # Forgetting Engine
-    ForgettingEngine,
-    PrunePolicy,
-    PruneResult,
-    PruneSummary,
-    PruneReason,
-    # Decay Functions
-    DecayFunction,
-    ExponentialDecay,
-    LinearDecay,
-    StepDecay,
-    NoDecay,
-    # Confidence Decay
-    ConfidenceDecayer,
-    DecayResult,
-    # Memory Health Monitoring
-    MemoryHealthMonitor,
-    MemoryHealthMetrics,
-    HealthAlert,
-    HealthThresholds,
-    # Cleanup Scheduling
-    CleanupScheduler,
     CleanupJob,
     CleanupResult,
+    # Cleanup Scheduling
+    CleanupScheduler,
+    # Confidence Decay
+    ConfidenceDecayer,
+    # Decay Functions
+    DecayResult,
+    ExponentialDecay,
+    # Forgetting Engine
+    ForgettingEngine,
+    HealthAlert,
+    HealthThresholds,
+    LinearDecay,
+    MemoryHealthMetrics,
+    # Memory Health Monitoring
+    MemoryHealthMonitor,
+    NoDecay,
+    PrunePolicy,
+    PruneReason,
+    PruneResult,
+    PruneSummary,
+    StepDecay,
 )
-from alma.types import Heuristic, Outcome, DomainKnowledge, AntiPattern
+from alma.types import Heuristic, Outcome
 
 
 class TestPrunePolicy:
@@ -173,8 +172,7 @@ class TestForgettingEngine:
 
         # h2 has confidence 0.2, below threshold 0.3
         low_conf = [
-            r for r in summary.pruned_items
-            if r.reason == PruneReason.LOW_CONFIDENCE
+            r for r in summary.pruned_items if r.reason == PruneReason.LOW_CONFIDENCE
         ]
         assert len(low_conf) >= 1
 
@@ -553,11 +551,11 @@ class TestConfidenceDecayer:
             decay_function=ExponentialDecay(half_life_days=30.0),
         )
 
-        result = decayer.apply_decay("test", agent="helena", dry_run=True)
+        decayer.apply_decay("test", agent="helena", dry_run=True)
 
         # Should only query helena's data
         mock_storage_for_decayer.get_heuristics.assert_called_with(
-            "test", agent="helena", top_k=1000, min_confidence=0.0
+            project_id="test", agent="helena", top_k=10000, min_confidence=0.0
         )
 
 
@@ -713,7 +711,9 @@ class TestMemoryHealthMonitor:
 
     def test_alert_handler(self, mock_storage_for_monitor):
         """Test alert handler callback."""
-        thresholds = HealthThresholds(max_total_items_warning=1, max_total_items_critical=2)  # Will trigger alert
+        thresholds = HealthThresholds(
+            max_total_items_warning=1, max_total_items_critical=2
+        )  # Will trigger alert
         monitor = MemoryHealthMonitor(mock_storage_for_monitor, thresholds)
 
         received_alerts = []
@@ -751,12 +751,15 @@ class TestCleanupResult:
 
     def test_creation(self):
         """Test creating a cleanup result."""
+        now = datetime.now(timezone.utc)
         result = CleanupResult(
             job_name="test_job",
-            success=True,
+            project_id="test",
+            started_at=now,
+            completed_at=now,
             prune_summary=PruneSummary(total_pruned=5),
             decay_result=DecayResult(items_processed=10),
-            execution_time_ms=150,
+            success=True,
         )
 
         assert result.success is True
@@ -771,7 +774,7 @@ class TestCleanupScheduler:
     def mock_storage_for_scheduler(self):
         """Create mock storage for scheduler testing."""
         storage = MagicMock()
-        now = datetime.now(timezone.utc)
+        datetime.now(timezone.utc)
 
         storage.get_heuristics.return_value = []
         storage.get_outcomes.return_value = []
@@ -882,8 +885,12 @@ class TestCleanupScheduler:
         """Test getting multiple jobs."""
         scheduler = CleanupScheduler(mock_storage_for_scheduler)
 
-        scheduler.register_job(CleanupJob(name="job1", project_id="test1", interval_hours=1.0))
-        scheduler.register_job(CleanupJob(name="job2", project_id="test2", interval_hours=2.0))
+        scheduler.register_job(
+            CleanupJob(name="job1", project_id="test1", interval_hours=1.0)
+        )
+        scheduler.register_job(
+            CleanupJob(name="job2", project_id="test2", interval_hours=2.0)
+        )
 
         jobs = scheduler.get_jobs()
 

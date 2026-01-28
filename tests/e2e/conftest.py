@@ -4,10 +4,11 @@ E2E Test Fixtures.
 Fixtures specific to end-to-end testing scenarios.
 """
 
-import pytest
-from pathlib import Path
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture

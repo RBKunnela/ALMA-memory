@@ -4,19 +4,19 @@ ALMA Graph Memory Module.
 Graph-based memory for capturing relationships between entities.
 """
 
-from alma.graph.store import (
-    GraphStore,
-    Neo4jGraphStore,
-    InMemoryGraphStore,
-    Entity,
-    Relationship,
-    GraphQuery,
-    GraphResult,
-    create_graph_store,
-)
 from alma.graph.extraction import (
     EntityExtractor,
     ExtractionConfig,
+)
+from alma.graph.store import (
+    Entity,
+    GraphQuery,
+    GraphResult,
+    GraphStore,
+    InMemoryGraphStore,
+    Neo4jGraphStore,
+    Relationship,
+    create_graph_store,
 )
 
 __all__ = [
@@ -26,7 +26,7 @@ __all__ = [
     "InMemoryGraphStore",
     # Data classes
     "Entity",
-    "Relationship", 
+    "Relationship",
     "GraphQuery",
     "GraphResult",
     # Extraction

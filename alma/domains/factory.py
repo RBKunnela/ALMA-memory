@@ -4,18 +4,18 @@ Domain Memory Factory.
 Factory pattern for creating domain-specific ALMA instances.
 """
 
-from typing import Dict, Any, Optional, List, Type
 import logging
+from typing import Any, Dict, List, Optional
 
-from alma.domains.types import DomainSchema, EntityType, RelationshipType
 from alma.domains.schemas import (
     get_coding_schema,
+    get_content_creation_schema,
+    get_customer_support_schema,
+    get_general_schema,
     get_research_schema,
     get_sales_schema,
-    get_general_schema,
-    get_customer_support_schema,
-    get_content_creation_schema,
 )
+from alma.domains.types import DomainSchema
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +124,9 @@ class DomainMemoryFactory:
             description=config.get("description", f"Custom schema: {name}"),
             learning_categories=config.get("learning_categories", []),
             excluded_categories=config.get("excluded_categories", []),
-            min_occurrences_for_heuristic=config.get("min_occurrences_for_heuristic", 3),
+            min_occurrences_for_heuristic=config.get(
+                "min_occurrences_for_heuristic", 3
+            ),
             confidence_decay_days=config.get("confidence_decay_days", 30.0),
         )
 
@@ -200,16 +202,17 @@ class DomainMemoryFactory:
             - Initialize domain-specific entity tracking
         """
         # Import here to avoid circular dependency
-        from alma.storage.file_based import FileBasedStorage
-        from alma.retrieval import RetrievalEngine
-        from alma.learning import LearningProtocol
-        from alma.types import MemoryScope
         from alma import ALMA
+        from alma.learning import LearningProtocol
+        from alma.retrieval import RetrievalEngine
+        from alma.storage.file_based import FileBasedStorage
+        from alma.types import MemoryScope
 
         # Create storage if not provided
         if storage is None:
             import tempfile
             from pathlib import Path
+
             storage_dir = Path(tempfile.mkdtemp()) / ".alma" / project_id
             storage = FileBasedStorage(storage_dir)
 

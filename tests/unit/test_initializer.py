@@ -2,10 +2,11 @@
 Tests for the Session Initializer module.
 """
 
-import pytest
-import tempfile
 import subprocess
+import tempfile
 from pathlib import Path
+
+import pytest
 
 from alma.initializer import (
     CodebaseOrientation,
@@ -235,11 +236,11 @@ class TestSessionInitializer:
             subprocess.run(["git", "init"], cwd=tmpdir, capture_output=True)
             subprocess.run(
                 ["git", "config", "user.email", "test@test.com"],
-                cwd=tmpdir, capture_output=True
+                cwd=tmpdir,
+                capture_output=True,
             )
             subprocess.run(
-                ["git", "config", "user.name", "Test"],
-                cwd=tmpdir, capture_output=True
+                ["git", "config", "user.name", "Test"], cwd=tmpdir, capture_output=True
             )
 
             # Create a file and commit
@@ -247,7 +248,8 @@ class TestSessionInitializer:
             subprocess.run(["git", "add", "."], cwd=tmpdir, capture_output=True)
             subprocess.run(
                 ["git", "commit", "-m", "Initial commit"],
-                cwd=tmpdir, capture_output=True
+                cwd=tmpdir,
+                capture_output=True,
             )
 
             orientation = initializer.orient_to_codebase(tmpdir)

@@ -9,20 +9,21 @@ These hooks enable agents to:
 """
 
 import logging
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from alma.core import ALMA
+from alma.harness.base import Context, Harness, RunResult
 from alma.types import MemorySlice
-from alma.harness.base import Harness, Context, RunResult
 
 logger = logging.getLogger(__name__)
 
 
 class AgentType(Enum):
     """Supported Claude Code agent types."""
+
     HELENA = "helena"
     VICTOR = "victor"
     CLARA = "clara"
@@ -37,6 +38,7 @@ class TaskContext:
 
     Captures all relevant information for memory retrieval and learning.
     """
+
     task_description: str
     task_type: str
     agent_name: str
@@ -67,6 +69,7 @@ class TaskOutcome:
 
     Used for learning from task results.
     """
+
     success: bool
     strategy_used: str
     output: Any = None
@@ -272,17 +275,17 @@ class ClaudeAgentHooks:
                 sections.append(f"- [{dk.domain}] {dk.fact}")
 
         # User preferences
-        if memories.user_preferences:
+        if memories.preferences:
             if include_section_headers:
                 sections.append("\n### User Preferences:")
-            for up in memories.user_preferences:
+            for up in memories.preferences:
                 sections.append(f"- [{up.category}] {up.preference}")
 
         # Recent outcomes
-        if memories.recent_outcomes:
+        if memories.outcomes:
             if include_section_headers:
                 sections.append("\n### Recent Outcomes:")
-            for o in memories.recent_outcomes[:3]:  # Limit to 3 most recent
+            for o in memories.outcomes[:3]:  # Limit to 3 most recent
                 status = "✓" if o.success else "✗"
                 sections.append(
                     f"- {status} {o.task_type}: {o.task_description[:50]}..."
@@ -391,10 +394,7 @@ class AgentIntegration:
 
     def get_all_stats(self) -> Dict[str, Dict[str, Any]]:
         """Get memory statistics for all registered agents."""
-        return {
-            name: hooks.get_agent_stats()
-            for name, hooks in self._agents.items()
-        }
+        return {name: hooks.get_agent_stats() for name, hooks in self._agents.items()}
 
 
 def create_integration(

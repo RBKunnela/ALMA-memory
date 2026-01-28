@@ -4,10 +4,11 @@ Integration Test Fixtures.
 Specific fixtures for integration testing with real storage backends.
 """
 
-import pytest
 import json
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
+import pytest
 
 
 # Load task definitions for parameterized tests

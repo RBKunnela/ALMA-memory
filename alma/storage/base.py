@@ -5,16 +5,15 @@ Abstract base class that all storage backends must implement.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from alma.types import (
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-    MemoryType,
 )
 
 
@@ -54,6 +53,22 @@ class StorageBackend(ABC):
     def save_anti_pattern(self, anti_pattern: AntiPattern) -> str:
         """Save an anti-pattern, return its ID."""
         pass
+
+    # ==================== BATCH WRITE OPERATIONS ====================
+
+    def save_heuristics(self, heuristics: List[Heuristic]) -> List[str]:
+        """Save multiple heuristics in a batch. Default implementation calls save_heuristic in a loop."""
+        return [self.save_heuristic(h) for h in heuristics]
+
+    def save_outcomes(self, outcomes: List[Outcome]) -> List[str]:
+        """Save multiple outcomes in a batch. Default implementation calls save_outcome in a loop."""
+        return [self.save_outcome(o) for o in outcomes]
+
+    def save_domain_knowledge_batch(
+        self, knowledge_items: List[DomainKnowledge]
+    ) -> List[str]:
+        """Save multiple domain knowledge items in a batch. Default implementation calls save_domain_knowledge in a loop."""
+        return [self.save_domain_knowledge(k) for k in knowledge_items]
 
     # ==================== READ OPERATIONS ====================
 
@@ -338,6 +353,144 @@ class StorageBackend(ABC):
             Number of items deleted
         """
         pass
+
+    # ==================== MULTI-AGENT MEMORY SHARING ====================
+
+    def get_heuristics_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+        min_confidence: float = 0.0,
+    ) -> List[Heuristic]:
+        """
+        Get heuristics from multiple agents in one call.
+
+        This enables multi-agent memory sharing where an agent can
+        read memories from agents it inherits from.
+
+        Args:
+            project_id: Project to query
+            agents: List of agent names to query
+            embedding: Query embedding for semantic search
+            top_k: Max results to return per agent
+            min_confidence: Minimum confidence threshold
+
+        Returns:
+            List of matching heuristics from all specified agents
+        """
+        # Default implementation: query each agent individually
+        results = []
+        for agent in agents:
+            agent_heuristics = self.get_heuristics(
+                project_id=project_id,
+                agent=agent,
+                embedding=embedding,
+                top_k=top_k,
+                min_confidence=min_confidence,
+            )
+            results.extend(agent_heuristics)
+        return results
+
+    def get_outcomes_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        task_type: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+        success_only: bool = False,
+    ) -> List[Outcome]:
+        """
+        Get outcomes from multiple agents in one call.
+
+        Args:
+            project_id: Project to query
+            agents: List of agent names to query
+            task_type: Filter by task type
+            embedding: Query embedding for semantic search
+            top_k: Max results to return per agent
+            success_only: Only return successful outcomes
+
+        Returns:
+            List of matching outcomes from all specified agents
+        """
+        results = []
+        for agent in agents:
+            agent_outcomes = self.get_outcomes(
+                project_id=project_id,
+                agent=agent,
+                task_type=task_type,
+                embedding=embedding,
+                top_k=top_k,
+                success_only=success_only,
+            )
+            results.extend(agent_outcomes)
+        return results
+
+    def get_domain_knowledge_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        domain: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+    ) -> List[DomainKnowledge]:
+        """
+        Get domain knowledge from multiple agents in one call.
+
+        Args:
+            project_id: Project to query
+            agents: List of agent names to query
+            domain: Filter by domain
+            embedding: Query embedding for semantic search
+            top_k: Max results to return per agent
+
+        Returns:
+            List of matching domain knowledge from all specified agents
+        """
+        results = []
+        for agent in agents:
+            agent_knowledge = self.get_domain_knowledge(
+                project_id=project_id,
+                agent=agent,
+                domain=domain,
+                embedding=embedding,
+                top_k=top_k,
+            )
+            results.extend(agent_knowledge)
+        return results
+
+    def get_anti_patterns_for_agents(
+        self,
+        project_id: str,
+        agents: List[str],
+        embedding: Optional[List[float]] = None,
+        top_k: int = 5,
+    ) -> List[AntiPattern]:
+        """
+        Get anti-patterns from multiple agents in one call.
+
+        Args:
+            project_id: Project to query
+            agents: List of agent names to query
+            embedding: Query embedding for semantic search
+            top_k: Max results to return per agent
+
+        Returns:
+            List of matching anti-patterns from all specified agents
+        """
+        results = []
+        for agent in agents:
+            agent_patterns = self.get_anti_patterns(
+                project_id=project_id,
+                agent=agent,
+                embedding=embedding,
+                top_k=top_k,
+            )
+            results.extend(agent_patterns)
+        return results
 
     # ==================== STATS ====================
 

@@ -2,22 +2,22 @@
 Integration tests for ALMA MCP Server.
 """
 
-import pytest
-import asyncio
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+
+import pytest
 
 from alma import ALMA, MemoryScope
-from alma.storage.file_based import FileBasedStorage
-from alma.retrieval.engine import RetrievalEngine
-from alma.learning.protocols import LearningProtocol
-from alma.mcp.server import ALMAMCPServer
-from alma.mcp.resources import list_resources, get_config_resource, get_agents_resource
 from alma.integration.helena import HELENA_CATEGORIES
 from alma.integration.victor import VICTOR_CATEGORIES
+from alma.learning.protocols import LearningProtocol
+from alma.mcp.resources import get_agents_resource, get_config_resource, list_resources
+from alma.mcp.server import ALMAMCPServer
+from alma.retrieval.engine import RetrievalEngine
+from alma.storage.file_based import FileBasedStorage
 
 
+@pytest.mark.asyncio
 class TestALMAMCPServer:
     """Tests for ALMAMCPServer class."""
 
@@ -89,8 +89,8 @@ class TestALMAMCPServer:
         assert "result" in response
         tools = response["result"]["tools"]
 
-        # Should have 7 tools
-        assert len(tools) == 7
+        # Should have 8 tools (including alma_consolidate added in Phase 1)
+        assert len(tools) == 8
 
         tool_names = [t["name"] for t in tools]
         assert "alma_retrieve" in tool_names
@@ -100,6 +100,7 @@ class TestALMAMCPServer:
         assert "alma_forget" in tool_names
         assert "alma_stats" in tool_names
         assert "alma_health" in tool_names
+        assert "alma_consolidate" in tool_names  # Added in Phase 1
 
     @pytest.mark.asyncio
     async def test_tool_call_retrieve(self, mcp_server: ALMAMCPServer):
@@ -377,6 +378,7 @@ class TestMCPResources:
         assert "backend" in helena["scope"]["cannot_learn"]
 
 
+@pytest.mark.asyncio
 class TestMCPFullWorkflow:
     """Tests for complete MCP workflows."""
 
@@ -409,9 +411,7 @@ class TestMCPFullWorkflow:
         return ALMAMCPServer(alma=workflow_alma)
 
     @pytest.mark.asyncio
-    async def test_learn_then_retrieve_workflow(
-        self, workflow_server: ALMAMCPServer
-    ):
+    async def test_learn_then_retrieve_workflow(self, workflow_server: ALMAMCPServer):
         """Test complete learn -> retrieve workflow."""
         # Step 1: Learn something
         learn_request = {
@@ -431,9 +431,7 @@ class TestMCPFullWorkflow:
         }
 
         learn_response = await workflow_server.handle_request(learn_request)
-        learn_result = json.loads(
-            learn_response["result"]["content"][0]["text"]
-        )
+        learn_result = json.loads(learn_response["result"]["content"][0]["text"])
         assert learn_result["success"] is True
 
         # Step 2: Add knowledge
@@ -451,9 +449,7 @@ class TestMCPFullWorkflow:
             },
         }
 
-        knowledge_response = await workflow_server.handle_request(
-            knowledge_request
-        )
+        knowledge_response = await workflow_server.handle_request(knowledge_request)
         knowledge_result = json.loads(
             knowledge_response["result"]["content"][0]["text"]
         )
@@ -473,12 +469,8 @@ class TestMCPFullWorkflow:
             },
         }
 
-        retrieve_response = await workflow_server.handle_request(
-            retrieve_request
-        )
-        retrieve_result = json.loads(
-            retrieve_response["result"]["content"][0]["text"]
-        )
+        retrieve_response = await workflow_server.handle_request(retrieve_request)
+        retrieve_result = json.loads(retrieve_response["result"]["content"][0]["text"])
         assert retrieve_result["success"] is True
 
         # Should have domain knowledge
@@ -496,9 +488,7 @@ class TestMCPFullWorkflow:
         }
 
         stats_response = await workflow_server.handle_request(stats_request)
-        stats_result = json.loads(
-            stats_response["result"]["content"][0]["text"]
-        )
+        stats_result = json.loads(stats_response["result"]["content"][0]["text"])
         assert stats_result["success"] is True
         assert stats_result["stats"]["outcomes_count"] >= 1
         assert stats_result["stats"]["domain_knowledge_count"] >= 1

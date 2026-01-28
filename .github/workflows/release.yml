@@ -1,0 +1,244 @@
+# ALMA-memory Release Workflow
+#
+# This workflow handles the complete release process:
+# 1. Triggers on version tags (v*)
+# 2. Runs full CI checks
+# 3. Builds the package
+# 4. Publishes to PyPI using trusted publishing (OIDC)
+# 5. Creates a GitHub Release with changelog
+#
+# Prerequisites:
+# - PyPI trusted publisher configured for this repository
+# - CHANGELOG.md follows Keep a Changelog format
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags: v0.4.0, v1.0.0, etc.
+
+permissions:
+  contents: write  # Required for creating GitHub releases
+  id-token: write  # Required for PyPI trusted publishing
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # ===========================================================================
+  # Pre-release Validation
+  # ===========================================================================
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      is_prerelease: ${{ steps.check_prerelease.outputs.is_prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Check if prerelease
+        id: check_prerelease
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          if [[ "$VERSION" == *"alpha"* ]] || [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"rc"* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "This is a pre-release version"
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "This is a stable release"
+          fi
+
+      - name: Validate version format
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "Error: Invalid version format: $VERSION"
+            echo "Expected format: X.Y.Z or X.Y.Z-prerelease"
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Verify pyproject.toml version matches tag
+        run: |
+          TAG_VERSION=${{ steps.get_version.outputs.version }}
+          PYPROJECT_VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          if [[ "$TAG_VERSION" != "$PYPROJECT_VERSION" ]]; then
+            echo "Error: Tag version ($TAG_VERSION) does not match pyproject.toml version ($PYPROJECT_VERSION)"
+            exit 1
+          fi
+          echo "Version verified: $TAG_VERSION"
+
+  # ===========================================================================
+  # Run Full CI Suite
+  # ===========================================================================
+  ci:
+    name: CI Checks
+    needs: validate
+    uses: ./.github/workflows/ci.yml
+
+  # ===========================================================================
+  # Build Distribution
+  # ===========================================================================
+  build:
+    name: Build Distribution
+    runs-on: ubuntu-latest
+    needs: [validate, ci]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Verify package
+        run: |
+          twine check dist/*
+          echo "Package contents:"
+          ls -la dist/
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          retention-days: 90
+
+  # ===========================================================================
+  # Publish to PyPI
+  # ===========================================================================
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: pypi
+      url: https://pypi.org/p/alma-memory
+    permissions:
+      id-token: write  # Required for trusted publishing
+
+    steps:
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # No credentials needed - uses OIDC trusted publishing
+
+  # ===========================================================================
+  # Create GitHub Release
+  # ===========================================================================
+  github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate, build, publish-pypi]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION=${{ needs.validate.outputs.version }}
+          echo "Extracting changelog for version $VERSION"
+
+          # Extract the section for this version from CHANGELOG.md
+          # Looks for ## [X.Y.Z] and captures until the next ## [ or end of file
+          CHANGELOG=$(awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit
+              if ($0 ~ "\\[" ver "\\]") {
+                found = 1
+                next
+              }
+            }
+            found { print }
+          ' CHANGELOG.md)
+
+          # If no changelog found, use a default message
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details."
+          fi
+
+          # Write to file for the release body (handles multi-line content)
+          echo "$CHANGELOG" > release_notes.md
+
+          # Show what we extracted
+          echo "=== Changelog content ==="
+          cat release_notes.md
+          echo "========================="
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ALMA-memory v${{ needs.validate.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ needs.validate.outputs.is_prerelease == 'true' }}
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+          generate_release_notes: false
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ===========================================================================
+  # Post-Release Notifications (Optional)
+  # ===========================================================================
+  notify:
+    name: Post-Release
+    runs-on: ubuntu-latest
+    needs: [validate, github-release]
+    if: success()
+    steps:
+      - name: Release Summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Pre-release:** ${{ needs.validate.outputs.is_prerelease }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [PyPI Package](https://pypi.org/project/alma-memory/${{ needs.validate.outputs.version }}/)" >> $GITHUB_STEP_SUMMARY
+          echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.validate.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "pip install alma-memory==${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

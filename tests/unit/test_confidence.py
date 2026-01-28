@@ -215,7 +215,13 @@ class TestConfidenceEngine:
         assert signal is not None
         assert signal.strategy == "Use incremental testing"
         assert signal.agent == "Helena"
-        assert signal.recommendation in ["strong_yes", "yes", "neutral", "caution", "avoid"]
+        assert signal.recommendation in [
+            "strong_yes",
+            "yes",
+            "neutral",
+            "caution",
+            "avoid",
+        ]
 
     def test_assess_strategy_detects_complexity(self, engine):
         """Test that complex strategies get risk signals."""
@@ -226,7 +232,9 @@ class TestConfidenceEngine:
         )
 
         # Should detect complexity
-        complexity_risks = [r for r in signal.risk_signals if r.signal_type == "high_complexity"]
+        complexity_risks = [
+            r for r in signal.risk_signals if r.signal_type == "high_complexity"
+        ]
         assert len(complexity_risks) >= 1
 
     def test_assess_strategy_detects_risky_patterns(self, engine):
@@ -237,7 +245,9 @@ class TestConfidenceEngine:
             agent="Helena",
         )
 
-        risky_pattern_risks = [r for r in signal.risk_signals if r.signal_type == "risky_pattern"]
+        risky_pattern_risks = [
+            r for r in signal.risk_signals if r.signal_type == "risky_pattern"
+        ]
         assert len(risky_pattern_risks) >= 1
 
     def test_assess_strategy_detects_best_practices(self, engine):
@@ -248,7 +258,9 @@ class TestConfidenceEngine:
             agent="Helena",
         )
 
-        best_practice_opps = [o for o in signal.opportunity_signals if o.signal_type == "best_practice"]
+        best_practice_opps = [
+            o for o in signal.opportunity_signals if o.signal_type == "best_practice"
+        ]
         assert len(best_practice_opps) >= 1
 
     def test_rank_strategies(self, engine):

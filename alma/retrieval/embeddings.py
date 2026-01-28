@@ -59,11 +59,11 @@ class LocalEmbedder(EmbeddingProvider):
                 self._model = SentenceTransformer(self.model_name)
                 self._dimension = self._model.get_sentence_embedding_dimension()
                 logger.info(f"Model loaded, dimension: {self._dimension}")
-            except ImportError:
+            except ImportError as err:
                 raise ImportError(
                     "sentence-transformers is required for local embeddings. "
                     "Install with: pip install sentence-transformers"
-                )
+                ) from err
 
     def encode(self, text: str) -> List[float]:
         """Generate embedding for text."""
@@ -134,11 +134,11 @@ class AzureEmbedder(EmbeddingProvider):
                     api_key=self.api_key,
                     api_version=self.api_version,
                 )
-            except ImportError:
+            except ImportError as err:
                 raise ImportError(
                     "openai is required for Azure embeddings. "
                     "Install with: pip install openai"
-                )
+                ) from err
         return self._client
 
     def encode(self, text: str) -> List[float]:

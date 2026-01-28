@@ -4,12 +4,12 @@ ALMA Session Management Module.
 Handles session continuity, handoffs, and quick context reload.
 """
 
+from alma.session.manager import SessionManager
 from alma.session.types import (
-    SessionHandoff,
     SessionContext,
+    SessionHandoff,
     SessionOutcome,
 )
-from alma.session.manager import SessionManager
 
 __all__ = [
     "SessionHandoff",

@@ -14,41 +14,41 @@ The fixtures follow a layered approach:
 4. Memory fixtures (pre-seeded data)
 """
 
-import pytest
-import tempfile
 import shutil
-from pathlib import Path
-from datetime import datetime, timezone, timedelta
-from typing import Generator, Dict, Any, List
-from unittest.mock import MagicMock, patch
+import tempfile
 import uuid
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any, Dict, Generator, List
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from alma import (
     ALMA,
-    MemorySlice,
+    AntiPattern,
+    DomainKnowledge,
     Heuristic,
+    MemoryScope,
+    MemorySlice,
     Outcome,
     UserPreference,
-    DomainKnowledge,
-    AntiPattern,
-    MemoryScope,
 )
-from alma.storage.file_based import FileBasedStorage
-from alma.retrieval.engine import RetrievalEngine
-from alma.learning.protocols import LearningProtocol
 from alma.integration.helena import (
+    HELENA_CATEGORIES,
     HelenaHooks,
     UITestContext,
     UITestOutcome,
-    HELENA_CATEGORIES,
 )
 from alma.integration.victor import (
-    VictorHooks,
+    VICTOR_CATEGORIES,
     APITestContext,
     APITestOutcome,
-    VICTOR_CATEGORIES,
+    VictorHooks,
 )
-
+from alma.learning.protocols import LearningProtocol
+from alma.retrieval.engine import RetrievalEngine
+from alma.storage.file_based import FileBasedStorage
 
 # =============================================================================
 # Base Fixtures - Storage and Configuration
@@ -569,24 +569,27 @@ def large_memory_storage(temp_storage_dir: Path) -> FileBasedStorage:
 
 @pytest.fixture
 def multi_agent_scopes() -> Dict[str, MemoryScope]:
-    """Create scopes for multiple agents with overlapping permissions."""
+    """Create scopes for multiple agents with overlapping permissions and sharing."""
     return {
         "helena": MemoryScope(
             agent_name="helena",
             can_learn=HELENA_CATEGORIES,
             cannot_learn=["backend_logic", "database_queries"],
+            share_with=["shared_agent"],  # Helena shares with shared_agent
             min_occurrences_for_heuristic=3,
         ),
         "victor": MemoryScope(
             agent_name="victor",
             can_learn=VICTOR_CATEGORIES,
             cannot_learn=["frontend_styling", "ui_testing"],
+            share_with=["shared_agent"],  # Victor shares with shared_agent
             min_occurrences_for_heuristic=3,
         ),
         "shared_agent": MemoryScope(
             agent_name="shared_agent",
             can_learn=HELENA_CATEGORIES + VICTOR_CATEGORIES,
             cannot_learn=[],
+            inherit_from=["helena", "victor"],  # Shared agent can read from both
             min_occurrences_for_heuristic=5,
         ),
     }

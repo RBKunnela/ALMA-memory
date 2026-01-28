@@ -5,9 +5,9 @@ Enforces scope constraints and validates learning requests.
 """
 
 import logging
-from typing import Optional, List, Dict, Any, Set
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Dict, List, Optional, Set
 
 from alma.types import MemoryScope
 
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class ValidationResult(Enum):
     """Result of a validation check."""
+
     ALLOWED = "allowed"
     DENIED_OUT_OF_SCOPE = "denied_out_of_scope"
     DENIED_FORBIDDEN = "denied_forbidden"
@@ -26,6 +27,7 @@ class ValidationResult(Enum):
 @dataclass
 class ValidationReport:
     """Detailed report of a validation check."""
+
     result: ValidationResult
     agent: str
     domain: str
@@ -36,7 +38,10 @@ class ValidationReport:
     @property
     def is_allowed(self) -> bool:
         """Check if the validation passed."""
-        return self.result in (ValidationResult.ALLOWED, ValidationResult.WARNING_NO_SCOPE)
+        return self.result in (
+            ValidationResult.ALLOWED,
+            ValidationResult.WARNING_NO_SCOPE,
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""

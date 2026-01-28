@@ -173,7 +173,7 @@ class SessionInitializer:
         work_items = []
 
         # Simple extraction: look for bullet points and numbered items
-        lines = user_prompt.strip().split('\n')
+        lines = user_prompt.strip().split("\n")
 
         for line in lines:
             line = line.strip()
@@ -181,25 +181,29 @@ class SessionInitializer:
                 continue
 
             # Match bullet points: -, *, •
-            bullet_match = re.match(r'^[-*•]\s+(.+)$', line)
+            bullet_match = re.match(r"^[-*•]\s+(.+)$", line)
             if bullet_match:
                 title = bullet_match.group(1).strip()
-                work_items.append(WorkItem.create(
-                    project_id="",  # Will be set by caller
-                    title=title,
-                    description=title,
-                ))
+                work_items.append(
+                    WorkItem.create(
+                        project_id="",  # Will be set by caller
+                        title=title,
+                        description=title,
+                    )
+                )
                 continue
 
             # Match numbered items: 1., 2., etc.
-            number_match = re.match(r'^\d+\.\s+(.+)$', line)
+            number_match = re.match(r"^\d+\.\s+(.+)$", line)
             if number_match:
                 title = number_match.group(1).strip()
-                work_items.append(WorkItem.create(
-                    project_id="",
-                    title=title,
-                    description=title,
-                ))
+                work_items.append(
+                    WorkItem.create(
+                        project_id="",
+                        title=title,
+                        description=title,
+                    )
+                )
                 continue
 
         # If no structured items found, create single item from prompt
@@ -209,11 +213,13 @@ class SessionInitializer:
             if len(user_prompt) > 100:
                 title += "..."
 
-            work_items.append(WorkItem.create(
-                project_id="",
-                title=title,
-                description=user_prompt,
-            ))
+            work_items.append(
+                WorkItem.create(
+                    project_id="",
+                    title=title,
+                    description=user_prompt,
+                )
+            )
 
         return work_items
 
@@ -261,7 +267,9 @@ class SessionInitializer:
                     timeout=5,
                 )
                 if result.returncode == 0:
-                    orientation.current_branch = result.stdout.strip() or "HEAD detached"
+                    orientation.current_branch = (
+                        result.stdout.strip() or "HEAD detached"
+                    )
 
                 # Check for uncommitted changes
                 result = subprocess.run(
@@ -283,7 +291,7 @@ class SessionInitializer:
                     timeout=5,
                 )
                 if result.returncode == 0:
-                    commits = result.stdout.strip().split('\n')
+                    commits = result.stdout.strip().split("\n")
                     orientation.recent_commits = [c for c in commits if c]
 
             except subprocess.TimeoutExpired:
@@ -293,18 +301,21 @@ class SessionInitializer:
 
         # Find key directories
         key_dirs = ["src", "lib", "tests", "test", "app", "api", "core"]
-        orientation.key_directories = [
-            d for d in key_dirs if (path / d).is_dir()
-        ]
+        orientation.key_directories = [d for d in key_dirs if (path / d).is_dir()]
 
         # Find config files
         config_files = [
-            "package.json", "pyproject.toml", "setup.py", "Cargo.toml",
-            "go.mod", "pom.xml", "build.gradle", "Makefile", "CMakeLists.txt",
+            "package.json",
+            "pyproject.toml",
+            "setup.py",
+            "Cargo.toml",
+            "go.mod",
+            "pom.xml",
+            "build.gradle",
+            "Makefile",
+            "CMakeLists.txt",
         ]
-        orientation.config_files = [
-            f for f in config_files if (path / f).exists()
-        ]
+        orientation.config_files = [f for f in config_files if (path / f).exists()]
 
         # Generate summary
         orientation.summary = self._generate_orientation_summary(orientation)
@@ -336,14 +347,10 @@ class SessionInitializer:
 
         # Convert scope to rules
         if scope.can_learn:
-            rules.scope_rules = [
-                f"Learn from: {', '.join(scope.can_learn)}"
-            ]
+            rules.scope_rules = [f"Learn from: {', '.join(scope.can_learn)}"]
 
         if scope.cannot_learn:
-            rules.constraints = [
-                f"Do not learn from: {', '.join(scope.cannot_learn)}"
-            ]
+            rules.constraints = [f"Do not learn from: {', '.join(scope.cannot_learn)}"]
 
         # Default quality gates
         rules.quality_gates = [
@@ -359,7 +366,7 @@ class SessionInitializer:
         if len(work_items) == 1:
             return prompt
 
-        item_titles = [getattr(item, 'title', str(item)) for item in work_items]
+        item_titles = [getattr(item, "title", str(item)) for item in work_items]
         return f"{prompt}\n\nBroken down into {len(work_items)} items: {', '.join(item_titles[:3])}{'...' if len(item_titles) > 3 else ''}"
 
     def _select_starting_point(self, work_items: List[Any]) -> Optional[Any]:
@@ -369,17 +376,15 @@ class SessionInitializer:
 
         # Find highest priority unblocked item
         actionable = [
-            item for item in work_items
-            if getattr(item, 'status', 'pending') == 'pending'
-            and not getattr(item, 'blocked_by', [])
+            item
+            for item in work_items
+            if getattr(item, "status", "pending") == "pending"
+            and not getattr(item, "blocked_by", [])
         ]
 
         if actionable:
             # Sort by priority (higher = more important)
-            actionable.sort(
-                key=lambda x: getattr(x, 'priority', 50),
-                reverse=True
-            )
+            actionable.sort(key=lambda x: getattr(x, "priority", 50), reverse=True)
             return actionable[0]
 
         return work_items[0]
@@ -400,7 +405,10 @@ class SessionInitializer:
             # Infer project type from config files
             if "package.json" in orientation.config_files:
                 parts.append("Node.js project")
-            elif "pyproject.toml" in orientation.config_files or "setup.py" in orientation.config_files:
+            elif (
+                "pyproject.toml" in orientation.config_files
+                or "setup.py" in orientation.config_files
+            ):
                 parts.append("Python project")
             elif "Cargo.toml" in orientation.config_files:
                 parts.append("Rust project")
