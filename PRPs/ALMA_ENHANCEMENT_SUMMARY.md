@@ -2,6 +2,22 @@
 
 **Updated**: 2026-01-30 (Architectural Review Applied)
 
+## Team & Infrastructure
+
+| Role | Agent | Responsibility |
+|------|-------|----------------|
+| Architecture | @architect (Aria) | System design, API patterns |
+| **Database** | **@data-analyst (Dana)** | **Schema design, DB provisioning** |
+| Implementation | @dev | Code implementation |
+
+| Infrastructure | Provider | Notes |
+|----------------|----------|-------|
+| PostgreSQL | **Cloudflare Hyperdrive** | NOT Supabase |
+| SQLite | Cloudflare D1 | Edge deployments |
+| Blob Storage | Cloudflare R2 | Artifacts |
+
+---
+
 ## Quick Reference Card
 
 ### What's Being Added
@@ -343,6 +359,8 @@ The following issues were identified and addressed in this update:
 | **Missing MemorySlice Update** | Added `workflow_outcomes` field to MemorySlice dataclass |
 | **State Size Bloat** | Added configurable state size limits (default 1MB) |
 | **FileBasedStorage Omitted** | Added Task 9 for FileBasedStorage (low priority, testing only) |
+| **Database Planning** | @data-analyst (Dana) designated for schema design and DB provisioning |
+| **Infrastructure Provider** | Cloudflare (Hyperdrive/D1/R2) specified as preferred provider, NOT Supabase |
 
 ---
 

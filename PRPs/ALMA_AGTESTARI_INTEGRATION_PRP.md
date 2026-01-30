@@ -1,11 +1,25 @@
 # PRP: ALMA Enhancement for AGtestari Workflow Studio Integration
 
-**Version**: 1.0
+**Version**: 1.1
 **Date**: 2026-01-30
 **Author**: Claude Opus 4.5 + RBKunnela
 **Status**: Draft - Pending Approval
 **Project**: ALMA-memory
 **Target Integration**: AGtestari AI Workflow Studio
+
+### Collaborators
+| Role | Agent | Responsibility |
+|------|-------|----------------|
+| Architecture | @architect (Aria) | System design, API patterns, cross-backend compatibility |
+| Database | @data-analyst (Dana) | Schema design, query optimization, database provisioning |
+| Implementation | @dev | Code implementation following this PRP |
+
+### Infrastructure Preferences
+| Component | Provider | Notes |
+|-----------|----------|-------|
+| PostgreSQL Hosting | **Cloudflare** (D1/Hyperdrive) | NOT Supabase |
+| Vector Search | pgvector extension | Available on Cloudflare Hyperdrive |
+| Blob Storage | Cloudflare R2 | For workflow artifacts |
 
 ---
 
@@ -271,6 +285,12 @@ timestamp = datetime.now(timezone.utc)  # NOT datetime.utcnow()
 
 # GOTCHA: Checkpoint state size can cause storage bloat
 # Enforce max state size (default 1MB) - use artifacts for large data
+
+# INFRASTRUCTURE: Use Cloudflare for all database hosting (NOT Supabase)
+# - PostgreSQL: Cloudflare Hyperdrive (with pgvector support)
+# - SQLite: Cloudflare D1 for edge deployments
+# - Blob Storage: Cloudflare R2 for artifacts
+# - Database planning: Coordinate with @data-analyst (Dana)
 ```
 
 ---
@@ -1397,8 +1417,14 @@ VALIDATION:
 
 ### Task 3: Storage Interface Extension
 **Estimated Complexity: High**
+**Requires: Schema review by @data-analyst (Dana) before implementation**
 
 ```yaml
+PREREQUISITE:
+  - @data-analyst (Dana) reviews and approves table schemas
+  - Dana validates index strategies for query patterns
+  - Dana confirms partition key choices for Cosmos DB
+
 MODIFY alma/storage/base.py:
   - UPDATE get_heuristics() - add scope_filter: Optional[Dict[str, Any]] = None
   - UPDATE get_outcomes() - add scope_filter: Optional[Dict[str, Any]] = None
@@ -1437,8 +1463,22 @@ VALIDATION:
 ### Task 3.5: PostgreSQL Storage Extension
 **Estimated Complexity: Medium**
 **IMPORTANT: PostgreSQL is a production backend (1,078 lines) - DO NOT SKIP!**
+**Database Planning: @data-analyst (Dana)**
+**Hosting: Cloudflare Hyperdrive (NOT Supabase)**
 
 ```yaml
+PREREQUISITE:
+  - @data-analyst (Dana) designs and reviews PostgreSQL schemas
+  - Dana provisions database on Cloudflare Hyperdrive
+  - Dana validates pgvector extension availability
+  - Dana optimizes indexes for expected query patterns
+
+DEPLOYMENT NOTE:
+  - Use Cloudflare Hyperdrive for PostgreSQL hosting
+  - Cloudflare D1 for SQLite-compatible workloads
+  - Cloudflare R2 for artifact blob storage
+  - DO NOT use Supabase
+
 MODIFY alma/storage/postgresql.py:
   - UPDATE get_heuristics() - add scope_filter parameter
   - UPDATE get_outcomes() - add scope_filter parameter
