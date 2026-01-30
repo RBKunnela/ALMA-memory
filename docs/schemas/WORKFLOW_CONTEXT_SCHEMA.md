@@ -316,30 +316,48 @@ python -m alma.storage.migrations.runner down --to 1.0.0
 
 ## Cloudflare Infrastructure
 
-### Hyperdrive (PostgreSQL)
+**Account**: FriendlyAI (`6aed792eec62c7d38c8fecaa92ed7618`)
+**Provisioned**: 2026-01-30
+
+### Hyperdrive (PostgreSQL Connection Pooler)
+
+> **Note**: Hyperdrive accelerates connections to an *existing* PostgreSQL database.
+> You must provision PostgreSQL separately (Neon, Railway, or self-hosted).
 
 ```yaml
 # Connection settings for Cloudflare Hyperdrive
 postgres:
-  host: ${CLOUDFLARE_HYPERDRIVE_HOST}
+  # After creating: wrangler hyperdrive create alma-memory --connection-string="postgres://..."
+  hyperdrive_id: ${CLOUDFLARE_HYPERDRIVE_ID}
+  host: ${CLOUDFLARE_HYPERDRIVE_HOST}  # <hyperdrive-id>.hyperdrive.workers.dev
   port: 5432
   database: alma_memory
-  user: ${CLOUDFLARE_HYPERDRIVE_USER}
-  password: ${CLOUDFLARE_HYPERDRIVE_PASSWORD}
   ssl_mode: require
   pool_size: 10
 ```
 
-### R2 (Artifact Storage)
+**Setup Steps**:
+1. Provision PostgreSQL (recommend Neon for pgvector support)
+2. Create Hyperdrive: `wrangler hyperdrive create alma-memory --connection-string="postgres://user:pass@host:5432/alma_memory"`
+3. Note the Hyperdrive ID for configuration
+
+### R2 (Artifact Storage) ✅ PROVISIONED
 
 ```yaml
 # Cloudflare R2 bucket for artifacts
 r2:
-  bucket: alma-artifacts
-  access_key_id: ${CLOUDFLARE_R2_ACCESS_KEY}
-  secret_access_key: ${CLOUDFLARE_R2_SECRET_KEY}
-  endpoint: https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com
+  bucket: alma-artifacts          # Created 2026-01-30
+  location: EEUR                  # Eastern Europe
+  storage_class: Standard
+  endpoint: https://6aed792eec62c7d38c8fecaa92ed7618.r2.cloudflarestorage.com
+  access_key_id: ${CLOUDFLARE_R2_ACCESS_KEY_ID}
+  secret_access_key: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY}
 ```
+
+**R2 API Token Setup**:
+1. Go to: https://dash.cloudflare.com/?to=/:account/r2/api-tokens
+2. Create token with "Object Read & Write" permission for `alma-artifacts`
+3. Save Access Key ID and Secret Access Key to `.env`
 
 ---
 
