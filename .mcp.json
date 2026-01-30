@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    },
+    "browser": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ]
+    },
+    "desktop-commander": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@wonderwhy-er/desktop-commander"
+      ]
+    }
+  }
+}
