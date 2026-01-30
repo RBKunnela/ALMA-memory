@@ -72,3 +72,15 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Environment & Secrets (AIOS)
+.env.*.local
+
+# Dependencies (AIOS)
+node_modules/
+node_modules
+
+# AIOS Local (AIOS)
+.aios-core/local/
+.claude/settings.local.json
+.aios/install-log.txt
