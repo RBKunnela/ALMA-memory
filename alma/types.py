@@ -7,7 +7,10 @@ Defines the core data structures for all memory types.
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from alma.workflow.outcomes import WorkflowOutcome
 
 
 class MemoryType(Enum):
@@ -206,6 +209,9 @@ class MemorySlice:
     preferences: List[UserPreference] = field(default_factory=list)
     domain_knowledge: List[DomainKnowledge] = field(default_factory=list)
     anti_patterns: List[AntiPattern] = field(default_factory=list)
+
+    # Workflow outcomes (v0.6.0+)
+    workflow_outcomes: List["WorkflowOutcome"] = field(default_factory=list)
 
     # Retrieval metadata
     query: Optional[str] = None

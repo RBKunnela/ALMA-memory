@@ -29,7 +29,7 @@ Testing Support:
     - create_test_heuristic(), create_test_outcome(), etc.
 """
 
-__version__ = "0.5.1"
+__version__ = "0.6.0-dev"
 
 # Core
 # Confidence Engine (Phase 12)
@@ -146,6 +146,28 @@ from alma.session import (
     SessionManager,
     SessionOutcome,
 )
+
+# Workflow Context Layer (v0.6.0)
+from alma.workflow import (
+    # Context and scoping
+    RetrievalScope,
+    WorkflowContext,
+    # Checkpoints
+    Checkpoint,
+    CheckpointManager,
+    # Workflow outcomes
+    WorkflowOutcome,
+    WorkflowResult,
+    # Artifacts
+    ArtifactRef,
+    ArtifactType,
+    link_artifact,
+    # State reducers
+    ReducerConfig,
+    StateMerger,
+    merge_states,
+)
+
 from alma.types import (
     AntiPattern,
     DomainKnowledge,
@@ -200,6 +222,19 @@ __all__ = [
     "SessionContext",
     "SessionOutcome",
     "SessionManager",
+    # Workflow Context Layer (v0.6.0)
+    "RetrievalScope",
+    "WorkflowContext",
+    "Checkpoint",
+    "CheckpointManager",
+    "WorkflowOutcome",
+    "WorkflowResult",
+    "ArtifactRef",
+    "ArtifactType",
+    "link_artifact",
+    "ReducerConfig",
+    "StateMerger",
+    "merge_states",
     # Domain Memory Factory
     "DomainSchema",
     "EntityType",
