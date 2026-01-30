@@ -128,3 +128,4 @@ scripts/
 
 # Backup Files
 .env.backup.*
+backup-to-gdrive.ps1
