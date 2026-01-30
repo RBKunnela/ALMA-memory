@@ -84,3 +84,47 @@ node_modules
 .aios-core/local/
 .claude/settings.local.json
 .aios/install-log.txt
+
+# ============================================
+# INTERNAL FILES (kept locally, not in GitHub)
+# ============================================
+
+# Internal Documentation
+docs/prd/
+docs/architecture/
+docs/stories/
+docs/reports/
+docs/reviews/
+docs/frontend/
+docs/api/
+docs/ROADMAP_TO_FUNDING.md
+docs/VIDEO_TALKING_POINTS.md
+docs/GOOD_FIRST_ISSUES.md
+PRPs/
+supabase/
+
+# Development & Testing
+tests/
+scripts/
+.benchmarks/
+
+# AI Coding Tool Configurations (AIOS)
+.aios-core/
+.aios/
+.agent/
+.claude/
+.cline/
+.cursor/
+.gemini/
+.trae/
+.antigravity/
+.github/agents/
+.github/copilot-instructions.md
+
+# MCP & Template Files
+.mcp.json
+.mcp.json.template
+.env.template
+
+# Backup Files
+.env.backup.*
