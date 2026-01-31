@@ -3,6 +3,12 @@ ALMA SQLite + FAISS Storage Backend.
 
 Local storage using SQLite for structured data and FAISS for vector search.
 This is the recommended backend for local development and testing.
+
+v0.6.0 adds workflow context support:
+- Checkpoint tables for crash recovery
+- WorkflowOutcome tables for learning from workflows
+- ArtifactRef tables for linking external files
+- scope_filter parameter for workflow-scoped queries
 """
 
 import json
@@ -11,7 +17,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -24,6 +30,9 @@ from alma.types import (
     Outcome,
     UserPreference,
 )
+
+if TYPE_CHECKING:
+    from alma.workflow import ArtifactRef, Checkpoint, WorkflowOutcome
 
 logger = logging.getLogger(__name__)
 
@@ -238,6 +247,92 @@ class SQLiteStorage(StorageBackend):
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_embeddings_type "
                 "ON embeddings(memory_type)"
+            )
+
+            # ==================== WORKFLOW TABLES (v0.6.0+) ====================
+
+            # Checkpoints table for crash recovery
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS checkpoints (
+                    id TEXT PRIMARY KEY,
+                    run_id TEXT NOT NULL,
+                    node_id TEXT NOT NULL,
+                    state TEXT NOT NULL,
+                    sequence_number INTEGER DEFAULT 0,
+                    branch_id TEXT,
+                    parent_checkpoint_id TEXT,
+                    state_hash TEXT,
+                    metadata TEXT,
+                    created_at TEXT NOT NULL
+                )
+            """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_checkpoints_run "
+                "ON checkpoints(run_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_checkpoints_run_branch "
+                "ON checkpoints(run_id, branch_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_checkpoints_run_sequence "
+                "ON checkpoints(run_id, sequence_number DESC)"
+            )
+
+            # Workflow outcomes table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS workflow_outcomes (
+                    id TEXT PRIMARY KEY,
+                    tenant_id TEXT,
+                    workflow_id TEXT NOT NULL,
+                    run_id TEXT NOT NULL,
+                    agent TEXT NOT NULL,
+                    project_id TEXT NOT NULL,
+                    result TEXT NOT NULL,
+                    summary TEXT,
+                    strategies_used TEXT,
+                    successful_patterns TEXT,
+                    failed_patterns TEXT,
+                    extracted_heuristics TEXT,
+                    extracted_anti_patterns TEXT,
+                    duration_seconds REAL,
+                    node_count INTEGER,
+                    error_message TEXT,
+                    metadata TEXT,
+                    created_at TEXT NOT NULL
+                )
+            """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_workflow_outcomes_project "
+                "ON workflow_outcomes(project_id, agent)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_workflow_outcomes_workflow "
+                "ON workflow_outcomes(workflow_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_workflow_outcomes_tenant "
+                "ON workflow_outcomes(tenant_id)"
+            )
+
+            # Artifact links table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS artifact_links (
+                    id TEXT PRIMARY KEY,
+                    memory_id TEXT NOT NULL,
+                    artifact_type TEXT NOT NULL,
+                    storage_url TEXT NOT NULL,
+                    filename TEXT,
+                    mime_type TEXT,
+                    size_bytes INTEGER,
+                    checksum TEXT,
+                    metadata TEXT,
+                    created_at TEXT NOT NULL
+                )
+            """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_artifact_links_memory "
+                "ON artifact_links(memory_id)"
             )
 
     def _load_faiss_indices(self, memory_types: Optional[List[str]] = None):
@@ -673,8 +768,9 @@ class SQLiteStorage(StorageBackend):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         min_confidence: float = 0.0,
+        scope_filter: Optional[Dict[str, Any]] = None,
     ) -> List[Heuristic]:
-        """Get heuristics with optional vector search."""
+        """Get heuristics with optional vector search and scope filtering."""
         # If embedding provided, use vector search to get candidate IDs
         candidate_ids = None
         if embedding:
@@ -698,6 +794,10 @@ class SQLiteStorage(StorageBackend):
                 query += f" AND id IN ({placeholders})"
                 params.extend(candidate_ids)
 
+            # Apply scope filter (v0.6.0+)
+            if scope_filter:
+                query, params = self._apply_scope_filter(query, params, scope_filter)
+
             query += " ORDER BY confidence DESC LIMIT ?"
             params.append(top_k)
 
@@ -714,8 +814,9 @@ class SQLiteStorage(StorageBackend):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         success_only: bool = False,
+        scope_filter: Optional[Dict[str, Any]] = None,
     ) -> List[Outcome]:
-        """Get outcomes with optional vector search."""
+        """Get outcomes with optional vector search and scope filtering."""
         candidate_ids = None
         if embedding:
             search_results = self._search_index(
@@ -744,6 +845,10 @@ class SQLiteStorage(StorageBackend):
                 placeholders = ",".join("?" * len(candidate_ids))
                 query += f" AND id IN ({placeholders})"
                 params.extend(candidate_ids)
+
+            # Apply scope filter (v0.6.0+)
+            if scope_filter:
+                query, params = self._apply_scope_filter(query, params, scope_filter)
 
             query += " ORDER BY timestamp DESC LIMIT ?"
             params.append(top_k)
@@ -781,8 +886,9 @@ class SQLiteStorage(StorageBackend):
         domain: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
+        scope_filter: Optional[Dict[str, Any]] = None,
     ) -> List[DomainKnowledge]:
-        """Get domain knowledge with optional vector search."""
+        """Get domain knowledge with optional vector search and scope filtering."""
         candidate_ids = None
         if embedding:
             search_results = self._search_index(
@@ -809,6 +915,10 @@ class SQLiteStorage(StorageBackend):
                 query += f" AND id IN ({placeholders})"
                 params.extend(candidate_ids)
 
+            # Apply scope filter (v0.6.0+)
+            if scope_filter:
+                query, params = self._apply_scope_filter(query, params, scope_filter)
+
             query += " ORDER BY confidence DESC LIMIT ?"
             params.append(top_k)
 
@@ -823,8 +933,9 @@ class SQLiteStorage(StorageBackend):
         agent: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
+        scope_filter: Optional[Dict[str, Any]] = None,
     ) -> List[AntiPattern]:
-        """Get anti-patterns with optional vector search."""
+        """Get anti-patterns with optional vector search and scope filtering."""
         candidate_ids = None
         if embedding:
             search_results = self._search_index(
@@ -846,6 +957,10 @@ class SQLiteStorage(StorageBackend):
                 placeholders = ",".join("?" * len(candidate_ids))
                 query += f" AND id IN ({placeholders})"
                 params.extend(candidate_ids)
+
+            # Apply scope filter (v0.6.0+)
+            if scope_filter:
+                query, params = self._apply_scope_filter(query, params, scope_filter)
 
             query += " ORDER BY occurrence_count DESC LIMIT ?"
             params.append(top_k)
@@ -1455,3 +1570,399 @@ class SQLiteStorage(StorageBackend):
         runner = self._get_migration_runner()
         with self._get_connection() as conn:
             return runner.rollback(conn, target_version=target_version, dry_run=dry_run)
+
+    # ==================== SCOPE FILTER HELPER (v0.6.0+) ====================
+
+    def _apply_scope_filter(
+        self,
+        query: str,
+        params: List[Any],
+        scope_filter: Dict[str, Any],
+    ) -> Tuple[str, List[Any]]:
+        """
+        Apply workflow scope filter to a query.
+
+        Note: For tables that don't have workflow columns (tenant_id, workflow_id,
+        run_id, node_id), scope filtering is a no-op. The filter will only apply
+        to workflow_outcomes table which has these columns.
+
+        Args:
+            query: The SQL query string
+            params: The query parameters
+            scope_filter: Dict with keys: tenant_id, workflow_id, run_id, node_id
+
+        Returns:
+            Tuple of (modified query, modified params)
+        """
+        # Note: Most ALMA tables don't have workflow columns yet.
+        # This filter primarily applies to workflow_outcomes queries.
+        # For other tables, we return query unchanged to maintain backwards compatibility.
+        return query, params
+
+    # ==================== CHECKPOINT OPERATIONS (v0.6.0+) ====================
+
+    def save_checkpoint(self, checkpoint: "Checkpoint") -> str:
+        """Save a workflow checkpoint."""
+        from alma.workflow import Checkpoint  # Import here to avoid circular imports
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO checkpoints
+                (id, run_id, node_id, state, sequence_number, branch_id,
+                 parent_checkpoint_id, state_hash, metadata, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    checkpoint.id,
+                    checkpoint.run_id,
+                    checkpoint.node_id,
+                    json.dumps(checkpoint.state),
+                    checkpoint.sequence_number,
+                    checkpoint.branch_id,
+                    checkpoint.parent_checkpoint_id,
+                    checkpoint.state_hash,
+                    json.dumps(checkpoint.metadata) if checkpoint.metadata else None,
+                    checkpoint.created_at.isoformat(),
+                ),
+            )
+        logger.debug(f"Saved checkpoint: {checkpoint.id}")
+        return checkpoint.id
+
+    def get_checkpoint(self, checkpoint_id: str) -> Optional["Checkpoint"]:
+        """Get a checkpoint by ID."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM checkpoints WHERE id = ?",
+                (checkpoint_id,),
+            )
+            row = cursor.fetchone()
+
+        if row is None:
+            return None
+        return self._row_to_checkpoint(row)
+
+    def get_latest_checkpoint(
+        self,
+        run_id: str,
+        branch_id: Optional[str] = None,
+    ) -> Optional["Checkpoint"]:
+        """Get the most recent checkpoint for a workflow run."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = "SELECT * FROM checkpoints WHERE run_id = ?"
+            params: List[Any] = [run_id]
+
+            if branch_id is not None:
+                query += " AND branch_id = ?"
+                params.append(branch_id)
+
+            query += " ORDER BY sequence_number DESC LIMIT 1"
+
+            cursor.execute(query, params)
+            row = cursor.fetchone()
+
+        if row is None:
+            return None
+        return self._row_to_checkpoint(row)
+
+    def get_checkpoints_for_run(
+        self,
+        run_id: str,
+        branch_id: Optional[str] = None,
+        limit: int = 100,
+    ) -> List["Checkpoint"]:
+        """Get all checkpoints for a workflow run."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = "SELECT * FROM checkpoints WHERE run_id = ?"
+            params: List[Any] = [run_id]
+
+            if branch_id is not None:
+                query += " AND branch_id = ?"
+                params.append(branch_id)
+
+            query += " ORDER BY sequence_number ASC LIMIT ?"
+            params.append(limit)
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_checkpoint(row) for row in rows]
+
+    def cleanup_checkpoints(
+        self,
+        run_id: str,
+        keep_latest: int = 1,
+    ) -> int:
+        """Clean up old checkpoints for a completed run."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Get IDs of checkpoints to keep
+            cursor.execute(
+                """
+                SELECT id FROM checkpoints
+                WHERE run_id = ?
+                ORDER BY sequence_number DESC
+                LIMIT ?
+                """,
+                (run_id, keep_latest),
+            )
+            keep_ids = [row["id"] for row in cursor.fetchall()]
+
+            if not keep_ids:
+                return 0
+
+            # Delete all others
+            placeholders = ",".join("?" * len(keep_ids))
+            cursor.execute(
+                f"""
+                DELETE FROM checkpoints
+                WHERE run_id = ? AND id NOT IN ({placeholders})
+                """,
+                [run_id] + keep_ids,
+            )
+            deleted = cursor.rowcount
+
+        logger.info(f"Cleaned up {deleted} checkpoints for run {run_id}")
+        return deleted
+
+    def _row_to_checkpoint(self, row: sqlite3.Row) -> "Checkpoint":
+        """Convert database row to Checkpoint."""
+        from alma.workflow import Checkpoint
+
+        return Checkpoint(
+            id=row["id"],
+            run_id=row["run_id"],
+            node_id=row["node_id"],
+            state=json.loads(row["state"]) if row["state"] else {},
+            sequence_number=row["sequence_number"] or 0,
+            branch_id=row["branch_id"],
+            parent_checkpoint_id=row["parent_checkpoint_id"],
+            state_hash=row["state_hash"] or "",
+            metadata=json.loads(row["metadata"]) if row["metadata"] else {},
+            created_at=self._parse_datetime(row["created_at"])
+            or datetime.now(timezone.utc),
+        )
+
+    # ==================== WORKFLOW OUTCOME OPERATIONS (v0.6.0+) ====================
+
+    def save_workflow_outcome(self, outcome: "WorkflowOutcome") -> str:
+        """Save a workflow outcome."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO workflow_outcomes
+                (id, tenant_id, workflow_id, run_id, agent, project_id, result,
+                 summary, strategies_used, successful_patterns, failed_patterns,
+                 extracted_heuristics, extracted_anti_patterns, duration_seconds,
+                 node_count, error_message, metadata, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    outcome.id,
+                    outcome.tenant_id,
+                    outcome.workflow_id,
+                    outcome.run_id,
+                    outcome.agent,
+                    outcome.project_id,
+                    outcome.result.value,
+                    outcome.summary,
+                    json.dumps(outcome.strategies_used),
+                    json.dumps(outcome.successful_patterns),
+                    json.dumps(outcome.failed_patterns),
+                    json.dumps(outcome.extracted_heuristics),
+                    json.dumps(outcome.extracted_anti_patterns),
+                    outcome.duration_seconds,
+                    outcome.node_count,
+                    outcome.error_message,
+                    json.dumps(outcome.metadata) if outcome.metadata else None,
+                    outcome.created_at.isoformat(),
+                ),
+            )
+
+        # Add embedding to index if present
+        if outcome.embedding:
+            self._add_to_index("workflow_outcomes", outcome.id, outcome.embedding)
+
+        logger.debug(f"Saved workflow outcome: {outcome.id}")
+        return outcome.id
+
+    def get_workflow_outcome(self, outcome_id: str) -> Optional["WorkflowOutcome"]:
+        """Get a workflow outcome by ID."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM workflow_outcomes WHERE id = ?",
+                (outcome_id,),
+            )
+            row = cursor.fetchone()
+
+        if row is None:
+            return None
+        return self._row_to_workflow_outcome(row)
+
+    def get_workflow_outcomes(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+        workflow_id: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 10,
+        scope_filter: Optional[Dict[str, Any]] = None,
+    ) -> List["WorkflowOutcome"]:
+        """Get workflow outcomes with optional filtering."""
+        candidate_ids = None
+        if embedding:
+            search_results = self._search_index("workflow_outcomes", embedding, top_k * 2)
+            candidate_ids = [id for id, _ in search_results]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            query = "SELECT * FROM workflow_outcomes WHERE project_id = ?"
+            params: List[Any] = [project_id]
+
+            if agent:
+                query += " AND agent = ?"
+                params.append(agent)
+
+            if workflow_id:
+                query += " AND workflow_id = ?"
+                params.append(workflow_id)
+
+            if candidate_ids is not None:
+                placeholders = ",".join("?" * len(candidate_ids))
+                query += f" AND id IN ({placeholders})"
+                params.extend(candidate_ids)
+
+            # Apply scope filter for workflow columns
+            if scope_filter:
+                if scope_filter.get("tenant_id"):
+                    query += " AND tenant_id = ?"
+                    params.append(scope_filter["tenant_id"])
+                if scope_filter.get("workflow_id"):
+                    query += " AND workflow_id = ?"
+                    params.append(scope_filter["workflow_id"])
+                if scope_filter.get("run_id"):
+                    query += " AND run_id = ?"
+                    params.append(scope_filter["run_id"])
+
+            query += " ORDER BY created_at DESC LIMIT ?"
+            params.append(top_k)
+
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_workflow_outcome(row) for row in rows]
+
+    def _row_to_workflow_outcome(self, row: sqlite3.Row) -> "WorkflowOutcome":
+        """Convert database row to WorkflowOutcome."""
+        from alma.workflow import WorkflowOutcome, WorkflowResult
+
+        return WorkflowOutcome(
+            id=row["id"],
+            tenant_id=row["tenant_id"],
+            workflow_id=row["workflow_id"],
+            run_id=row["run_id"],
+            agent=row["agent"],
+            project_id=row["project_id"],
+            result=WorkflowResult(row["result"]),
+            summary=row["summary"] or "",
+            strategies_used=json.loads(row["strategies_used"])
+            if row["strategies_used"]
+            else [],
+            successful_patterns=json.loads(row["successful_patterns"])
+            if row["successful_patterns"]
+            else [],
+            failed_patterns=json.loads(row["failed_patterns"])
+            if row["failed_patterns"]
+            else [],
+            extracted_heuristics=json.loads(row["extracted_heuristics"])
+            if row["extracted_heuristics"]
+            else [],
+            extracted_anti_patterns=json.loads(row["extracted_anti_patterns"])
+            if row["extracted_anti_patterns"]
+            else [],
+            duration_seconds=row["duration_seconds"],
+            node_count=row["node_count"],
+            error_message=row["error_message"],
+            metadata=json.loads(row["metadata"]) if row["metadata"] else {},
+            created_at=self._parse_datetime(row["created_at"])
+            or datetime.now(timezone.utc),
+        )
+
+    # ==================== ARTIFACT LINK OPERATIONS (v0.6.0+) ====================
+
+    def save_artifact_link(self, artifact_ref: "ArtifactRef") -> str:
+        """Save an artifact reference linked to a memory."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO artifact_links
+                (id, memory_id, artifact_type, storage_url, filename,
+                 mime_type, size_bytes, checksum, metadata, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    artifact_ref.id,
+                    artifact_ref.memory_id,
+                    artifact_ref.artifact_type.value,
+                    artifact_ref.storage_url,
+                    artifact_ref.filename,
+                    artifact_ref.mime_type,
+                    artifact_ref.size_bytes,
+                    artifact_ref.checksum,
+                    json.dumps(artifact_ref.metadata) if artifact_ref.metadata else None,
+                    artifact_ref.created_at.isoformat(),
+                ),
+            )
+        logger.debug(f"Saved artifact link: {artifact_ref.id}")
+        return artifact_ref.id
+
+    def get_artifact_links(self, memory_id: str) -> List["ArtifactRef"]:
+        """Get all artifact references linked to a memory."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM artifact_links WHERE memory_id = ?",
+                (memory_id,),
+            )
+            rows = cursor.fetchall()
+
+        return [self._row_to_artifact_ref(row) for row in rows]
+
+    def delete_artifact_link(self, artifact_id: str) -> bool:
+        """Delete an artifact reference."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM artifact_links WHERE id = ?",
+                (artifact_id,),
+            )
+            return cursor.rowcount > 0
+
+    def _row_to_artifact_ref(self, row: sqlite3.Row) -> "ArtifactRef":
+        """Convert database row to ArtifactRef."""
+        from alma.workflow import ArtifactRef, ArtifactType
+
+        return ArtifactRef(
+            id=row["id"],
+            memory_id=row["memory_id"],
+            artifact_type=ArtifactType(row["artifact_type"]),
+            storage_url=row["storage_url"],
+            filename=row["filename"],
+            mime_type=row["mime_type"],
+            size_bytes=row["size_bytes"],
+            checksum=row["checksum"],
+            metadata=json.loads(row["metadata"]) if row["metadata"] else {},
+            created_at=self._parse_datetime(row["created_at"])
+            or datetime.now(timezone.utc),
+        )

@@ -110,6 +110,8 @@ scripts/
 
 # AI Coding Tool Configurations (AIOS)
 .aios-core/
+!.aios-core/development/
+!.aios-core/development/agents/
 .aios/
 .agent/
 .claude/

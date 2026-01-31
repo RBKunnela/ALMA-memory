@@ -376,53 +376,60 @@ class SQLiteWorkflowContextMigration(Migration):
 
         # =====================================================================
         # TABLE 1: Checkpoints
+        # Matches alma.workflow.checkpoint.Checkpoint dataclass
         # =====================================================================
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS checkpoints (
                 id TEXT PRIMARY KEY,
                 run_id TEXT NOT NULL,
                 node_id TEXT NOT NULL,
-                state_json TEXT NOT NULL,
-                state_hash TEXT NOT NULL,
-                sequence_number INTEGER NOT NULL,
+                state TEXT NOT NULL,
+                sequence_number INTEGER DEFAULT 0,
                 branch_id TEXT,
-                parent_checkpoint_id TEXT REFERENCES checkpoints(id),
-                created_at TEXT NOT NULL,
-                metadata_json TEXT,
-                UNIQUE(run_id, sequence_number)
+                parent_checkpoint_id TEXT,
+                state_hash TEXT,
+                metadata TEXT,
+                created_at TEXT NOT NULL
             )
         """)
 
         cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_checkpoints_run_seq
-            ON checkpoints(run_id, sequence_number DESC)
+            CREATE INDEX IF NOT EXISTS idx_checkpoints_run
+            ON checkpoints(run_id)
         """)
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_checkpoints_run_branch
             ON checkpoints(run_id, branch_id)
         """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_checkpoints_run_seq
+            ON checkpoints(run_id, sequence_number DESC)
+        """)
 
         # =====================================================================
         # TABLE 2: Workflow Outcomes
+        # Matches alma.workflow.outcomes.WorkflowOutcome dataclass
         # =====================================================================
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS workflow_outcomes (
                 id TEXT PRIMARY KEY,
-                tenant_id TEXT NOT NULL DEFAULT 'default',
+                tenant_id TEXT,
                 workflow_id TEXT NOT NULL,
-                workflow_version TEXT DEFAULT '1.0',
-                run_id TEXT NOT NULL UNIQUE,
-                success INTEGER NOT NULL,
-                duration_ms INTEGER NOT NULL,
-                node_count INTEGER NOT NULL,
-                nodes_succeeded INTEGER NOT NULL DEFAULT 0,
-                nodes_failed INTEGER NOT NULL DEFAULT 0,
+                run_id TEXT NOT NULL,
+                agent TEXT NOT NULL,
+                project_id TEXT NOT NULL,
+                result TEXT NOT NULL,
+                summary TEXT,
+                strategies_used TEXT,
+                successful_patterns TEXT,
+                failed_patterns TEXT,
+                extracted_heuristics TEXT,
+                extracted_anti_patterns TEXT,
+                duration_seconds REAL,
+                node_count INTEGER,
                 error_message TEXT,
-                artifacts_json TEXT,
-                learnings_extracted INTEGER DEFAULT 0,
-                timestamp TEXT NOT NULL,
-                embedding BLOB,
-                metadata_json TEXT
+                metadata TEXT,
+                created_at TEXT NOT NULL
             )
         """)
 
@@ -432,34 +439,35 @@ class SQLiteWorkflowContextMigration(Migration):
         """)
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_wo_workflow
-            ON workflow_outcomes(tenant_id, workflow_id)
+            ON workflow_outcomes(workflow_id)
         """)
         cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_wo_success
-            ON workflow_outcomes(tenant_id, success)
+            CREATE INDEX IF NOT EXISTS idx_wo_project_agent
+            ON workflow_outcomes(project_id, agent)
         """)
 
         # =====================================================================
         # TABLE 3: Artifact Links
+        # Matches alma.workflow.artifacts.ArtifactRef dataclass
         # =====================================================================
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS artifact_links (
                 id TEXT PRIMARY KEY,
                 memory_id TEXT NOT NULL,
-                memory_type TEXT NOT NULL,
-                artifact_id TEXT NOT NULL,
                 artifact_type TEXT NOT NULL,
-                storage_path TEXT NOT NULL,
-                content_hash TEXT NOT NULL,
-                size_bytes INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                metadata_json TEXT
+                storage_url TEXT NOT NULL,
+                filename TEXT,
+                mime_type TEXT,
+                size_bytes INTEGER,
+                checksum TEXT,
+                metadata TEXT,
+                created_at TEXT NOT NULL
             )
         """)
 
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_artifact_memory
-            ON artifact_links(memory_id, memory_type)
+            ON artifact_links(memory_id)
         """)
 
         # =====================================================================
