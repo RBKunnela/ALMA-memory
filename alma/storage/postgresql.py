@@ -8,6 +8,12 @@ Recommended for:
 - Customer deployments (Azure PostgreSQL, AWS RDS, etc.)
 - Self-hosted production environments
 - High-availability requirements
+
+v0.6.0 adds workflow context support:
+- Checkpoint tables for crash recovery
+- WorkflowOutcome tables for learning from workflows
+- ArtifactRef tables for linking external files
+- scope_filter parameter for workflow-scoped queries
 """
 
 import json
@@ -15,7 +21,7 @@ import logging
 import os
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 # numpy is optional - only needed for fallback similarity when pgvector unavailable
 try:
@@ -35,6 +41,9 @@ from alma.types import (
     Outcome,
     UserPreference,
 )
+
+if TYPE_CHECKING:
+    from alma.workflow import ArtifactRef, Checkpoint, WorkflowOutcome
 
 logger = logging.getLogger(__name__)
 
@@ -1557,3 +1566,383 @@ class PostgreSQLStorage(StorageBackend):
         runner = self._get_migration_runner()
         with self._get_connection() as conn:
             return runner.rollback(conn, target_version=target_version, dry_run=dry_run)
+
+    # ==================== CHECKPOINT OPERATIONS (v0.6.0+) ====================
+
+    def save_checkpoint(self, checkpoint: "Checkpoint") -> str:
+        """Save a workflow checkpoint."""
+        with self._get_connection() as conn:
+            conn.execute(
+                f"""
+                INSERT INTO {self.schema}.alma_checkpoints
+                (id, run_id, node_id, state_json, state_hash, sequence_number,
+                 branch_id, parent_checkpoint_id, metadata, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    state_json = EXCLUDED.state_json,
+                    state_hash = EXCLUDED.state_hash,
+                    sequence_number = EXCLUDED.sequence_number,
+                    metadata = EXCLUDED.metadata
+                """,
+                (
+                    checkpoint.id,
+                    checkpoint.run_id,
+                    checkpoint.node_id,
+                    json.dumps(checkpoint.state),
+                    checkpoint.state_hash,
+                    checkpoint.sequence_number,
+                    checkpoint.branch_id,
+                    checkpoint.parent_checkpoint_id,
+                    json.dumps(checkpoint.metadata) if checkpoint.metadata else None,
+                    checkpoint.created_at,
+                ),
+            )
+            conn.commit()
+
+        logger.debug(f"Saved checkpoint: {checkpoint.id}")
+        return checkpoint.id
+
+    def get_checkpoint(self, checkpoint_id: str) -> Optional["Checkpoint"]:
+        """Get a checkpoint by ID."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                f"SELECT * FROM {self.schema}.alma_checkpoints WHERE id = %s",
+                (checkpoint_id,),
+            )
+            row = cursor.fetchone()
+
+        if row is None:
+            return None
+        return self._row_to_checkpoint(row)
+
+    def get_latest_checkpoint(
+        self,
+        run_id: str,
+        branch_id: Optional[str] = None,
+    ) -> Optional["Checkpoint"]:
+        """Get the most recent checkpoint for a workflow run."""
+        with self._get_connection() as conn:
+            if branch_id is not None:
+                cursor = conn.execute(
+                    f"""
+                    SELECT * FROM {self.schema}.alma_checkpoints
+                    WHERE run_id = %s AND branch_id = %s
+                    ORDER BY sequence_number DESC LIMIT 1
+                    """,
+                    (run_id, branch_id),
+                )
+            else:
+                cursor = conn.execute(
+                    f"""
+                    SELECT * FROM {self.schema}.alma_checkpoints
+                    WHERE run_id = %s
+                    ORDER BY sequence_number DESC LIMIT 1
+                    """,
+                    (run_id,),
+                )
+            row = cursor.fetchone()
+
+        if row is None:
+            return None
+        return self._row_to_checkpoint(row)
+
+    def get_checkpoints_for_run(
+        self,
+        run_id: str,
+        branch_id: Optional[str] = None,
+        limit: int = 100,
+    ) -> List["Checkpoint"]:
+        """Get all checkpoints for a workflow run."""
+        with self._get_connection() as conn:
+            if branch_id is not None:
+                cursor = conn.execute(
+                    f"""
+                    SELECT * FROM {self.schema}.alma_checkpoints
+                    WHERE run_id = %s AND branch_id = %s
+                    ORDER BY sequence_number ASC LIMIT %s
+                    """,
+                    (run_id, branch_id, limit),
+                )
+            else:
+                cursor = conn.execute(
+                    f"""
+                    SELECT * FROM {self.schema}.alma_checkpoints
+                    WHERE run_id = %s
+                    ORDER BY sequence_number ASC LIMIT %s
+                    """,
+                    (run_id, limit),
+                )
+            rows = cursor.fetchall()
+
+        return [self._row_to_checkpoint(row) for row in rows]
+
+    def cleanup_checkpoints(
+        self,
+        run_id: str,
+        keep_latest: int = 1,
+    ) -> int:
+        """Clean up old checkpoints for a completed run."""
+        with self._get_connection() as conn:
+            # Delete all but the latest N checkpoints
+            cursor = conn.execute(
+                f"""
+                DELETE FROM {self.schema}.alma_checkpoints
+                WHERE run_id = %s AND id NOT IN (
+                    SELECT id FROM {self.schema}.alma_checkpoints
+                    WHERE run_id = %s
+                    ORDER BY sequence_number DESC
+                    LIMIT %s
+                )
+                """,
+                (run_id, run_id, keep_latest),
+            )
+            conn.commit()
+            deleted = cursor.rowcount
+
+        logger.info(f"Cleaned up {deleted} checkpoints for run {run_id}")
+        return deleted
+
+    def _row_to_checkpoint(self, row: Dict[str, Any]) -> "Checkpoint":
+        """Convert database row to Checkpoint."""
+        from alma.workflow import Checkpoint
+
+        return Checkpoint(
+            id=row["id"],
+            run_id=row["run_id"],
+            node_id=row["node_id"],
+            state=json.loads(row["state_json"]) if row["state_json"] else {},
+            sequence_number=row["sequence_number"] or 0,
+            branch_id=row["branch_id"],
+            parent_checkpoint_id=row["parent_checkpoint_id"],
+            state_hash=row["state_hash"] or "",
+            metadata=row["metadata"] if row["metadata"] else {},
+            created_at=self._parse_datetime(row["created_at"])
+            or datetime.now(timezone.utc),
+        )
+
+    # ==================== WORKFLOW OUTCOME OPERATIONS (v0.6.0+) ====================
+
+    def save_workflow_outcome(self, outcome: "WorkflowOutcome") -> str:
+        """Save a workflow outcome."""
+        with self._get_connection() as conn:
+            conn.execute(
+                f"""
+                INSERT INTO {self.schema}.alma_workflow_outcomes
+                (id, tenant_id, workflow_id, run_id, agent, project_id, result,
+                 summary, strategies_used, successful_patterns, failed_patterns,
+                 extracted_heuristics, extracted_anti_patterns, duration_seconds,
+                 node_count, error_message, metadata, embedding, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    result = EXCLUDED.result,
+                    summary = EXCLUDED.summary,
+                    strategies_used = EXCLUDED.strategies_used,
+                    successful_patterns = EXCLUDED.successful_patterns,
+                    failed_patterns = EXCLUDED.failed_patterns,
+                    extracted_heuristics = EXCLUDED.extracted_heuristics,
+                    extracted_anti_patterns = EXCLUDED.extracted_anti_patterns,
+                    duration_seconds = EXCLUDED.duration_seconds,
+                    node_count = EXCLUDED.node_count,
+                    error_message = EXCLUDED.error_message,
+                    metadata = EXCLUDED.metadata,
+                    embedding = EXCLUDED.embedding
+                """,
+                (
+                    outcome.id,
+                    outcome.tenant_id,
+                    outcome.workflow_id,
+                    outcome.run_id,
+                    outcome.agent,
+                    outcome.project_id,
+                    outcome.result.value,
+                    outcome.summary,
+                    outcome.strategies_used,
+                    outcome.successful_patterns,
+                    outcome.failed_patterns,
+                    outcome.extracted_heuristics,
+                    outcome.extracted_anti_patterns,
+                    outcome.duration_seconds,
+                    outcome.node_count,
+                    outcome.error_message,
+                    outcome.metadata,
+                    self._embedding_to_db(outcome.embedding),
+                    outcome.created_at,
+                ),
+            )
+            conn.commit()
+
+        logger.debug(f"Saved workflow outcome: {outcome.id}")
+        return outcome.id
+
+    def get_workflow_outcome(self, outcome_id: str) -> Optional["WorkflowOutcome"]:
+        """Get a workflow outcome by ID."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                f"SELECT * FROM {self.schema}.alma_workflow_outcomes WHERE id = %s",
+                (outcome_id,),
+            )
+            row = cursor.fetchone()
+
+        if row is None:
+            return None
+        return self._row_to_workflow_outcome(row)
+
+    def get_workflow_outcomes(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+        workflow_id: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 10,
+        scope_filter: Optional[Dict[str, Any]] = None,
+    ) -> List["WorkflowOutcome"]:
+        """Get workflow outcomes with optional filtering."""
+        with self._get_connection() as conn:
+            if embedding and self._pgvector_available:
+                query = f"""
+                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    FROM {self.schema}.alma_workflow_outcomes
+                    WHERE project_id = %s
+                """
+                params: List[Any] = [self._embedding_to_db(embedding), project_id]
+            else:
+                query = f"""
+                    SELECT *
+                    FROM {self.schema}.alma_workflow_outcomes
+                    WHERE project_id = %s
+                """
+                params = [project_id]
+
+            if agent:
+                query += " AND agent = %s"
+                params.append(agent)
+
+            if workflow_id:
+                query += " AND workflow_id = %s"
+                params.append(workflow_id)
+
+            # Apply scope filter
+            if scope_filter:
+                if scope_filter.get("tenant_id"):
+                    query += " AND tenant_id = %s"
+                    params.append(scope_filter["tenant_id"])
+                if scope_filter.get("workflow_id"):
+                    query += " AND workflow_id = %s"
+                    params.append(scope_filter["workflow_id"])
+                if scope_filter.get("run_id"):
+                    query += " AND run_id = %s"
+                    params.append(scope_filter["run_id"])
+
+            if embedding and self._pgvector_available:
+                query += " ORDER BY similarity DESC LIMIT %s"
+            else:
+                query += " ORDER BY created_at DESC LIMIT %s"
+            params.append(top_k)
+
+            cursor = conn.execute(query, params)
+            rows = cursor.fetchall()
+
+        return [self._row_to_workflow_outcome(row) for row in rows]
+
+    def _row_to_workflow_outcome(self, row: Dict[str, Any]) -> "WorkflowOutcome":
+        """Convert database row to WorkflowOutcome."""
+        from alma.workflow import WorkflowOutcome, WorkflowResult
+
+        return WorkflowOutcome(
+            id=row["id"],
+            tenant_id=row["tenant_id"],
+            workflow_id=row["workflow_id"],
+            run_id=row["run_id"],
+            agent=row["agent"],
+            project_id=row["project_id"],
+            result=WorkflowResult(row["result"]),
+            summary=row["summary"] or "",
+            strategies_used=row["strategies_used"] or [],
+            successful_patterns=row["successful_patterns"] or [],
+            failed_patterns=row["failed_patterns"] or [],
+            extracted_heuristics=row["extracted_heuristics"] or [],
+            extracted_anti_patterns=row["extracted_anti_patterns"] or [],
+            duration_seconds=row["duration_seconds"],
+            node_count=row["node_count"],
+            error_message=row["error_message"],
+            embedding=self._embedding_from_db(row.get("embedding")),
+            metadata=row["metadata"] if row["metadata"] else {},
+            created_at=self._parse_datetime(row["created_at"])
+            or datetime.now(timezone.utc),
+        )
+
+    # ==================== ARTIFACT LINK OPERATIONS (v0.6.0+) ====================
+
+    def save_artifact_link(self, artifact_ref: "ArtifactRef") -> str:
+        """Save an artifact reference linked to a memory."""
+        with self._get_connection() as conn:
+            conn.execute(
+                f"""
+                INSERT INTO {self.schema}.alma_artifact_links
+                (id, memory_id, artifact_type, storage_url, filename,
+                 mime_type, size_bytes, checksum, metadata, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    storage_url = EXCLUDED.storage_url,
+                    filename = EXCLUDED.filename,
+                    mime_type = EXCLUDED.mime_type,
+                    size_bytes = EXCLUDED.size_bytes,
+                    checksum = EXCLUDED.checksum,
+                    metadata = EXCLUDED.metadata
+                """,
+                (
+                    artifact_ref.id,
+                    artifact_ref.memory_id,
+                    artifact_ref.artifact_type.value,
+                    artifact_ref.storage_url,
+                    artifact_ref.filename,
+                    artifact_ref.mime_type,
+                    artifact_ref.size_bytes,
+                    artifact_ref.checksum,
+                    artifact_ref.metadata,
+                    artifact_ref.created_at,
+                ),
+            )
+            conn.commit()
+
+        logger.debug(f"Saved artifact link: {artifact_ref.id}")
+        return artifact_ref.id
+
+    def get_artifact_links(self, memory_id: str) -> List["ArtifactRef"]:
+        """Get all artifact references linked to a memory."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                f"SELECT * FROM {self.schema}.alma_artifact_links WHERE memory_id = %s",
+                (memory_id,),
+            )
+            rows = cursor.fetchall()
+
+        return [self._row_to_artifact_ref(row) for row in rows]
+
+    def delete_artifact_link(self, artifact_id: str) -> bool:
+        """Delete an artifact reference."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                f"DELETE FROM {self.schema}.alma_artifact_links WHERE id = %s",
+                (artifact_id,),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def _row_to_artifact_ref(self, row: Dict[str, Any]) -> "ArtifactRef":
+        """Convert database row to ArtifactRef."""
+        from alma.workflow import ArtifactRef, ArtifactType
+
+        return ArtifactRef(
+            id=row["id"],
+            memory_id=row["memory_id"],
+            artifact_type=ArtifactType(row["artifact_type"]),
+            storage_url=row["storage_url"],
+            filename=row["filename"],
+            mime_type=row["mime_type"],
+            size_bytes=row["size_bytes"],
+            checksum=row["checksum"],
+            metadata=row["metadata"] if row["metadata"] else {},
+            created_at=self._parse_datetime(row["created_at"])
+            or datetime.now(timezone.utc),
+        )

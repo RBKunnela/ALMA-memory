@@ -2,11 +2,17 @@
 ALMA Storage Backend Interface.
 
 Abstract base class that all storage backends must implement.
+
+v0.6.0 adds workflow context support:
+- Checkpoint CRUD operations
+- WorkflowOutcome storage and retrieval
+- ArtifactRef linking
+- scope_filter parameter for workflow-scoped queries
 """
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from alma.types import (
     AntiPattern,
@@ -15,6 +21,9 @@ from alma.types import (
     Outcome,
     UserPreference,
 )
+
+if TYPE_CHECKING:
+    from alma.workflow import ArtifactRef, Checkpoint, WorkflowOutcome
 
 
 class StorageBackend(ABC):
@@ -80,6 +89,7 @@ class StorageBackend(ABC):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         min_confidence: float = 0.0,
+        scope_filter: Optional[Dict[str, Any]] = None,
     ) -> List[Heuristic]:
         """
         Get heuristics, optionally filtered by agent and similarity.
@@ -90,6 +100,8 @@ class StorageBackend(ABC):
             embedding: Query embedding for semantic search
             top_k: Max results to return
             min_confidence: Minimum confidence threshold
+            scope_filter: Optional workflow scope filter (v0.6.0+)
+                         Keys: tenant_id, workflow_id, run_id, node_id
 
         Returns:
             List of matching heuristics
@@ -105,6 +117,7 @@ class StorageBackend(ABC):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         success_only: bool = False,
+        scope_filter: Optional[Dict[str, Any]] = None,
     ) -> List[Outcome]:
         """
         Get outcomes, optionally filtered.
@@ -116,6 +129,8 @@ class StorageBackend(ABC):
             embedding: Query embedding for semantic search
             top_k: Max results
             success_only: Only return successful outcomes
+            scope_filter: Optional workflow scope filter (v0.6.0+)
+                         Keys: tenant_id, workflow_id, run_id, node_id
 
         Returns:
             List of matching outcomes
@@ -148,6 +163,7 @@ class StorageBackend(ABC):
         domain: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
+        scope_filter: Optional[Dict[str, Any]] = None,
     ) -> List[DomainKnowledge]:
         """
         Get domain knowledge.
@@ -158,6 +174,8 @@ class StorageBackend(ABC):
             domain: Filter by domain
             embedding: Query embedding for semantic search
             top_k: Max results
+            scope_filter: Optional workflow scope filter (v0.6.0+)
+                         Keys: tenant_id, workflow_id, run_id, node_id
 
         Returns:
             List of domain knowledge items
@@ -171,6 +189,7 @@ class StorageBackend(ABC):
         agent: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
+        scope_filter: Optional[Dict[str, Any]] = None,
     ) -> List[AntiPattern]:
         """
         Get anti-patterns.
@@ -180,6 +199,8 @@ class StorageBackend(ABC):
             agent: Filter by agent
             embedding: Query embedding for semantic search
             top_k: Max results
+            scope_filter: Optional workflow scope filter (v0.6.0+)
+                         Keys: tenant_id, workflow_id, run_id, node_id
 
         Returns:
             List of anti-patterns
@@ -565,6 +586,203 @@ class StorageBackend(ABC):
         """
         # Default implementation does nothing
         return []
+
+    # ==================== CHECKPOINT OPERATIONS (v0.6.0+) ====================
+
+    def save_checkpoint(self, checkpoint: "Checkpoint") -> str:
+        """
+        Save a workflow checkpoint.
+
+        Args:
+            checkpoint: Checkpoint to save
+
+        Returns:
+            The checkpoint ID
+
+        Note: Default implementation raises NotImplementedError.
+              Backends should override for workflow support.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support checkpoints. "
+            "Use SQLiteStorage or PostgreSQLStorage for workflow features."
+        )
+
+    def get_checkpoint(self, checkpoint_id: str) -> Optional["Checkpoint"]:
+        """
+        Get a checkpoint by ID.
+
+        Args:
+            checkpoint_id: The checkpoint ID
+
+        Returns:
+            The checkpoint, or None if not found
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support checkpoints."
+        )
+
+    def get_latest_checkpoint(
+        self,
+        run_id: str,
+        branch_id: Optional[str] = None,
+    ) -> Optional["Checkpoint"]:
+        """
+        Get the most recent checkpoint for a workflow run.
+
+        Args:
+            run_id: The workflow run identifier
+            branch_id: Optional branch to filter by
+
+        Returns:
+            The latest checkpoint, or None if no checkpoints exist
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support checkpoints."
+        )
+
+    def get_checkpoints_for_run(
+        self,
+        run_id: str,
+        branch_id: Optional[str] = None,
+        limit: int = 100,
+    ) -> List["Checkpoint"]:
+        """
+        Get all checkpoints for a workflow run.
+
+        Args:
+            run_id: The workflow run identifier
+            branch_id: Optional branch filter
+            limit: Maximum checkpoints to return
+
+        Returns:
+            List of checkpoints ordered by sequence number
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support checkpoints."
+        )
+
+    def cleanup_checkpoints(
+        self,
+        run_id: str,
+        keep_latest: int = 1,
+    ) -> int:
+        """
+        Clean up old checkpoints for a completed run.
+
+        Args:
+            run_id: The workflow run identifier
+            keep_latest: Number of latest checkpoints to keep
+
+        Returns:
+            Number of checkpoints deleted
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support checkpoints."
+        )
+
+    # ==================== WORKFLOW OUTCOME OPERATIONS (v0.6.0+) ====================
+
+    def save_workflow_outcome(self, outcome: "WorkflowOutcome") -> str:
+        """
+        Save a workflow outcome.
+
+        Args:
+            outcome: WorkflowOutcome to save
+
+        Returns:
+            The outcome ID
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support workflow outcomes."
+        )
+
+    def get_workflow_outcome(self, outcome_id: str) -> Optional["WorkflowOutcome"]:
+        """
+        Get a workflow outcome by ID.
+
+        Args:
+            outcome_id: The outcome ID
+
+        Returns:
+            The workflow outcome, or None if not found
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support workflow outcomes."
+        )
+
+    def get_workflow_outcomes(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+        workflow_id: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
+        top_k: int = 10,
+        scope_filter: Optional[Dict[str, Any]] = None,
+    ) -> List["WorkflowOutcome"]:
+        """
+        Get workflow outcomes with optional filtering.
+
+        Args:
+            project_id: Project to query
+            agent: Filter by agent
+            workflow_id: Filter by workflow definition
+            embedding: Query embedding for semantic search
+            top_k: Max results
+            scope_filter: Optional workflow scope filter
+
+        Returns:
+            List of matching workflow outcomes
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support workflow outcomes."
+        )
+
+    # ==================== ARTIFACT LINK OPERATIONS (v0.6.0+) ====================
+
+    def save_artifact_link(self, artifact_ref: "ArtifactRef") -> str:
+        """
+        Save an artifact reference linked to a memory.
+
+        Args:
+            artifact_ref: ArtifactRef to save
+
+        Returns:
+            The artifact reference ID
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support artifact links."
+        )
+
+    def get_artifact_links(
+        self,
+        memory_id: str,
+    ) -> List["ArtifactRef"]:
+        """
+        Get all artifact references linked to a memory.
+
+        Args:
+            memory_id: The memory ID to get artifacts for
+
+        Returns:
+            List of artifact references
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support artifact links."
+        )
+
+    def delete_artifact_link(self, artifact_id: str) -> bool:
+        """
+        Delete an artifact reference.
+
+        Args:
+            artifact_id: The artifact reference ID
+
+        Returns:
+            True if deleted, False if not found
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support artifact links."
+        )
 
     # ==================== UTILITY ====================
 

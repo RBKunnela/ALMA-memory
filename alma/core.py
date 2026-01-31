@@ -14,12 +14,19 @@ ALMA provides both synchronous and asynchronous APIs. The async variants
 (async_retrieve, async_learn, etc.) use asyncio.to_thread() to run
 blocking storage operations in a thread pool, enabling better concurrency
 in async applications without blocking the event loop.
+
+Workflow Integration (v0.6.0):
+ALMA supports AGtestari workflow integration with:
+- Checkpoints: Crash recovery and state persistence
+- Workflow Outcomes: Learning from completed workflows
+- Artifact Links: Connecting external files to memories
+- Scoped Retrieval: Filtering by workflow context
 """
 
 import asyncio
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from alma.config.loader import ConfigLoader
 from alma.exceptions import ScopeViolationError
@@ -35,6 +42,18 @@ from alma.types import (
     MemorySlice,
     Outcome,
     UserPreference,
+)
+from alma.workflow import (
+    ArtifactRef,
+    ArtifactType,
+    Checkpoint,
+    CheckpointManager,
+    ReducerConfig,
+    RetrievalScope,
+    StateMerger,
+    WorkflowContext,
+    WorkflowOutcome,
+    WorkflowResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -435,6 +454,397 @@ class ALMA:
             agent=agent,
         )
 
+    # ==================== WORKFLOW INTEGRATION (v0.6.0) ====================
+    #
+    # Methods for AGtestari workflow integration: checkpointing, scoped
+    # retrieval, learning from workflows, and artifact linking.
+
+    def _get_checkpoint_manager(self) -> CheckpointManager:
+        """Get or create the checkpoint manager."""
+        if not hasattr(self, "_checkpoint_manager"):
+            self._checkpoint_manager = CheckpointManager(storage=self.storage)
+        return self._checkpoint_manager
+
+    @trace_method(name="ALMA.checkpoint", kind=SpanKind.INTERNAL)
+    def checkpoint(
+        self,
+        run_id: str,
+        node_id: str,
+        state: Dict[str, Any],
+        branch_id: Optional[str] = None,
+        parent_checkpoint_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        skip_if_unchanged: bool = True,
+    ) -> Optional[Checkpoint]:
+        """
+        Create a checkpoint for crash recovery.
+
+        Checkpoints persist workflow state at key points during execution,
+        enabling recovery after crashes or failures.
+
+        Args:
+            run_id: The workflow run identifier.
+            node_id: The node creating this checkpoint.
+            state: The state to persist.
+            branch_id: Optional branch identifier for parallel execution.
+            parent_checkpoint_id: Previous checkpoint in the chain.
+            metadata: Additional checkpoint metadata.
+            skip_if_unchanged: If True, skip creating checkpoint if state
+                              hasn't changed from the last checkpoint.
+
+        Returns:
+            The created Checkpoint, or None if skipped due to no changes.
+
+        Raises:
+            ValueError: If state exceeds max_state_size (1MB by default).
+        """
+        manager = self._get_checkpoint_manager()
+        checkpoint = manager.create_checkpoint(
+            run_id=run_id,
+            node_id=node_id,
+            state=state,
+            branch_id=branch_id,
+            parent_checkpoint_id=parent_checkpoint_id,
+            metadata=metadata,
+            skip_if_unchanged=skip_if_unchanged,
+        )
+
+        if checkpoint:
+            structured_logger.info(
+                "Checkpoint created",
+                run_id=run_id,
+                node_id=node_id,
+                checkpoint_id=checkpoint.id,
+                sequence_number=checkpoint.sequence_number,
+            )
+
+        return checkpoint
+
+    def get_resume_point(
+        self,
+        run_id: str,
+        branch_id: Optional[str] = None,
+    ) -> Optional[Checkpoint]:
+        """
+        Get the checkpoint to resume from after a crash.
+
+        Args:
+            run_id: The workflow run identifier.
+            branch_id: Optional branch to filter by.
+
+        Returns:
+            The checkpoint to resume from, or None if no checkpoints.
+        """
+        manager = self._get_checkpoint_manager()
+        return manager.get_latest_checkpoint(run_id, branch_id)
+
+    def merge_states(
+        self,
+        states: List[Dict[str, Any]],
+        reducer_config: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Merge multiple branch states after parallel execution.
+
+        Uses configurable reducers to handle each key in the state.
+        Default reducer is 'last_value' which takes the value from
+        the last state.
+
+        Args:
+            states: List of state dicts from parallel branches.
+            reducer_config: Optional mapping of key -> reducer name.
+                           Available reducers: append, merge_dict,
+                           last_value, first_value, sum, max, min, union.
+
+        Returns:
+            Merged state dictionary.
+
+        Example:
+            >>> states = [
+            ...     {"count": 5, "items": ["a"]},
+            ...     {"count": 3, "items": ["b", "c"]},
+            ... ]
+            >>> alma.merge_states(states, {"count": "sum", "items": "append"})
+            {"count": 8, "items": ["a", "b", "c"]}
+        """
+        config = ReducerConfig(field_reducers=reducer_config or {})
+        merger = StateMerger(config)
+        return merger.merge(states)
+
+    @trace_method(name="ALMA.learn_from_workflow", kind=SpanKind.INTERNAL)
+    def learn_from_workflow(
+        self,
+        agent: str,
+        workflow_id: str,
+        run_id: str,
+        result: str,
+        summary: str,
+        strategies_used: Optional[List[str]] = None,
+        successful_patterns: Optional[List[str]] = None,
+        failed_patterns: Optional[List[str]] = None,
+        duration_seconds: Optional[float] = None,
+        node_count: Optional[int] = None,
+        error_message: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> WorkflowOutcome:
+        """
+        Record learnings from a completed workflow execution.
+
+        Captures what was learned from running a workflow, including
+        strategies used, what worked, what didn't, and error details.
+
+        Args:
+            agent: The agent that executed the workflow.
+            workflow_id: The workflow definition that was executed.
+            run_id: The specific run this outcome is from.
+            result: Result status ("success", "failure", "partial",
+                   "cancelled", "timeout").
+            summary: Human-readable summary of what happened.
+            strategies_used: List of strategies/approaches attempted.
+            successful_patterns: Patterns that worked well.
+            failed_patterns: Patterns that didn't work.
+            duration_seconds: How long the workflow took.
+            node_count: Number of nodes executed.
+            error_message: Error details if failed.
+            tenant_id: Multi-tenant isolation identifier.
+            metadata: Additional outcome metadata.
+
+        Returns:
+            The created WorkflowOutcome.
+        """
+        start_time = time.time()
+        metrics = get_metrics()
+
+        # Create the outcome
+        outcome = WorkflowOutcome(
+            tenant_id=tenant_id,
+            workflow_id=workflow_id,
+            run_id=run_id,
+            agent=agent,
+            project_id=self.project_id,
+            result=WorkflowResult(result),
+            summary=summary,
+            strategies_used=strategies_used or [],
+            successful_patterns=successful_patterns or [],
+            failed_patterns=failed_patterns or [],
+            duration_seconds=duration_seconds,
+            node_count=node_count,
+            error_message=error_message,
+            metadata=metadata or {},
+        )
+
+        # Validate
+        outcome.validate()
+
+        # Save to storage
+        self.storage.save_workflow_outcome(outcome)
+
+        # Invalidate cache
+        self.retrieval.invalidate_cache(agent=agent, project_id=self.project_id)
+
+        # Record metrics
+        learn_duration_ms = (time.time() - start_time) * 1000
+        metrics.record_learn_operation(
+            duration_ms=learn_duration_ms,
+            agent=agent,
+            project_id=self.project_id,
+            memory_type="workflow_outcome",
+            success=True,
+        )
+
+        structured_logger.info(
+            "Workflow outcome recorded",
+            agent=agent,
+            workflow_id=workflow_id,
+            run_id=run_id,
+            result=result,
+            duration_ms=learn_duration_ms,
+        )
+
+        return outcome
+
+    def link_artifact(
+        self,
+        memory_id: str,
+        artifact_type: str,
+        storage_url: str,
+        filename: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        size_bytes: Optional[int] = None,
+        checksum: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> ArtifactRef:
+        """
+        Link an external artifact to a memory.
+
+        Artifacts are stored externally (e.g., Cloudflare R2, S3) and
+        referenced by URL. This allows memories to reference large files
+        without bloating the memory database.
+
+        Args:
+            memory_id: The memory to link the artifact to.
+            artifact_type: Type of artifact ("screenshot", "log", "report",
+                          "file", "document", "image", etc.).
+            storage_url: URL or path to the artifact in storage.
+            filename: Original filename.
+            mime_type: MIME type.
+            size_bytes: Size in bytes.
+            checksum: SHA256 checksum for integrity verification.
+            metadata: Additional artifact metadata.
+
+        Returns:
+            The created ArtifactRef.
+        """
+        # Convert string to enum
+        try:
+            artifact_type_enum = ArtifactType(artifact_type)
+        except ValueError:
+            artifact_type_enum = ArtifactType.OTHER
+
+        artifact = ArtifactRef(
+            memory_id=memory_id,
+            artifact_type=artifact_type_enum,
+            storage_url=storage_url,
+            filename=filename,
+            mime_type=mime_type,
+            size_bytes=size_bytes,
+            checksum=checksum,
+            metadata=metadata or {},
+        )
+
+        # Validate
+        artifact.validate()
+
+        # Save to storage
+        self.storage.save_artifact_link(artifact)
+
+        structured_logger.info(
+            "Artifact linked",
+            memory_id=memory_id,
+            artifact_id=artifact.id,
+            artifact_type=artifact_type,
+            storage_url=storage_url[:50] if storage_url else None,
+        )
+
+        return artifact
+
+    def get_artifacts(self, memory_id: str) -> List[ArtifactRef]:
+        """
+        Get all artifacts linked to a memory.
+
+        Args:
+            memory_id: The memory to get artifacts for.
+
+        Returns:
+            List of ArtifactRef objects.
+        """
+        return self.storage.get_artifact_links(memory_id)
+
+    def cleanup_checkpoints(
+        self,
+        run_id: str,
+        keep_latest: int = 1,
+    ) -> int:
+        """
+        Clean up old checkpoints for a completed run.
+
+        Call this after a workflow completes to free up storage.
+
+        Args:
+            run_id: The workflow run identifier.
+            keep_latest: Number of latest checkpoints to keep.
+
+        Returns:
+            Number of checkpoints deleted.
+        """
+        manager = self._get_checkpoint_manager()
+        count = manager.cleanup_checkpoints(run_id, keep_latest)
+
+        if count > 0:
+            structured_logger.info(
+                "Checkpoints cleaned up",
+                run_id=run_id,
+                deleted_count=count,
+                kept=keep_latest,
+            )
+
+        return count
+
+    def retrieve_with_scope(
+        self,
+        task: str,
+        agent: str,
+        context: WorkflowContext,
+        scope: RetrievalScope = RetrievalScope.AGENT,
+        user_id: Optional[str] = None,
+        top_k: int = 5,
+    ) -> MemorySlice:
+        """
+        Retrieve memories with workflow scope filtering.
+
+        This is an enhanced version of retrieve() that supports
+        filtering by workflow context and scope level.
+
+        Args:
+            task: Description of the task to perform.
+            agent: Name of the agent requesting memories.
+            context: Workflow context for scoping.
+            scope: How broadly to search for memories.
+            user_id: Optional user ID for preference retrieval.
+            top_k: Maximum items per memory type.
+
+        Returns:
+            MemorySlice with relevant memories for context injection.
+        """
+        start_time = time.time()
+        metrics = get_metrics()
+
+        # Build scope filter from context
+        scope_filter = context.get_scope_filter(scope)
+
+        # For now, scope_filter is passed to the retrieval as metadata
+        # Future: pass to storage.get_* methods for proper filtering
+        result = self.retrieval.retrieve(
+            query=task,
+            agent=agent,
+            project_id=self.project_id,
+            user_id=user_id,
+            top_k=top_k,
+            scope=self.scopes.get(agent),
+        )
+
+        # Add scope context to result metadata
+        result.metadata = {
+            "scope": scope.value,
+            "scope_filter": scope_filter,
+            "context": context.to_dict(),
+        }
+
+        # Record metrics
+        duration_ms = (time.time() - start_time) * 1000
+        cache_hit = result.retrieval_time_ms < 10
+        metrics.record_retrieve_latency(
+            duration_ms=duration_ms,
+            agent=agent,
+            project_id=self.project_id,
+            cache_hit=cache_hit,
+            items_returned=result.total_items,
+        )
+
+        structured_logger.info(
+            "Scoped memory retrieval completed",
+            agent=agent,
+            project_id=self.project_id,
+            scope=scope.value,
+            workflow_id=context.workflow_id,
+            run_id=context.run_id,
+            items_returned=result.total_items,
+            duration_ms=duration_ms,
+        )
+
+        return result
+
     # ==================== ASYNC API ====================
     #
     # Async variants of core methods for better concurrency support.
@@ -619,4 +1029,118 @@ class ALMA:
         return await asyncio.to_thread(
             self.get_stats,
             agent=agent,
+        )
+
+    # ==================== ASYNC WORKFLOW API ====================
+
+    async def async_checkpoint(
+        self,
+        run_id: str,
+        node_id: str,
+        state: Dict[str, Any],
+        branch_id: Optional[str] = None,
+        parent_checkpoint_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        skip_if_unchanged: bool = True,
+    ) -> Optional[Checkpoint]:
+        """Async version of checkpoint()."""
+        return await asyncio.to_thread(
+            self.checkpoint,
+            run_id=run_id,
+            node_id=node_id,
+            state=state,
+            branch_id=branch_id,
+            parent_checkpoint_id=parent_checkpoint_id,
+            metadata=metadata,
+            skip_if_unchanged=skip_if_unchanged,
+        )
+
+    async def async_get_resume_point(
+        self,
+        run_id: str,
+        branch_id: Optional[str] = None,
+    ) -> Optional[Checkpoint]:
+        """Async version of get_resume_point()."""
+        return await asyncio.to_thread(
+            self.get_resume_point,
+            run_id=run_id,
+            branch_id=branch_id,
+        )
+
+    async def async_learn_from_workflow(
+        self,
+        agent: str,
+        workflow_id: str,
+        run_id: str,
+        result: str,
+        summary: str,
+        strategies_used: Optional[List[str]] = None,
+        successful_patterns: Optional[List[str]] = None,
+        failed_patterns: Optional[List[str]] = None,
+        duration_seconds: Optional[float] = None,
+        node_count: Optional[int] = None,
+        error_message: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> WorkflowOutcome:
+        """Async version of learn_from_workflow()."""
+        return await asyncio.to_thread(
+            self.learn_from_workflow,
+            agent=agent,
+            workflow_id=workflow_id,
+            run_id=run_id,
+            result=result,
+            summary=summary,
+            strategies_used=strategies_used,
+            successful_patterns=successful_patterns,
+            failed_patterns=failed_patterns,
+            duration_seconds=duration_seconds,
+            node_count=node_count,
+            error_message=error_message,
+            tenant_id=tenant_id,
+            metadata=metadata,
+        )
+
+    async def async_link_artifact(
+        self,
+        memory_id: str,
+        artifact_type: str,
+        storage_url: str,
+        filename: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        size_bytes: Optional[int] = None,
+        checksum: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> ArtifactRef:
+        """Async version of link_artifact()."""
+        return await asyncio.to_thread(
+            self.link_artifact,
+            memory_id=memory_id,
+            artifact_type=artifact_type,
+            storage_url=storage_url,
+            filename=filename,
+            mime_type=mime_type,
+            size_bytes=size_bytes,
+            checksum=checksum,
+            metadata=metadata,
+        )
+
+    async def async_retrieve_with_scope(
+        self,
+        task: str,
+        agent: str,
+        context: WorkflowContext,
+        scope: RetrievalScope = RetrievalScope.AGENT,
+        user_id: Optional[str] = None,
+        top_k: int = 5,
+    ) -> MemorySlice:
+        """Async version of retrieve_with_scope()."""
+        return await asyncio.to_thread(
+            self.retrieve_with_scope,
+            task=task,
+            agent=agent,
+            context=context,
+            scope=scope,
+            user_id=user_id,
+            top_k=top_k,
         )
