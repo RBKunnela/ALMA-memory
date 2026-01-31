@@ -26,6 +26,15 @@ from alma.mcp.tools import (
     alma_learn,
     alma_retrieve,
     alma_stats,
+    # Workflow tools (v0.6.0)
+    alma_checkpoint,
+    alma_resume,
+    alma_merge_states,
+    alma_workflow_learn,
+    alma_link_artifact,
+    alma_get_artifacts,
+    alma_cleanup_checkpoints,
+    alma_retrieve_scoped,
     # Async variants
     async_alma_add_knowledge,
     async_alma_add_preference,
@@ -34,6 +43,12 @@ from alma.mcp.tools import (
     async_alma_learn,
     async_alma_retrieve,
     async_alma_stats,
+    # Async workflow variants
+    async_alma_checkpoint,
+    async_alma_resume,
+    async_alma_workflow_learn,
+    async_alma_link_artifact,
+    async_alma_retrieve_scoped,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,7 +67,7 @@ class ALMAMCPServer:
         self,
         alma: ALMA,
         server_name: str = "alma-memory",
-        server_version: str = "0.2.0",
+        server_version: str = "0.6.0",
     ):
         """
         Initialize the MCP server.
@@ -278,6 +293,273 @@ class ALMAMCPServer:
                     "required": ["agent"],
                 },
             },
+            # ==================== WORKFLOW TOOLS (v0.6.0) ====================
+            {
+                "name": "alma_checkpoint",
+                "description": "Create a checkpoint for crash recovery. Persists workflow state at key execution points.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "run_id": {
+                            "type": "string",
+                            "description": "The workflow run identifier",
+                        },
+                        "node_id": {
+                            "type": "string",
+                            "description": "The node creating this checkpoint",
+                        },
+                        "state": {
+                            "type": "object",
+                            "description": "The state to persist",
+                        },
+                        "branch_id": {
+                            "type": "string",
+                            "description": "Optional branch identifier for parallel execution",
+                        },
+                        "parent_checkpoint_id": {
+                            "type": "string",
+                            "description": "Previous checkpoint in the chain",
+                        },
+                        "metadata": {
+                            "type": "object",
+                            "description": "Additional checkpoint metadata",
+                        },
+                        "skip_if_unchanged": {
+                            "type": "boolean",
+                            "description": "Skip if state hasn't changed (default: true)",
+                            "default": True,
+                        },
+                    },
+                    "required": ["run_id", "node_id", "state"],
+                },
+            },
+            {
+                "name": "alma_resume",
+                "description": "Get the checkpoint to resume from after a crash.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "run_id": {
+                            "type": "string",
+                            "description": "The workflow run identifier",
+                        },
+                        "branch_id": {
+                            "type": "string",
+                            "description": "Optional branch to filter by",
+                        },
+                    },
+                    "required": ["run_id"],
+                },
+            },
+            {
+                "name": "alma_merge_states",
+                "description": "Merge multiple branch states after parallel execution using configurable reducers.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "states": {
+                            "type": "array",
+                            "items": {"type": "object"},
+                            "description": "List of state dicts from parallel branches",
+                        },
+                        "reducer_config": {
+                            "type": "object",
+                            "description": "Mapping of key -> reducer (append, merge_dict, last_value, first_value, sum, max, min, union)",
+                        },
+                    },
+                    "required": ["states"],
+                },
+            },
+            {
+                "name": "alma_workflow_learn",
+                "description": "Record learnings from a completed workflow execution.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent": {
+                            "type": "string",
+                            "description": "The agent that executed the workflow",
+                        },
+                        "workflow_id": {
+                            "type": "string",
+                            "description": "The workflow definition identifier",
+                        },
+                        "run_id": {
+                            "type": "string",
+                            "description": "The specific run identifier",
+                        },
+                        "result": {
+                            "type": "string",
+                            "enum": ["success", "failure", "partial", "cancelled", "timeout"],
+                            "description": "Result status",
+                        },
+                        "summary": {
+                            "type": "string",
+                            "description": "Human-readable summary of what happened",
+                        },
+                        "strategies_used": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "List of strategies attempted",
+                        },
+                        "successful_patterns": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Patterns that worked well",
+                        },
+                        "failed_patterns": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Patterns that didn't work",
+                        },
+                        "duration_seconds": {
+                            "type": "number",
+                            "description": "How long the workflow took",
+                        },
+                        "node_count": {
+                            "type": "integer",
+                            "description": "Number of nodes executed",
+                        },
+                        "error_message": {
+                            "type": "string",
+                            "description": "Error details if failed",
+                        },
+                        "tenant_id": {
+                            "type": "string",
+                            "description": "Multi-tenant isolation identifier",
+                        },
+                        "metadata": {
+                            "type": "object",
+                            "description": "Additional outcome metadata",
+                        },
+                    },
+                    "required": ["agent", "workflow_id", "run_id", "result", "summary"],
+                },
+            },
+            {
+                "name": "alma_link_artifact",
+                "description": "Link an external artifact (file, screenshot, log) to a memory.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "memory_id": {
+                            "type": "string",
+                            "description": "The memory to link the artifact to",
+                        },
+                        "artifact_type": {
+                            "type": "string",
+                            "description": "Type (screenshot, log, report, file, document, image, etc.)",
+                        },
+                        "storage_url": {
+                            "type": "string",
+                            "description": "URL or path to the artifact in storage",
+                        },
+                        "filename": {
+                            "type": "string",
+                            "description": "Original filename",
+                        },
+                        "mime_type": {
+                            "type": "string",
+                            "description": "MIME type",
+                        },
+                        "size_bytes": {
+                            "type": "integer",
+                            "description": "Size in bytes",
+                        },
+                        "checksum": {
+                            "type": "string",
+                            "description": "SHA256 checksum for integrity",
+                        },
+                        "metadata": {
+                            "type": "object",
+                            "description": "Additional artifact metadata",
+                        },
+                    },
+                    "required": ["memory_id", "artifact_type", "storage_url"],
+                },
+            },
+            {
+                "name": "alma_get_artifacts",
+                "description": "Get all artifacts linked to a memory.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "memory_id": {
+                            "type": "string",
+                            "description": "The memory to get artifacts for",
+                        },
+                    },
+                    "required": ["memory_id"],
+                },
+            },
+            {
+                "name": "alma_cleanup_checkpoints",
+                "description": "Clean up old checkpoints for a completed workflow run.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "run_id": {
+                            "type": "string",
+                            "description": "The workflow run identifier",
+                        },
+                        "keep_latest": {
+                            "type": "integer",
+                            "description": "Number of latest checkpoints to keep (default: 1)",
+                            "default": 1,
+                        },
+                    },
+                    "required": ["run_id"],
+                },
+            },
+            {
+                "name": "alma_retrieve_scoped",
+                "description": "Retrieve memories with workflow scope filtering. Supports hierarchical scoping: node -> run -> workflow -> agent -> tenant -> global.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "task": {
+                            "type": "string",
+                            "description": "Description of the task to perform",
+                        },
+                        "agent": {
+                            "type": "string",
+                            "description": "Name of the agent requesting memories",
+                        },
+                        "scope": {
+                            "type": "string",
+                            "enum": ["node", "run", "workflow", "agent", "tenant", "global"],
+                            "description": "Scope level for filtering (default: agent)",
+                            "default": "agent",
+                        },
+                        "tenant_id": {
+                            "type": "string",
+                            "description": "Tenant identifier for multi-tenant",
+                        },
+                        "workflow_id": {
+                            "type": "string",
+                            "description": "Workflow definition identifier",
+                        },
+                        "run_id": {
+                            "type": "string",
+                            "description": "Specific run identifier",
+                        },
+                        "node_id": {
+                            "type": "string",
+                            "description": "Current node identifier",
+                        },
+                        "user_id": {
+                            "type": "string",
+                            "description": "Optional user ID for preferences",
+                        },
+                        "top_k": {
+                            "type": "integer",
+                            "description": "Maximum items per memory type (default: 5)",
+                            "default": 5,
+                        },
+                    },
+                    "required": ["task", "agent"],
+                },
+            },
         ]
 
     async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -408,6 +690,75 @@ class ALMAMCPServer:
                 memory_type=arguments.get("memory_type", "heuristics"),
                 similarity_threshold=arguments.get("similarity_threshold", 0.85),
                 dry_run=arguments.get("dry_run", True),
+            ),
+            # Workflow tools (v0.6.0)
+            "alma_checkpoint": lambda: async_alma_checkpoint(
+                self.alma,
+                run_id=arguments.get("run_id", ""),
+                node_id=arguments.get("node_id", ""),
+                state=arguments.get("state", {}),
+                branch_id=arguments.get("branch_id"),
+                parent_checkpoint_id=arguments.get("parent_checkpoint_id"),
+                metadata=arguments.get("metadata"),
+                skip_if_unchanged=arguments.get("skip_if_unchanged", True),
+            ),
+            "alma_resume": lambda: async_alma_resume(
+                self.alma,
+                run_id=arguments.get("run_id", ""),
+                branch_id=arguments.get("branch_id"),
+            ),
+            "alma_merge_states": lambda: alma_merge_states(
+                self.alma,
+                states=arguments.get("states", []),
+                reducer_config=arguments.get("reducer_config"),
+            ),
+            "alma_workflow_learn": lambda: async_alma_workflow_learn(
+                self.alma,
+                agent=arguments.get("agent", ""),
+                workflow_id=arguments.get("workflow_id", ""),
+                run_id=arguments.get("run_id", ""),
+                result=arguments.get("result", ""),
+                summary=arguments.get("summary", ""),
+                strategies_used=arguments.get("strategies_used"),
+                successful_patterns=arguments.get("successful_patterns"),
+                failed_patterns=arguments.get("failed_patterns"),
+                duration_seconds=arguments.get("duration_seconds"),
+                node_count=arguments.get("node_count"),
+                error_message=arguments.get("error_message"),
+                tenant_id=arguments.get("tenant_id"),
+                metadata=arguments.get("metadata"),
+            ),
+            "alma_link_artifact": lambda: async_alma_link_artifact(
+                self.alma,
+                memory_id=arguments.get("memory_id", ""),
+                artifact_type=arguments.get("artifact_type", ""),
+                storage_url=arguments.get("storage_url", ""),
+                filename=arguments.get("filename"),
+                mime_type=arguments.get("mime_type"),
+                size_bytes=arguments.get("size_bytes"),
+                checksum=arguments.get("checksum"),
+                metadata=arguments.get("metadata"),
+            ),
+            "alma_get_artifacts": lambda: alma_get_artifacts(
+                self.alma,
+                memory_id=arguments.get("memory_id", ""),
+            ),
+            "alma_cleanup_checkpoints": lambda: alma_cleanup_checkpoints(
+                self.alma,
+                run_id=arguments.get("run_id", ""),
+                keep_latest=arguments.get("keep_latest", 1),
+            ),
+            "alma_retrieve_scoped": lambda: async_alma_retrieve_scoped(
+                self.alma,
+                task=arguments.get("task", ""),
+                agent=arguments.get("agent", ""),
+                scope=arguments.get("scope", "agent"),
+                tenant_id=arguments.get("tenant_id"),
+                workflow_id=arguments.get("workflow_id"),
+                run_id=arguments.get("run_id"),
+                node_id=arguments.get("node_id"),
+                user_id=arguments.get("user_id"),
+                top_k=arguments.get("top_k", 5),
             ),
         }
 
