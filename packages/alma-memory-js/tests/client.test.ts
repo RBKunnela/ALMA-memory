@@ -615,7 +615,7 @@ describe('ALMA Client', () => {
 
   describe('VERSION', () => {
     it('should export version', () => {
-      expect(VERSION).toBe('0.4.0');
+      expect(VERSION).toBe('0.6.0');
     });
   });
 });

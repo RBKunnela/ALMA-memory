@@ -32,6 +32,7 @@ from alma.types import (
 )
 
 if TYPE_CHECKING:
+    from alma.session import SessionHandoff
     from alma.workflow import ArtifactRef, Checkpoint, WorkflowOutcome
 
 logger = logging.getLogger(__name__)
@@ -333,6 +334,39 @@ class SQLiteStorage(StorageBackend):
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_artifact_links_memory "
                 "ON artifact_links(memory_id)"
+            )
+
+            # Session handoffs table (for session persistence)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS session_handoffs (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT NOT NULL,
+                    agent TEXT NOT NULL,
+                    session_id TEXT NOT NULL,
+                    last_action TEXT NOT NULL,
+                    last_outcome TEXT NOT NULL,
+                    current_goal TEXT,
+                    key_decisions TEXT,
+                    active_files TEXT,
+                    blockers TEXT,
+                    next_steps TEXT,
+                    test_status TEXT,
+                    confidence_level REAL DEFAULT 0.5,
+                    risk_flags TEXT,
+                    session_start TEXT,
+                    session_end TEXT,
+                    duration_ms INTEGER DEFAULT 0,
+                    metadata TEXT,
+                    created_at TEXT NOT NULL
+                )
+            """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_session_handoffs_project_agent "
+                "ON session_handoffs(project_id, agent)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_session_handoffs_agent_created "
+                "ON session_handoffs(agent, created_at DESC)"
             )
 
     def _load_faiss_indices(self, memory_types: Optional[List[str]] = None):
@@ -1962,6 +1996,125 @@ class SQLiteStorage(StorageBackend):
             mime_type=row["mime_type"],
             size_bytes=row["size_bytes"],
             checksum=row["checksum"],
+            metadata=json.loads(row["metadata"]) if row["metadata"] else {},
+            created_at=self._parse_datetime(row["created_at"])
+            or datetime.now(timezone.utc),
+        )
+
+    # ==================== SESSION HANDOFFS ====================
+
+    def save_session_handoff(self, handoff: "SessionHandoff") -> str:
+        """Save a session handoff for persistence."""
+        from alma.session import SessionHandoff
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO session_handoffs (
+                    id, project_id, agent, session_id, last_action, last_outcome,
+                    current_goal, key_decisions, active_files, blockers, next_steps,
+                    test_status, confidence_level, risk_flags, session_start,
+                    session_end, duration_ms, metadata, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    handoff.id,
+                    handoff.project_id,
+                    handoff.agent,
+                    handoff.session_id,
+                    handoff.last_action,
+                    handoff.last_outcome,
+                    handoff.current_goal,
+                    json.dumps(handoff.key_decisions),
+                    json.dumps(handoff.active_files),
+                    json.dumps(handoff.blockers),
+                    json.dumps(handoff.next_steps),
+                    json.dumps(handoff.test_status),
+                    handoff.confidence_level,
+                    json.dumps(handoff.risk_flags),
+                    handoff.session_start.isoformat() if handoff.session_start else None,
+                    handoff.session_end.isoformat() if handoff.session_end else None,
+                    handoff.duration_ms,
+                    json.dumps(handoff.metadata),
+                    handoff.created_at.isoformat(),
+                ),
+            )
+        return handoff.id
+
+    def get_session_handoffs(
+        self,
+        project_id: str,
+        agent: str,
+        limit: int = 50,
+    ) -> List["SessionHandoff"]:
+        """Get session handoffs for an agent, most recent first."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT * FROM session_handoffs
+                WHERE project_id = ? AND agent = ?
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (project_id, agent, limit),
+            )
+            rows = cursor.fetchall()
+            return [self._row_to_session_handoff(row) for row in rows]
+
+    def get_latest_session_handoff(
+        self,
+        project_id: str,
+        agent: str,
+    ) -> Optional["SessionHandoff"]:
+        """Get the most recent session handoff for an agent."""
+        handoffs = self.get_session_handoffs(project_id, agent, limit=1)
+        return handoffs[0] if handoffs else None
+
+    def delete_session_handoffs(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+    ) -> int:
+        """Delete session handoffs."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            if agent:
+                cursor.execute(
+                    "DELETE FROM session_handoffs WHERE project_id = ? AND agent = ?",
+                    (project_id, agent),
+                )
+            else:
+                cursor.execute(
+                    "DELETE FROM session_handoffs WHERE project_id = ?",
+                    (project_id,),
+                )
+            return cursor.rowcount
+
+    def _row_to_session_handoff(self, row: sqlite3.Row) -> "SessionHandoff":
+        """Convert database row to SessionHandoff."""
+        from alma.session import SessionHandoff
+
+        return SessionHandoff(
+            id=row["id"],
+            project_id=row["project_id"],
+            agent=row["agent"],
+            session_id=row["session_id"],
+            last_action=row["last_action"],
+            last_outcome=row["last_outcome"],
+            current_goal=row["current_goal"] or "",
+            key_decisions=json.loads(row["key_decisions"]) if row["key_decisions"] else [],
+            active_files=json.loads(row["active_files"]) if row["active_files"] else [],
+            blockers=json.loads(row["blockers"]) if row["blockers"] else [],
+            next_steps=json.loads(row["next_steps"]) if row["next_steps"] else [],
+            test_status=json.loads(row["test_status"]) if row["test_status"] else {},
+            confidence_level=row["confidence_level"] or 0.5,
+            risk_flags=json.loads(row["risk_flags"]) if row["risk_flags"] else [],
+            session_start=self._parse_datetime(row["session_start"])
+            or datetime.now(timezone.utc),
+            session_end=self._parse_datetime(row["session_end"]),
+            duration_ms=row["duration_ms"] or 0,
             metadata=json.loads(row["metadata"]) if row["metadata"] else {},
             created_at=self._parse_datetime(row["created_at"])
             or datetime.now(timezone.utc),

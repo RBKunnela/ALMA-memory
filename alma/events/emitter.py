@@ -7,6 +7,7 @@ memory changes.
 """
 
 import asyncio
+import inspect
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Awaitable, Callable, Dict, List, Optional, Union
@@ -187,7 +188,7 @@ class EventEmitter:
 
         tasks = []
         for callback in callbacks:
-            if asyncio.iscoroutinefunction(callback):
+            if inspect.iscoroutinefunction(callback):
                 tasks.append(self._safe_call_async(callback, event))
             else:
                 # Run sync callbacks in executor

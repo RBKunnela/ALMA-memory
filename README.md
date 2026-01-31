@@ -33,63 +33,64 @@ ALMA isn't just another memory framework. Here's what sets it apart from alterna
 
 ---
 
-## What's New in v0.5.0
+## What's New in v0.6.0
 
-### Phase 2: Vector Database Backends
+### Workflow Context Layer
 
-- **Qdrant Backend** (`alma/storage/qdrant.py`)
-  - Full StorageBackend implementation with vector similarity search
-  - Metadata filtering for all queries
-  - Optimized `MatchAny` queries for multi-agent memory sharing
+The major theme of v0.6.0 is **multi-agent workflow support** - enabling agents to coordinate across long-running tasks with checkpoints, state merging, and artifact tracking.
 
-- **Pinecone Backend** (`alma/storage/pinecone.py`)
-  - Namespace-based organization per memory type
-  - Serverless spec support for automatic scaling
-  - Environment variable expansion in configuration
+- **Checkpoint & Resume** (`alma/workflow/`)
+  - Save workflow state at any point: `alma.checkpoint(workflow_id, state, metadata)`
+  - Resume from checkpoints after failures or handoffs: `alma.resume(workflow_id)`
+  - Automatic cleanup of old checkpoints: `alma.cleanup_checkpoints(older_than_days=7)`
 
-- **Chroma Backend** (`alma/storage/chroma.py`)
-  - Persistent, client-server, and ephemeral modes
-  - Native embedding storage and similarity search
-  - Lightweight local development option
+- **State Reducers for Multi-Agent Workflows**
+  - Merge states from parallel agents: `alma.merge_states(workflow_id, states, reducer)`
+  - Built-in reducers: `latest_wins`, `merge_lists`, `priority_agent`
+  - Custom reducer functions for complex merge logic
 
-- **Graph Database Abstraction** (`alma/graph/`)
-  - Pluggable `GraphBackend` interface
-  - Neo4j backend for production
-  - Memgraph backend for high-performance in-memory graphs
-  - Kuzu backend for embedded graph storage (no server required)
-  - In-memory backend for testing
-  - Factory function `create_graph_backend()` for easy setup
+- **Artifact Linking**
+  - Link outputs to workflows: `alma.link_artifact(workflow_id, artifact_type, ref)`
+  - Artifact types: `code`, `test`, `document`, `config`, `deployment`
+  - Retrieve all artifacts: `alma.get_artifacts(workflow_id)`
 
-- **Testing Module** (`alma/testing/`)
-  - `MockStorage` - In-memory storage backend for isolated testing
-  - `MockEmbedder` - Deterministic fake embedding provider
-  - Factory functions for creating test data with sensible defaults
+- **Scoped Retrieval**
+  - Filter memories by workflow context: `alma.retrieve_scoped(query, scope)`
+  - Scopes: `workflow_only`, `agent_only`, `project_wide`
 
-### Phase 1: Core Features
+- **Session Persistence**
+  - Session handoffs now persist to storage backend
+  - Lazy loading for performance
+  - Survives process restarts
 
-- **Memory Consolidation Engine** (`alma/consolidation/`)
-  - LLM-powered deduplication that merges similar memories
-  - Cosine similarity-based grouping with configurable thresholds
-  - Provenance tracking (merged_from metadata)
-  - Dry-run mode for safety
+- **MCP Workflow Tools** (8 new tools)
+  - `alma_consolidate`, `alma_checkpoint`, `alma_resume`
+  - `alma_merge_states`, `alma_workflow_learn`
+  - `alma_link_artifact`, `alma_get_artifacts`
+  - `alma_cleanup_checkpoints`, `alma_retrieve_scoped`
 
-- **Event System** (`alma/events/`)
-  - In-process callbacks via `EventEmitter`
-  - Webhook delivery with HMAC signatures
-  - Event types: CREATED, UPDATED, DELETED, ACCESSED, CONSOLIDATED
-  - Retry logic with exponential backoff
+- **TypeScript SDK v0.6.0** (`packages/alma-memory-js/`)
+  - Full workflow API parity with Python SDK
+  - 9 new methods: `consolidate()`, `checkpoint()`, `resume()`, `mergeStates()`, `workflowLearn()`, `linkArtifact()`, `getArtifacts()`, `cleanupCheckpoints()`, `retrieveScoped()`
+  - 25+ new TypeScript types for workflow context
+  - Published to GitHub Packages: `@rbkunnela/alma-memory`
 
-- **TypeScript/JavaScript SDK** (`packages/alma-memory-js/`)
-  - Full API coverage: retrieve, learn, addPreference, addKnowledge, forget
-  - Type-safe with comprehensive TypeScript definitions
-  - Error hierarchy matching Python SDK
-  - Automatic retry with configurable backoff
+### Previous Releases
 
-- **Multi-Agent Memory Sharing**
-  - `inherit_from`: Read memories from other agents
-  - `share_with`: Make your memories readable by others
-  - Origin tracking via `metadata['shared_from']`
-  - Optimized batch queries across agents
+<details>
+<summary>v0.5.0 - Vector Database Backends</summary>
+
+- **Qdrant Backend** - Full vector similarity search with metadata filtering
+- **Pinecone Backend** - Serverless spec support, namespace organization
+- **Chroma Backend** - Persistent, client-server, and ephemeral modes
+- **Graph Database Abstraction** - Neo4j, Memgraph, Kuzu, In-memory backends
+- **Testing Module** - MockStorage, MockEmbedder, factory functions
+- **Memory Consolidation Engine** - LLM-powered deduplication
+- **Event System** - Webhooks + in-process callbacks
+- **TypeScript SDK** - Initial release with core API
+- **Multi-Agent Memory Sharing** - inherit_from, share_with
+
+</details>
 
 See [CHANGELOG.md](CHANGELOG.md) for the complete history.
 
@@ -145,11 +146,15 @@ pip install alma-memory[azure]     # Azure Cosmos DB + Azure OpenAI
 pip install alma-memory[all]
 ```
 
-**TypeScript/JavaScript:**
+**TypeScript/JavaScript (via GitHub Packages):**
 ```bash
-npm install alma-memory
+# Configure npm for the scope (one-time)
+echo "@rbkunnela:registry=https://npm.pkg.github.com" >> ~/.npmrc
+
+# Install
+npm install @rbkunnela/alma-memory
 # or
-yarn add alma-memory
+yarn add @rbkunnela/alma-memory
 ```
 
 ---
@@ -192,7 +197,7 @@ alma.learn(
 ### TypeScript/JavaScript
 
 ```typescript
-import { ALMA } from 'alma-memory';
+import { ALMA } from '@rbkunnela/alma-memory';
 
 // Create client
 const alma = new ALMA({
@@ -476,9 +481,10 @@ python -m alma.mcp --config .alma/config.yaml
 }
 ```
 
-**Available MCP Tools:**
-| Tool | Description |
-|------|-------------|
+**Available MCP Tools (16 total):**
+
+| Core Tools | Description |
+|------------|-------------|
 | `alma_retrieve` | Get memories for a task |
 | `alma_learn` | Record task outcome |
 | `alma_add_preference` | Add user preference |
@@ -486,6 +492,18 @@ python -m alma.mcp --config .alma/config.yaml
 | `alma_forget` | Prune stale memories |
 | `alma_stats` | Get memory statistics |
 | `alma_health` | Health check |
+
+| Workflow Tools (v0.6.0) | Description |
+|-------------------------|-------------|
+| `alma_consolidate` | Merge similar memories |
+| `alma_checkpoint` | Save workflow state |
+| `alma_resume` | Resume from checkpoint |
+| `alma_merge_states` | Merge parallel agent states |
+| `alma_workflow_learn` | Learn with workflow context |
+| `alma_link_artifact` | Link output to workflow |
+| `alma_get_artifacts` | Get workflow artifacts |
+| `alma_cleanup_checkpoints` | Clean old checkpoints |
+| `alma_retrieve_scoped` | Scoped memory retrieval |
 
 ---
 
@@ -617,7 +635,7 @@ print(f"Recommendation: {signal.recommendation}")
 
 ```
 +-------------------------------------------------------------------------+
-|                          ALMA v0.5.0                                    |
+|                          ALMA v0.6.0                                    |
 +-------------------------------------------------------------------------+
 |  HARNESS LAYER                                                          |
 |  +-----------+  +-----------+  +-----------+  +----------------+        |
@@ -783,6 +801,11 @@ chroma:
 | Chroma Backend | Lightweight vector DB | Done |
 | Graph Abstraction | Pluggable graph backends | Done |
 | Testing Module | Mocks and factories for testing | Done |
+| Workflow Context | Checkpoints, state merging, artifacts | Done |
+| Session Persistence | Persistent session handoffs | Done |
+| Scoped Retrieval | Filter by workflow/agent/project | Done |
+| MCP Workflow Tools | 8 additional MCP tools | Done |
+| TypeScript SDK v0.6.0 | Full workflow API support | Done |
 
 ---
 
@@ -847,11 +870,18 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Roadmap
 
-**Completed:**
+**Completed (v0.6.0):**
+- Workflow context layer (checkpoints, state merging, artifacts)
+- Session persistence
+- Scoped retrieval
+- MCP workflow tools (8 new tools)
+- TypeScript SDK v0.6.0 with full workflow support
+
+**Completed (v0.5.0):**
 - Multi-agent memory sharing
 - Memory consolidation engine
 - Event system / webhooks
-- TypeScript SDK
+- TypeScript SDK (initial)
 - Qdrant, Pinecone, Chroma backends
 - Graph database abstraction
 

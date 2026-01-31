@@ -273,7 +273,7 @@ class SessionManager:
         return handoff
 
     def _store_handoff(self, agent: str, handoff: SessionHandoff) -> None:
-        """Store a handoff internally and optionally to persistent storage."""
+        """Store a handoff internally and to persistent storage."""
         if agent not in self._handoffs:
             self._handoffs[agent] = []
 
@@ -283,10 +283,38 @@ class SessionManager:
         if len(self._handoffs[agent]) > self.max_handoffs:
             self._handoffs[agent] = self._handoffs[agent][-self.max_handoffs :]
 
-        # TODO: Persist to storage backend when integrated
+        # Persist to storage backend if available
+        if self.storage is not None:
+            try:
+                self.storage.save_session_handoff(handoff)
+                logger.debug(f"Persisted session handoff {handoff.id} to storage")
+            except Exception as e:
+                logger.warning(f"Failed to persist session handoff: {e}")
+
+    def _load_handoffs_from_storage(self, agent: str) -> None:
+        """Load handoffs from storage into memory cache if not already loaded."""
+        if agent in self._handoffs:
+            return  # Already loaded
+
+        if self.storage is None:
+            self._handoffs[agent] = []
+            return
+
+        try:
+            handoffs = self.storage.get_session_handoffs(
+                self.project_id, agent, limit=self.max_handoffs
+            )
+            # Storage returns most recent first, we want oldest first in our list
+            self._handoffs[agent] = list(reversed(handoffs))
+            logger.debug(f"Loaded {len(handoffs)} handoffs from storage for {agent}")
+        except Exception as e:
+            logger.warning(f"Failed to load handoffs from storage: {e}")
+            self._handoffs[agent] = []
 
     def get_latest_handoff(self, agent: str) -> Optional[SessionHandoff]:
         """Get the most recent handoff for an agent."""
+        # Ensure handoffs are loaded from storage
+        self._load_handoffs_from_storage(agent)
         handoffs = self._handoffs.get(agent, [])
         return handoffs[-1] if handoffs else None
 
@@ -305,6 +333,8 @@ class SessionManager:
         Returns:
             List of SessionHandoff, most recent first
         """
+        # Ensure handoffs are loaded from storage
+        self._load_handoffs_from_storage(agent)
         handoffs = self._handoffs.get(agent, [])
         return list(reversed(handoffs[-limit:]))
 
@@ -389,11 +419,24 @@ class SessionManager:
         Returns:
             Number of handoffs cleared
         """
+        # Clear from memory
         if agent:
             count = len(self._handoffs.get(agent, []))
             self._handoffs[agent] = []
-            return count
         else:
             count = sum(len(h) for h in self._handoffs.values())
             self._handoffs.clear()
-            return count
+
+        # Clear from storage if available
+        if self.storage is not None:
+            try:
+                storage_count = self.storage.delete_session_handoffs(
+                    self.project_id, agent
+                )
+                logger.debug(f"Cleared {storage_count} handoffs from storage")
+                # Use storage count if larger (in case memory wasn't fully loaded)
+                count = max(count, storage_count)
+            except Exception as e:
+                logger.warning(f"Failed to clear handoffs from storage: {e}")
+
+        return count
