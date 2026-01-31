@@ -10,6 +10,28 @@
 
 > Persistent memory for AI agents that learn and improve over time - without model weight updates.
 
+**[Documentation](https://alma-memory.pages.dev)** · **[Technical Reference](docs/TECHNICAL.md)** · **[PyPI](https://pypi.org/project/alma-memory/)** · **[npm](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)**
+
+---
+
+## The Problem I Solved
+
+I was building AI agents for automated testing. Helena for frontend QA, Victor for backend verification. They worked great... until they didn't.
+
+**The same mistakes kept happening:**
+
+- Helena would use `sleep(5000)` for waits, causing flaky tests
+- Victor would forget that the API uses JWT with 24-hour expiry
+- Both agents would repeat failed strategies session after session
+
+Every conversation started fresh. No memory. No learning. Just an expensive LLM making the same mistakes I'd already corrected.
+
+I tried **Mem0**. It stores memories, but no way to scope what an agent can learn, no anti-pattern tracking, no multi-agent sharing. I looked at **LangChain Memory**. It's for conversation context, not long-term learning.
+
+**Nothing fit. So I built ALMA.**
+
+The core insight: AI agents don't need to modify their weights to "learn." They need **smart prompts** built from **relevant past experiences.**
+
 ---
 
 ## Why ALMA? Key Differentiators
@@ -925,3 +947,9 @@ If ALMA helps your AI agents get smarter:
 **Built for AI agents that get better with every task.**
 
 *Created by [@RBKunnela](https://github.com/RBKunnela)*
+
+---
+
+## Technical Documentation
+
+For detailed technical reference including architecture diagrams, API specifications, storage backend configuration, and performance tuning, see the **[Technical Documentation](docs/TECHNICAL.md)**.
