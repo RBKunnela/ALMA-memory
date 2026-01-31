@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/badge/docs-alma--memory.pages.dev-blue)](https://alma-memory.pages.dev)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/rbkunnela)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/aiagentsprp)
 
 > Persistent memory for AI agents that learn and improve over time - without model weight updates.
 
@@ -907,7 +907,7 @@ MIT
 If ALMA helps your AI agents get smarter:
 
 - **Star this repo** - It helps others discover ALMA
-- **[Buy me a coffee](https://www.buymeacoffee.com/rbkunnela)** - Support continued development
+- **[Buy me a coffee](https://buymeacoffee.com/aiagentsprp)** - Support continued development
 - **[Sponsor on GitHub](https://github.com/sponsors/RBKunnela)** - Become an official sponsor
 - **Contribute** - PRs welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
