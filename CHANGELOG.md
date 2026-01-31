@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - 2026-01-31
+
+### Added - Workflow Context Layer (AGtestari Integration)
+
+- **Workflow Types** (`alma/workflow/`)
+  - `WorkflowContext`: Hierarchical scoping for workflow orchestration
+  - `RetrievalScope`: Enum for scope levels (NODE → RUN → WORKFLOW → AGENT → TENANT → GLOBAL)
+  - `Checkpoint`: Crash recovery state persistence
+  - `CheckpointManager`: Checkpoint operations with sequence tracking
+  - `WorkflowOutcome`: Learning from completed workflow executions
+  - `WorkflowResult`: Enum for result status (SUCCESS, FAILURE, PARTIAL, CANCELLED, TIMEOUT)
+  - `ArtifactRef`: External artifact linking (screenshots, logs, reports)
+  - `ArtifactType`: Enum for artifact types (FILE, SCREENSHOT, LOG, REPORT, etc.)
+
+- **State Reducers** (`alma/workflow/reducers.py`)
+  - 8 built-in reducers for parallel branch merging:
+    - `AppendReducer`: Concatenate lists
+    - `MergeDictReducer`: Merge dictionaries (later wins)
+    - `LastValueReducer`: Take last non-None value (default)
+    - `FirstValueReducer`: Take first non-None value
+    - `SumReducer`: Sum numeric values
+    - `MaxReducer`: Take maximum value
+    - `MinReducer`: Take minimum value
+    - `UnionReducer`: Set union preserving order
+  - `ReducerConfig`: Configure reducers per field
+  - `StateMerger`: Merge multiple branch states
+  - `merge_states()`: Convenience function for simple merges
+
+- **Storage Layer Updates** (`alma/storage/`)
+  - New `scope_filter` parameter on all `get_*` methods
+  - Checkpoint operations: `save_checkpoint()`, `get_checkpoint()`, `get_latest_checkpoint()`, `cleanup_checkpoints()`
+  - Workflow outcome operations: `save_workflow_outcome()`, `get_workflow_outcome()`, `get_workflow_outcomes()`
+  - Artifact link operations: `save_artifact_link()`, `get_artifact_links()`, `delete_artifact_link()`
+  - Full SQLite implementation with workflow tables
+  - Full PostgreSQL implementation with pgvector support
+
+- **ALMA Core Workflow API** (`alma/core.py`)
+  - `checkpoint()`: Create crash recovery checkpoints
+  - `get_resume_point()`: Get checkpoint to resume from after crash
+  - `merge_states()`: Merge parallel branch states with configurable reducers
+  - `learn_from_workflow()`: Record workflow execution outcomes
+  - `link_artifact()`: Link external artifacts to memories
+  - `get_artifacts()`: Get artifacts linked to a memory
+  - `cleanup_checkpoints()`: Clean up old checkpoints for completed runs
+  - `retrieve_with_scope()`: Scoped memory retrieval with workflow context
+  - Async variants for all workflow methods
+
+- **MCP Workflow Tools** (`alma/mcp/`)
+  - `alma_checkpoint`: Create crash recovery checkpoints
+  - `alma_resume`: Get checkpoint to resume from
+  - `alma_merge_states`: Merge parallel branch states
+  - `alma_workflow_learn`: Record workflow outcomes
+  - `alma_link_artifact`: Link external artifacts
+  - `alma_get_artifacts`: Get artifacts for a memory
+  - `alma_cleanup_checkpoints`: Clean up old checkpoints
+  - `alma_retrieve_scoped`: Scoped memory retrieval
+  - Async variants for all workflow tools
+
+- **Database Migrations** (`alma/storage/migrations/versions/v1_1_0_workflow_context.py`)
+  - PostgreSQL: `alma_checkpoints`, `alma_workflow_outcomes`, `alma_artifact_links` tables
+  - SQLite: `checkpoints`, `workflow_outcomes`, `artifact_links` tables
+  - Workflow scope columns added to existing tables (`tenant_id`, `workflow_id`, `run_id`, `node_id`)
+  - Indexes for scope filtering
+
+### Changed
+
+- Updated MCP server version to 0.6.0
+- Updated package version to 0.6.0-dev
+- Migration system now supports v1.1.0 schema
+
+### Tests
+
+- 144 tests for workflow types and reducers (93% coverage)
+- 31 tests for ALMA core workflow integration
+- 17 tests for storage workflow operations
+
+---
+
 ## [0.5.1] - 2026-01-29
 
 ### Added - Phase 2: Graph Database Backends
