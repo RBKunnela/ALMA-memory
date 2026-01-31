@@ -23,6 +23,7 @@ from alma.types import (
 )
 
 if TYPE_CHECKING:
+    from alma.session import SessionHandoff
     from alma.workflow import ArtifactRef, Checkpoint, WorkflowOutcome
 
 
@@ -782,6 +783,82 @@ class StorageBackend(ABC):
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not support artifact links."
+        )
+
+    # ==================== SESSION HANDOFFS ====================
+
+    def save_session_handoff(self, handoff: "SessionHandoff") -> str:
+        """
+        Save a session handoff for persistence across restarts.
+
+        Args:
+            handoff: SessionHandoff to save
+
+        Returns:
+            The handoff ID
+
+        Note: Default implementation raises NotImplementedError.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support session handoffs."
+        )
+
+    def get_session_handoffs(
+        self,
+        project_id: str,
+        agent: str,
+        limit: int = 50,
+    ) -> List["SessionHandoff"]:
+        """
+        Get session handoffs for an agent, most recent first.
+
+        Args:
+            project_id: Project identifier
+            agent: Agent identifier
+            limit: Maximum number of handoffs to return
+
+        Returns:
+            List of SessionHandoff, most recent first
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support session handoffs."
+        )
+
+    def get_latest_session_handoff(
+        self,
+        project_id: str,
+        agent: str,
+    ) -> Optional["SessionHandoff"]:
+        """
+        Get the most recent session handoff for an agent.
+
+        Args:
+            project_id: Project identifier
+            agent: Agent identifier
+
+        Returns:
+            Most recent SessionHandoff or None
+        """
+        handoffs = self.get_session_handoffs(project_id, agent, limit=1)
+        return handoffs[0] if handoffs else None
+
+    def delete_session_handoffs(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+    ) -> int:
+        """
+        Delete session handoffs.
+
+        Args:
+            project_id: Project identifier
+            agent: If provided, only delete for this agent
+
+        Returns:
+            Number of handoffs deleted
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support session handoffs."
         )
 
     # ==================== UTILITY ====================

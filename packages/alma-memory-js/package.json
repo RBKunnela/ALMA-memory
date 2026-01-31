@@ -1,6 +1,6 @@
 {
-  "name": "alma-memory",
-  "version": "0.5.1",
+  "name": "@rbkunnela/alma-memory",
+  "version": "0.6.0",
   "description": "TypeScript/JavaScript SDK for ALMA Memory - Persistent memory for AI agents",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -54,6 +54,9 @@
     "url": "https://github.com/RBKunnela/ALMA-memory/issues"
   },
   "homepage": "https://github.com/RBKunnela/ALMA-memory#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "engines": {
     "node": ">=18.0.0"
   },

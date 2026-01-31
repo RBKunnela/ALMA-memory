@@ -95,6 +95,43 @@ export type {
   MCPResponse,
 } from './types';
 
+// Types - v0.6.0 Workflow Context
+export type {
+  RetrievalScope,
+  WorkflowResult,
+  ArtifactType,
+  WorkflowContext,
+  Checkpoint,
+  ArtifactRef,
+  WorkflowOutcome,
+} from './types';
+
+// Types - v0.6.0 Workflow Options
+export type {
+  ConsolidateOptions,
+  CheckpointOptions,
+  ResumeOptions,
+  MergeStatesOptions,
+  WorkflowLearnOptions,
+  LinkArtifactOptions,
+  GetArtifactsOptions,
+  CleanupCheckpointsOptions,
+  RetrieveScopedOptions,
+} from './types';
+
+// Types - v0.6.0 Workflow Responses
+export type {
+  ConsolidateResponse,
+  CheckpointResponse,
+  ResumeResponse,
+  MergeStatesResponse,
+  WorkflowLearnResponse,
+  LinkArtifactResponse,
+  GetArtifactsResponse,
+  CleanupCheckpointsResponse,
+  RetrieveScopedResponse,
+} from './types';
+
 // Errors - Classes
 export {
   ALMAError,
@@ -118,4 +155,4 @@ export {
 } from './errors';
 
 // Version
-export const VERSION = '0.5.0';
+export const VERSION = '0.6.0';

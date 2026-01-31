@@ -477,3 +477,386 @@ export interface MCPResponse<T = unknown> {
     message: string;
   };
 }
+
+// ============================================================
+// v0.6.0 Workflow Context Types
+// ============================================================
+
+/**
+ * Scope for memory retrieval in workflow context.
+ */
+export type RetrievalScope = 'global' | 'tenant' | 'workflow' | 'run' | 'node';
+
+/**
+ * Result of a workflow execution.
+ */
+export type WorkflowResult = 'success' | 'failure' | 'partial' | 'cancelled';
+
+/**
+ * Type of artifact being linked.
+ */
+export type ArtifactType = 'file' | 'image' | 'log' | 'report' | 'data' | 'other';
+
+/**
+ * Workflow context for scoped memory operations.
+ */
+export interface WorkflowContext {
+  /** Tenant identifier for multi-tenant isolation */
+  tenantId?: string;
+  /** Workflow definition identifier */
+  workflowId?: string;
+  /** Unique run/execution identifier */
+  runId?: string;
+  /** Current node/step identifier */
+  nodeId?: string;
+  /** Branch identifier for parallel execution */
+  branchId?: string;
+}
+
+/**
+ * Checkpoint state for crash recovery.
+ */
+export interface Checkpoint {
+  /** Unique checkpoint identifier */
+  id: string;
+  /** Run this checkpoint belongs to */
+  runId: string;
+  /** Node that created this checkpoint */
+  nodeId: string;
+  /** Serialized state data */
+  state: Record<string, unknown>;
+  /** Sequence number for ordering */
+  sequenceNumber: number;
+  /** Branch identifier if parallel */
+  branchId?: string;
+  /** Parent checkpoint for branching */
+  parentCheckpointId?: string;
+  /** Hash of state for change detection */
+  stateHash?: string;
+  /** When checkpoint was created */
+  createdAt: string;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Reference to an external artifact.
+ */
+export interface ArtifactRef {
+  /** Unique artifact reference ID */
+  id: string;
+  /** Memory ID this artifact is linked to */
+  memoryId: string;
+  /** Type of artifact */
+  artifactType: ArtifactType;
+  /** Storage URL (e.g., S3, R2, local path) */
+  storageUrl: string;
+  /** Original filename */
+  filename?: string;
+  /** MIME type */
+  mimeType?: string;
+  /** Size in bytes */
+  sizeBytes?: number;
+  /** Content checksum */
+  checksum?: string;
+  /** When artifact was linked */
+  createdAt: string;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Outcome of a workflow execution.
+ */
+export interface WorkflowOutcome {
+  /** Unique outcome identifier */
+  id: string;
+  /** Tenant identifier */
+  tenantId?: string;
+  /** Workflow definition ID */
+  workflowId: string;
+  /** Run/execution ID */
+  runId: string;
+  /** Agent that executed */
+  agent: string;
+  /** Project identifier */
+  projectId: string;
+  /** Overall result */
+  result: WorkflowResult;
+  /** Human-readable summary */
+  summary?: string;
+  /** Strategies that were used */
+  strategiesUsed?: string[];
+  /** Patterns that worked */
+  successfulPatterns?: string[];
+  /** Patterns that failed */
+  failedPatterns?: string[];
+  /** Duration in seconds */
+  durationSeconds?: number;
+  /** Number of nodes executed */
+  nodeCount?: number;
+  /** When outcome was recorded */
+  createdAt: string;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================================
+// v0.6.0 Workflow Options Types
+// ============================================================
+
+/**
+ * Options for consolidating memories.
+ */
+export interface ConsolidateOptions {
+  /** Agent to consolidate (omit for all) */
+  agent?: string;
+  /** Similarity threshold for grouping (0.0-1.0, default: 0.85) */
+  similarityThreshold?: number;
+  /** Minimum group size to consolidate (default: 2) */
+  minGroupSize?: number;
+  /** Preview without making changes */
+  dryRun?: boolean;
+}
+
+/**
+ * Options for creating a checkpoint.
+ */
+export interface CheckpointOptions {
+  /** Run identifier */
+  runId: string;
+  /** Node creating the checkpoint */
+  nodeId: string;
+  /** State to checkpoint */
+  state: Record<string, unknown>;
+  /** Branch identifier for parallel execution */
+  branchId?: string;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Options for resuming from a checkpoint.
+ */
+export interface ResumeOptions {
+  /** Run to resume */
+  runId: string;
+  /** Specific checkpoint ID (omit for latest) */
+  checkpointId?: string;
+  /** Branch to resume */
+  branchId?: string;
+}
+
+/**
+ * Options for merging parallel branch states.
+ */
+export interface MergeStatesOptions {
+  /** Run identifier */
+  runId: string;
+  /** Branch IDs to merge */
+  branchIds: string[];
+  /** Merge strategy per field */
+  reducers?: Record<string, string>;
+}
+
+/**
+ * Options for learning from workflow execution.
+ */
+export interface WorkflowLearnOptions {
+  /** Workflow context */
+  context: WorkflowContext;
+  /** Agent that executed */
+  agent: string;
+  /** Overall result */
+  result: WorkflowResult;
+  /** Human-readable summary */
+  summary?: string;
+  /** Strategies that were used */
+  strategiesUsed?: string[];
+  /** Patterns that worked */
+  successfulPatterns?: string[];
+  /** Patterns that failed */
+  failedPatterns?: string[];
+  /** Duration in seconds */
+  durationSeconds?: number;
+  /** Number of nodes executed */
+  nodeCount?: number;
+}
+
+/**
+ * Options for linking an artifact.
+ */
+export interface LinkArtifactOptions {
+  /** Memory ID to link to */
+  memoryId: string;
+  /** Type of artifact */
+  artifactType: ArtifactType;
+  /** Storage URL */
+  storageUrl: string;
+  /** Original filename */
+  filename?: string;
+  /** MIME type */
+  mimeType?: string;
+  /** Size in bytes */
+  sizeBytes?: number;
+  /** Content checksum */
+  checksum?: string;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Options for retrieving artifacts.
+ */
+export interface GetArtifactsOptions {
+  /** Memory ID to get artifacts for */
+  memoryId: string;
+  /** Filter by artifact type */
+  artifactType?: ArtifactType;
+}
+
+/**
+ * Options for cleaning up checkpoints.
+ */
+export interface CleanupCheckpointsOptions {
+  /** Run to clean up */
+  runId: string;
+  /** Number of latest checkpoints to keep (default: 1) */
+  keepLatest?: number;
+  /** Also clean up by branch */
+  branchId?: string;
+}
+
+/**
+ * Options for scoped memory retrieval.
+ */
+export interface RetrieveScopedOptions {
+  /** Task/query description */
+  query: string;
+  /** Agent requesting */
+  agent: string;
+  /** Workflow context for scoping */
+  context: WorkflowContext;
+  /** Retrieval scope */
+  scope: RetrievalScope;
+  /** Max items per type */
+  topK?: number;
+}
+
+// ============================================================
+// v0.6.0 Workflow Response Types
+// ============================================================
+
+/**
+ * Response from consolidate operation.
+ */
+export interface ConsolidateResponse {
+  success: boolean;
+  /** Number of memory groups found */
+  groupsFound?: number;
+  /** Number of memories merged */
+  memoriesMerged?: number;
+  /** Number of new consolidated memories */
+  consolidatedCreated?: number;
+  /** Was this a dry run? */
+  dryRun?: boolean;
+  error?: string;
+}
+
+/**
+ * Response from checkpoint operation.
+ */
+export interface CheckpointResponse {
+  success: boolean;
+  /** Created checkpoint ID */
+  checkpointId?: string;
+  /** Sequence number */
+  sequenceNumber?: number;
+  /** Whether state was unchanged (skipped) */
+  skipped?: boolean;
+  error?: string;
+}
+
+/**
+ * Response from resume operation.
+ */
+export interface ResumeResponse {
+  success: boolean;
+  /** Retrieved checkpoint */
+  checkpoint?: Checkpoint;
+  /** Restored state */
+  state?: Record<string, unknown>;
+  error?: string;
+}
+
+/**
+ * Response from merge states operation.
+ */
+export interface MergeStatesResponse {
+  success: boolean;
+  /** Merged state */
+  mergedState?: Record<string, unknown>;
+  /** Number of branches merged */
+  branchesMerged?: number;
+  error?: string;
+}
+
+/**
+ * Response from workflow learn operation.
+ */
+export interface WorkflowLearnResponse {
+  success: boolean;
+  /** Created outcome ID */
+  outcomeId?: string;
+  /** Number of heuristics extracted */
+  heuristicsExtracted?: number;
+  /** Number of anti-patterns extracted */
+  antiPatternsExtracted?: number;
+  error?: string;
+}
+
+/**
+ * Response from link artifact operation.
+ */
+export interface LinkArtifactResponse {
+  success: boolean;
+  /** Created artifact reference */
+  artifact?: ArtifactRef;
+  error?: string;
+}
+
+/**
+ * Response from get artifacts operation.
+ */
+export interface GetArtifactsResponse {
+  success: boolean;
+  /** List of artifact references */
+  artifacts?: ArtifactRef[];
+  error?: string;
+}
+
+/**
+ * Response from cleanup checkpoints operation.
+ */
+export interface CleanupCheckpointsResponse {
+  success: boolean;
+  /** Number of checkpoints deleted */
+  deleted?: number;
+  /** Number of checkpoints kept */
+  kept?: number;
+  error?: string;
+}
+
+/**
+ * Response from scoped retrieve operation.
+ */
+export interface RetrieveScopedResponse {
+  success: boolean;
+  /** Retrieved memories */
+  memories?: MemorySlice;
+  /** Applied scope */
+  scope?: RetrievalScope;
+  /** Scope filter used */
+  scopeFilter?: Record<string, string>;
+  error?: string;
+}

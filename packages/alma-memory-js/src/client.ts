@@ -22,6 +22,25 @@ import type {
   MCPRequest,
   MCPResponse,
   RetryConfig,
+  // v0.6.0 Workflow types
+  ConsolidateOptions,
+  ConsolidateResponse,
+  CheckpointOptions,
+  CheckpointResponse,
+  ResumeOptions,
+  ResumeResponse,
+  MergeStatesOptions,
+  MergeStatesResponse,
+  WorkflowLearnOptions,
+  WorkflowLearnResponse,
+  LinkArtifactOptions,
+  LinkArtifactResponse,
+  GetArtifactsOptions,
+  GetArtifactsResponse,
+  CleanupCheckpointsOptions,
+  CleanupCheckpointsResponse,
+  RetrieveScopedOptions,
+  RetrieveScopedResponse,
 } from './types';
 
 import {
@@ -396,6 +415,297 @@ export class ALMA {
    */
   async health(): Promise<HealthResponse> {
     const response = await this.callTool<HealthResponse>('alma_health', {});
+    return response;
+  }
+
+  // ============================================================
+  // v0.6.0 Workflow Context Methods
+  // ============================================================
+
+  /**
+   * Consolidate similar memories using LLM-powered deduplication.
+   *
+   * @param options - Consolidation options
+   * @returns Consolidation results
+   *
+   * @example
+   * ```typescript
+   * // Dry run to preview
+   * const preview = await alma.consolidate({
+   *   agent: 'dev-agent',
+   *   similarityThreshold: 0.85,
+   *   dryRun: true
+   * });
+   * console.log(`Would merge ${preview.memoriesMerged} memories`);
+   *
+   * // Actual consolidation
+   * const result = await alma.consolidate({
+   *   agent: 'dev-agent',
+   *   similarityThreshold: 0.85
+   * });
+   * ```
+   */
+  async consolidate(options: ConsolidateOptions = {}): Promise<ConsolidateResponse> {
+    const response = await this.callTool<ConsolidateResponse>('alma_consolidate', {
+      agent: options.agent,
+      similarity_threshold: options.similarityThreshold ?? 0.85,
+      min_group_size: options.minGroupSize ?? 2,
+      dry_run: options.dryRun ?? false,
+    });
+    return response;
+  }
+
+  /**
+   * Create a checkpoint for crash recovery.
+   *
+   * @param options - Checkpoint options
+   * @returns Created checkpoint info
+   *
+   * @example
+   * ```typescript
+   * const result = await alma.checkpoint({
+   *   runId: 'run-123',
+   *   nodeId: 'step-2',
+   *   state: { progress: 50, data: [...] }
+   * });
+   * console.log(`Checkpoint ${result.checkpointId} created`);
+   * ```
+   */
+  async checkpoint(options: CheckpointOptions): Promise<CheckpointResponse> {
+    this.validateRequired(options.runId, 'runId');
+    this.validateRequired(options.nodeId, 'nodeId');
+    this.validateRequired(options.state, 'state');
+
+    const response = await this.callTool<CheckpointResponse>('alma_checkpoint', {
+      run_id: options.runId,
+      node_id: options.nodeId,
+      state: options.state,
+      branch_id: options.branchId,
+      metadata: options.metadata,
+    });
+    return response;
+  }
+
+  /**
+   * Resume from a checkpoint after crash or restart.
+   *
+   * @param options - Resume options
+   * @returns Restored checkpoint and state
+   *
+   * @example
+   * ```typescript
+   * const result = await alma.resume({ runId: 'run-123' });
+   * if (result.success && result.state) {
+   *   console.log(`Resuming from step ${result.checkpoint?.nodeId}`);
+   *   // Continue with restored state
+   * }
+   * ```
+   */
+  async resume(options: ResumeOptions): Promise<ResumeResponse> {
+    this.validateRequired(options.runId, 'runId');
+
+    const response = await this.callTool<ResumeResponse>('alma_resume', {
+      run_id: options.runId,
+      checkpoint_id: options.checkpointId,
+      branch_id: options.branchId,
+    });
+    return response;
+  }
+
+  /**
+   * Merge states from parallel workflow branches.
+   *
+   * @param options - Merge options
+   * @returns Merged state
+   *
+   * @example
+   * ```typescript
+   * const result = await alma.mergeStates({
+   *   runId: 'run-123',
+   *   branchIds: ['branch-a', 'branch-b'],
+   *   reducers: {
+   *     results: 'append',
+   *     counts: 'sum',
+   *     status: 'last'
+   *   }
+   * });
+   * console.log('Merged state:', result.mergedState);
+   * ```
+   */
+  async mergeStates(options: MergeStatesOptions): Promise<MergeStatesResponse> {
+    this.validateRequired(options.runId, 'runId');
+    this.validateRequired(options.branchIds, 'branchIds');
+
+    const response = await this.callTool<MergeStatesResponse>('alma_merge_states', {
+      run_id: options.runId,
+      branch_ids: options.branchIds,
+      reducers: options.reducers,
+    });
+    return response;
+  }
+
+  /**
+   * Learn from a completed workflow execution.
+   *
+   * @param options - Workflow learning options
+   * @returns Learning results
+   *
+   * @example
+   * ```typescript
+   * await alma.workflowLearn({
+   *   context: { workflowId: 'deploy', runId: 'run-123' },
+   *   agent: 'deploy-agent',
+   *   result: 'success',
+   *   summary: 'Deployed v2.0 to production',
+   *   strategiesUsed: ['blue-green', 'canary'],
+   *   successfulPatterns: ['gradual rollout'],
+   *   durationSeconds: 300
+   * });
+   * ```
+   */
+  async workflowLearn(options: WorkflowLearnOptions): Promise<WorkflowLearnResponse> {
+    this.validateRequired(options.context, 'context');
+    this.validateRequired(options.agent, 'agent');
+    this.validateRequired(options.result, 'result');
+
+    const response = await this.callTool<WorkflowLearnResponse>('alma_workflow_learn', {
+      tenant_id: options.context.tenantId,
+      workflow_id: options.context.workflowId,
+      run_id: options.context.runId,
+      agent: options.agent,
+      result: options.result,
+      summary: options.summary,
+      strategies_used: options.strategiesUsed,
+      successful_patterns: options.successfulPatterns,
+      failed_patterns: options.failedPatterns,
+      duration_seconds: options.durationSeconds,
+      node_count: options.nodeCount,
+    });
+    return response;
+  }
+
+  /**
+   * Link an external artifact to a memory.
+   *
+   * @param options - Artifact linking options
+   * @returns Created artifact reference
+   *
+   * @example
+   * ```typescript
+   * const result = await alma.linkArtifact({
+   *   memoryId: 'outcome-123',
+   *   artifactType: 'report',
+   *   storageUrl: 's3://bucket/reports/test-report.html',
+   *   filename: 'test-report.html',
+   *   mimeType: 'text/html'
+   * });
+   * ```
+   */
+  async linkArtifact(options: LinkArtifactOptions): Promise<LinkArtifactResponse> {
+    this.validateRequired(options.memoryId, 'memoryId');
+    this.validateRequired(options.artifactType, 'artifactType');
+    this.validateRequired(options.storageUrl, 'storageUrl');
+
+    const response = await this.callTool<LinkArtifactResponse>('alma_link_artifact', {
+      memory_id: options.memoryId,
+      artifact_type: options.artifactType,
+      storage_url: options.storageUrl,
+      filename: options.filename,
+      mime_type: options.mimeType,
+      size_bytes: options.sizeBytes,
+      checksum: options.checksum,
+      metadata: options.metadata,
+    });
+    return response;
+  }
+
+  /**
+   * Get artifacts linked to a memory.
+   *
+   * @param options - Get artifacts options
+   * @returns List of artifact references
+   *
+   * @example
+   * ```typescript
+   * const result = await alma.getArtifacts({
+   *   memoryId: 'outcome-123',
+   *   artifactType: 'report'
+   * });
+   * for (const artifact of result.artifacts ?? []) {
+   *   console.log(`${artifact.filename}: ${artifact.storageUrl}`);
+   * }
+   * ```
+   */
+  async getArtifacts(options: GetArtifactsOptions): Promise<GetArtifactsResponse> {
+    this.validateRequired(options.memoryId, 'memoryId');
+
+    const response = await this.callTool<GetArtifactsResponse>('alma_get_artifacts', {
+      memory_id: options.memoryId,
+      artifact_type: options.artifactType,
+    });
+    return response;
+  }
+
+  /**
+   * Clean up old checkpoints for a run.
+   *
+   * @param options - Cleanup options
+   * @returns Cleanup results
+   *
+   * @example
+   * ```typescript
+   * // Keep only the latest checkpoint
+   * const result = await alma.cleanupCheckpoints({
+   *   runId: 'run-123',
+   *   keepLatest: 1
+   * });
+   * console.log(`Deleted ${result.deleted} old checkpoints`);
+   * ```
+   */
+  async cleanupCheckpoints(options: CleanupCheckpointsOptions): Promise<CleanupCheckpointsResponse> {
+    this.validateRequired(options.runId, 'runId');
+
+    const response = await this.callTool<CleanupCheckpointsResponse>('alma_cleanup_checkpoints', {
+      run_id: options.runId,
+      keep_latest: options.keepLatest ?? 1,
+      branch_id: options.branchId,
+    });
+    return response;
+  }
+
+  /**
+   * Retrieve memories with workflow context scoping.
+   *
+   * @param options - Scoped retrieval options
+   * @returns Scoped memory slice
+   *
+   * @example
+   * ```typescript
+   * // Get memories scoped to current workflow run
+   * const result = await alma.retrieveScoped({
+   *   query: 'deployment patterns',
+   *   agent: 'deploy-agent',
+   *   context: { workflowId: 'deploy', runId: 'run-123' },
+   *   scope: 'run'
+   * });
+   * ```
+   */
+  async retrieveScoped(options: RetrieveScopedOptions): Promise<RetrieveScopedResponse> {
+    this.validateRequired(options.query, 'query');
+    this.validateRequired(options.agent, 'agent');
+    this.validateRequired(options.context, 'context');
+    this.validateRequired(options.scope, 'scope');
+
+    const response = await this.callTool<RetrieveScopedResponse>('alma_retrieve_scoped', {
+      task: options.query,
+      agent: options.agent,
+      tenant_id: options.context.tenantId,
+      workflow_id: options.context.workflowId,
+      run_id: options.context.runId,
+      node_id: options.context.nodeId,
+      scope: options.scope,
+      top_k: options.topK ?? 5,
+    });
     return response;
   }
 
