@@ -1144,3 +1144,46 @@ class ALMA:
             user_id=user_id,
             top_k=top_k,
         )
+
+    async def async_merge_states(
+        self,
+        states: List[Dict[str, Any]],
+        reducer_config: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Async version of merge_states().
+
+        Merge multiple branch states after parallel execution.
+        """
+        return await asyncio.to_thread(
+            self.merge_states,
+            states=states,
+            reducer_config=reducer_config,
+        )
+
+    async def async_get_artifacts(self, memory_id: str) -> List[ArtifactRef]:
+        """
+        Async version of get_artifacts().
+
+        Get all artifacts linked to a memory.
+        """
+        return await asyncio.to_thread(
+            self.get_artifacts,
+            memory_id=memory_id,
+        )
+
+    async def async_cleanup_checkpoints(
+        self,
+        run_id: str,
+        keep_latest: int = 1,
+    ) -> int:
+        """
+        Async version of cleanup_checkpoints().
+
+        Clean up old checkpoints for a completed run.
+        """
+        return await asyncio.to_thread(
+            self.cleanup_checkpoints,
+            run_id=run_id,
+            keep_latest=keep_latest,
+        )
