@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALMA - Agent Learning Memory Architecture | Persistent Memory for AI Agents</title>
+    <meta name="description" content="ALMA is an open-source memory framework that makes AI agents learn and improve over time. Scoped learning, anti-pattern tracking, multi-agent sharing, and 6 vector database backends.">
+    <meta name="keywords" content="AI agents, memory framework, Mem0 alternative, LangChain memory, Claude Code, MCP server, vector database, machine learning">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="ALMA - AI Agents That Actually Learn">
+    <meta property="og:description" content="Persistent memory framework for AI agents. Stop making the same mistakes every session.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://alma-memory.pages.dev">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ALMA - Agent Learning Memory Architecture">
+    <meta name="twitter:description" content="Persistent memory for AI agents that learn and improve over time.">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        alma: {
+                            50: '#eef9ff',
+                            100: '#d8f1ff',
+                            200: '#bae6ff',
+                            300: '#8bd7ff',
+                            400: '#54beff',
+                            500: '#2d9dfc',
+                            600: '#177ef1',
+                            700: '#1066de',
+                            800: '#1452b4',
+                            900: '#16478e',
+                            950: '#0f172a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+                    },
+                    animation: {
+                        'gradient': 'gradient 8s ease infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        gradient: {
+                            '0%, 100%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Prism.js for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Animated gradient background */
+        .gradient-bg {
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #0f172a, #1e1b4b);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        /* Code block styling */
+        pre[class*="language-"] {
+            margin: 0 !important;
+            border-radius: 0.5rem !important;
+            background: #0f172a !important;
+        }
+
+        code[class*="language-"] {
+            font-size: 0.875rem !important;
+        }
+
+        /* Glow effects */
+        .glow-blue { box-shadow: 0 0 40px rgba(59, 130, 246, 0.3); }
+        .glow-cyan { box-shadow: 0 0 40px rgba(6, 182, 212, 0.3); }
+
+        /* Smooth transitions */
+        * { transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+
+        /* Tab active state */
+        .tab-active {
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            color: white;
+        }
+
+        /* Copy button */
+        .copy-btn {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .code-block:hover .copy-btn {
+            opacity: 1;
+        }
+
+        /* Feature card hover */
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        /* Comparison table styling */
+        .comparison-table th:first-child,
+        .comparison-table td:first-child {
+            position: sticky;
+            left: 0;
+            background: #1e293b;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center font-bold text-white">
+                        A
+                    </div>
+                    <span class="text-xl font-bold">ALMA</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-slate-400 hover:text-white transition">Features</a>
+                    <a href="#comparison" class="text-slate-400 hover:text-white transition">Compare</a>
+                    <a href="#quickstart" class="text-slate-400 hover:text-white transition">Quick Start</a>
+                    <a href="#docs" class="text-slate-400 hover:text-white transition">Docs</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="https://github.com/RBKunnela/ALMA-memory" target="_blank"
+                       class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg>
+                        <span class="hidden sm:inline">GitHub</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center gradient-bg overflow-hidden pt-16">
+        <!-- Background decoration -->
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute top-1/4 -left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
+            <div class="absolute bottom-1/4 -right-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse-slow" style="animation-delay: 2s;"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-500/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Left: Text Content -->
+                <div class="space-y-8">
+                    <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700 text-sm">
+                        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                        <span>v0.6.0 - Workflow Context Layer</span>
+                    </div>
+
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight">
+                        AI Agents That<br>
+                        <span class="gradient-text">Actually Learn</span>
+                    </h1>
+
+                    <p class="text-xl text-slate-400 max-w-xl">
+                        Persistent memory for AI agents that improves over time.
+                        <strong class="text-slate-200">No fine-tuning. No model changes.</strong>
+                        Just smarter prompts built from experience.
+                    </p>
+
+                    <div class="flex flex-wrap gap-4">
+                        <a href="https://github.com/RBKunnela/ALMA-memory" target="_blank"
+                           class="group flex items-center space-x-2 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 font-semibold transition-all glow-blue">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg>
+                            <span>Star on GitHub</span>
+                            <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </a>
+                        <a href="#quickstart"
+                           class="flex items-center space-x-2 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 font-semibold transition">
+                            <span>Get Started</span>
+                        </a>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-6 pt-4 text-sm text-slate-500">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>MIT Licensed</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Python + TypeScript</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>6 Vector Backends</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Visual/Code Block -->
+                <div class="relative animate-float">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-2xl blur-2xl"></div>
+                    <div class="relative bg-slate-900 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl">
+                        <!-- Terminal header -->
+                        <div class="flex items-center space-x-2 px-4 py-3 bg-slate-800 border-b border-slate-700">
+                            <div class="flex space-x-2">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                            </div>
+                            <span class="text-sm text-slate-400 ml-2">agent_memory.py</span>
+                        </div>
+                        <!-- Code content -->
+                        <div class="p-6 text-sm">
+<pre><code class="language-python"># Before: AI makes same mistakes every session
+agent.run("Test login form")  # Uses sleep(), fails
+agent.run("Test login form")  # Uses sleep() AGAIN
+
+# After: ALMA remembers what works
+from alma import ALMA
+alma = ALMA.from_config(".alma/config.yaml")
+
+# Get memories before task
+memories = alma.retrieve(
+    task="Test login form",
+    agent="helena"
+)
+
+# Agent now knows: "Don't use sleep()"
+# Agent now knows: "Incremental validation works"
+result = agent.run_with_context(memories)</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+            <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+            </svg>
+        </div>
+    </section>
+
+    <!-- The Story Section -->
+    <section class="py-24 bg-slate-900">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">
+                    The Same Mistakes. <span class="gradient-text">Every Session.</span>
+                </h2>
+                <p class="text-slate-400 text-lg">Why I built ALMA</p>
+            </div>
+
+            <div class="space-y-8 text-lg text-slate-300 leading-relaxed">
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p>I was building AI agents for automated testing. <strong class="text-white">Helena</strong> for frontend QA, <strong class="text-white">Victor</strong> for backend verification. They worked great... until they didn't.</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+                    <p class="font-semibold text-white mb-4">The same mistakes kept happening:</p>
+                    <ul class="space-y-3">
+                        <li class="flex items-start gap-3">
+                            <span class="text-red-400 mt-1">x</span>
+                            <span>Helena would use <code class="px-2 py-1 rounded bg-slate-700 text-cyan-400 text-sm">sleep(5000)</code> for waits, causing flaky tests</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-red-400 mt-1">x</span>
+                            <span>Victor would forget that the API uses JWT with 24-hour expiry</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-red-400 mt-1">x</span>
+                            <span>Both agents would repeat failed strategies session after session</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <p class="text-slate-400">
+                    Every conversation started fresh. No memory. No learning. Just an expensive LLM making the same mistakes I'd already corrected.
+                </p>
+
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p>I tried <strong class="text-white">Mem0</strong>. It stores memories, but no way to scope what an agent can learn. Helena could "learn" database queries she'd never use. I looked at <strong class="text-white">LangChain Memory</strong>. It's for conversation context, not long-term learning. Different problem.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p><strong class="text-white">Nothing fit.</strong> So I built ALMA - Agent Learning Memory Architecture. The core insight: AI agents don't need to modify their weights to "learn." They need <em>smart prompts</em> built from <em>relevant past experiences.</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="py-24 bg-slate-950">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">How ALMA Works</h2>
+                <p class="text-slate-400 text-lg max-w-2xl mx-auto">Three simple phases. No model modifications.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Phase 1 -->
+                <div class="relative p-8 rounded-2xl bg-slate-900 border border-slate-800">
+                    <div class="absolute -top-4 left-8 px-4 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-sm font-medium">
+                        Before Task
+                    </div>
+                    <div class="mt-4 space-y-4">
+                        <div class="w-14 h-14 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold">Retrieve Memories</h3>
+                        <p class="text-slate-400">ALMA finds relevant past experiences, strategies that worked, and anti-patterns to avoid.</p>
+                        <div class="text-sm text-slate-500 font-mono bg-slate-800 rounded-lg p-3">
+                            "Incremental validation worked"<br>
+                            "Don't use sleep() - flaky"
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 2 -->
+                <div class="relative p-8 rounded-2xl bg-slate-900 border border-slate-800">
+                    <div class="absolute -top-4 left-8 px-4 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm font-medium">
+                        During Task
+                    </div>
+                    <div class="mt-4 space-y-4">
+                        <div class="w-14 h-14 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold">Execute with Context</h3>
+                        <p class="text-slate-400">Memories are injected into prompts. The agent executes with accumulated knowledge.</p>
+                        <div class="text-sm text-slate-500 font-mono bg-slate-800 rounded-lg p-3">
+                            Agent uses explicit waits<br>
+                            Tests pass on first try
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 3 -->
+                <div class="relative p-8 rounded-2xl bg-slate-900 border border-slate-800">
+                    <div class="absolute -top-4 left-8 px-4 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-400 text-sm font-medium">
+                        After Task
+                    </div>
+                    <div class="mt-4 space-y-4">
+                        <div class="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold">Learn from Outcome</h3>
+                        <p class="text-slate-400">Success becomes a new heuristic. Failure becomes an anti-pattern with what to do instead.</p>
+                        <div class="text-sm text-slate-500 font-mono bg-slate-800 rounded-lg p-3">
+                            Heuristic saved<br>
+                            Future tasks benefit
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 bg-slate-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">What Makes ALMA Different</h2>
+                <p class="text-slate-400 text-lg max-w-2xl mx-auto">Purpose-built for AI agents that need to learn, remember, and improve.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Feature 1: Scoped Learning -->
+                <div class="feature-card p-6 rounded-xl bg-slate-800/50 border border-slate-700 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Scoped Learning</h3>
+                    <p class="text-slate-400 text-sm mb-4">Define what each agent can and cannot learn. Helena learns testing, not database queries.</p>
+                    <div class="text-xs font-mono bg-slate-900 rounded p-3 text-slate-300">
+                        <span class="text-cyan-400">can_learn:</span> [testing, selectors]<br>
+                        <span class="text-red-400">cannot_learn:</span> [backend_logic]
+                    </div>
+                </div>
+
+                <!-- Feature 2: Anti-Pattern Tracking -->
+                <div class="feature-card p-6 rounded-xl bg-slate-800/50 border border-slate-700 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-lg bg-red-500/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Anti-Pattern Tracking</h3>
+                    <p class="text-slate-400 text-sm mb-4">Explicitly record what NOT to do, why it's bad, and what to do instead.</p>
+                    <div class="text-xs font-mono bg-slate-900 rounded p-3 text-slate-300">
+                        <span class="text-red-400">pattern:</span> "Using sleep()"<br>
+                        <span class="text-yellow-400">why_bad:</span> "Flaky tests"<br>
+                        <span class="text-green-400">instead:</span> "Explicit waits"
+                    </div>
+                </div>
+
+                <!-- Feature 3: Multi-Agent Sharing -->
+                <div class="feature-card p-6 rounded-xl bg-slate-800/50 border border-slate-700 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Multi-Agent Sharing</h3>
+                    <p class="text-slate-400 text-sm mb-4">Senior agents share knowledge with juniors. Hierarchical memory inheritance.</p>
+                    <div class="text-xs font-mono bg-slate-900 rounded p-3 text-slate-300">
+                        <span class="text-cyan-400">senior:</span> share_with: [junior]<br>
+                        <span class="text-cyan-400">junior:</span> inherit_from: [senior]
+                    </div>
+                </div>
+
+                <!-- Feature 4: Workflow Checkpoints -->
+                <div class="feature-card p-6 rounded-xl bg-slate-800/50 border border-slate-700 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Workflow Checkpoints</h3>
+                    <p class="text-slate-400 text-sm mb-4">Save state mid-workflow, resume after failures. Perfect for complex multi-step tasks.</p>
+                    <div class="text-xs font-mono bg-slate-900 rounded p-3 text-slate-300">
+                        <span class="text-purple-400">alma.checkpoint</span>(workflow_id, state)<br>
+                        <span class="text-purple-400">alma.resume</span>(workflow_id)
+                    </div>
+                </div>
+
+                <!-- Feature 5: MCP Integration -->
+                <div class="feature-card p-6 rounded-xl bg-slate-800/50 border border-slate-700 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">MCP Integration</h3>
+                    <p class="text-slate-400 text-sm mb-4">Native MCP server with 16 tools. Works directly with Claude Code.</p>
+                    <div class="text-xs font-mono bg-slate-900 rounded p-3 text-slate-300">
+                        python -m alma.mcp<br>
+                        <span class="text-slate-500"># 16 tools ready to use</span>
+                    </div>
+                </div>
+
+                <!-- Feature 6: 6 Vector Backends -->
+                <div class="feature-card p-6 rounded-xl bg-slate-800/50 border border-slate-700 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-lg bg-yellow-500/20 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">6 Vector Backends</h3>
+                    <p class="text-slate-400 text-sm mb-4">PostgreSQL, Qdrant, Pinecone, Chroma, SQLite, Azure Cosmos. Deploy anywhere.</p>
+                    <div class="flex flex-wrap gap-2 mt-3">
+                        <span class="px-2 py-1 text-xs rounded bg-slate-700 text-slate-300">PostgreSQL</span>
+                        <span class="px-2 py-1 text-xs rounded bg-slate-700 text-slate-300">Qdrant</span>
+                        <span class="px-2 py-1 text-xs rounded bg-slate-700 text-slate-300">Pinecone</span>
+                        <span class="px-2 py-1 text-xs rounded bg-slate-700 text-slate-300">Chroma</span>
+                        <span class="px-2 py-1 text-xs rounded bg-slate-700 text-slate-300">SQLite</span>
+                        <span class="px-2 py-1 text-xs rounded bg-slate-700 text-slate-300">Azure</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Features Row -->
+            <div class="grid md:grid-cols-4 gap-4 mt-8">
+                <div class="p-4 rounded-lg bg-slate-800/30 border border-slate-800 text-center">
+                    <div class="text-2xl font-bold text-white">5</div>
+                    <div class="text-sm text-slate-400">Memory Types</div>
+                </div>
+                <div class="p-4 rounded-lg bg-slate-800/30 border border-slate-800 text-center">
+                    <div class="text-2xl font-bold text-white">16</div>
+                    <div class="text-sm text-slate-400">MCP Tools</div>
+                </div>
+                <div class="p-4 rounded-lg bg-slate-800/30 border border-slate-800 text-center">
+                    <div class="text-2xl font-bold text-white">4</div>
+                    <div class="text-sm text-slate-400">Graph Backends</div>
+                </div>
+                <div class="p-4 rounded-lg bg-slate-800/30 border border-slate-800 text-center">
+                    <div class="text-2xl font-bold text-white">6</div>
+                    <div class="text-sm text-slate-400">Domain Schemas</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section id="comparison" class="py-24 bg-slate-950">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">ALMA vs Alternatives</h2>
+                <p class="text-slate-400 text-lg max-w-2xl mx-auto">See how ALMA compares to Mem0 and LangChain Memory.</p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="comparison-table w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-700">
+                            <th class="text-left py-4 px-4 font-semibold text-slate-300 min-w-[200px]">Feature</th>
+                            <th class="text-center py-4 px-6 min-w-[150px]">
+                                <div class="flex flex-col items-center">
+                                    <span class="font-bold text-lg gradient-text">ALMA</span>
+                                    <span class="text-xs text-slate-500">v0.6.0</span>
+                                </div>
+                            </th>
+                            <th class="text-center py-4 px-6 text-slate-400 min-w-[150px]">Mem0</th>
+                            <th class="text-center py-4 px-6 text-slate-400 min-w-[150px]">LangChain Memory</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="py-4 px-4 font-medium">Memory Scoping</td>
+                            <td class="text-center py-4 px-6">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">can_learn / cannot_learn</span>
+                            </td>
+                            <td class="text-center py-4 px-6 text-slate-500">Basic isolation</td>
+                            <td class="text-center py-4 px-6 text-slate-500">None</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="py-4 px-4 font-medium">Anti-Pattern Learning</td>
+                            <td class="text-center py-4 px-6"><span class="text-green-400">Yes</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="py-4 px-4 font-medium">Multi-Agent Sharing</td>
+                            <td class="text-center py-4 px-6"><span class="text-green-400">inherit_from + share_with</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="py-4 px-4 font-medium">Workflow Checkpoints</td>
+                            <td class="text-center py-4 px-6"><span class="text-green-400">Yes</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="py-4 px-4 font-medium">MCP Integration</td>
+                            <td class="text-center py-4 px-6"><span class="text-green-400">16 tools</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="py-4 px-4 font-medium">TypeScript SDK</td>
+                            <td class="text-center py-4 px-6"><span class="text-green-400">Full-featured</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Limited</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="py-4 px-4 font-medium">Vector Backends</td>
+                            <td class="text-center py-4 px-6"><span class="text-green-400">6 options</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Limited</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Via integrations</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="py-4 px-4 font-medium">Graph Memory</td>
+                            <td class="text-center py-4 px-6"><span class="text-green-400">Neo4j, Memgraph, Kuzu</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Limited</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Entity memory</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="py-4 px-4 font-medium">Event System</td>
+                            <td class="text-center py-4 px-6"><span class="text-green-400">Webhooks + callbacks</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="py-4 px-4 font-medium">License</td>
+                            <td class="text-center py-4 px-6"><span class="text-green-400">MIT (fully open)</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Partially open</span></td>
+                            <td class="text-center py-4 px-6"><span class="text-green-400">MIT</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-12 text-center">
+                <p class="text-slate-400 mb-4">Ready to give your agents real memory?</p>
+                <a href="#quickstart" class="inline-flex items-center space-x-2 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 font-semibold hover:from-blue-500 hover:to-cyan-400 transition-all">
+                    <span>Get Started</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quickstart" class="py-24 bg-slate-900">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Get Started in 60 Seconds</h2>
+                <p class="text-slate-400 text-lg">Install ALMA and start giving your agents memory.</p>
+            </div>
+
+            <!-- Install Commands -->
+            <div class="grid md:grid-cols-2 gap-6 mb-12">
+                <div class="code-block relative">
+                    <div class="flex items-center justify-between px-4 py-2 bg-slate-800 rounded-t-lg border-b border-slate-700">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M14.25.18l.9.2.73.26.59.3.45.32.34.34.25.34.16.33.1.3.04.26.02.2-.01.13V8.5l-.05.63-.13.55-.21.46-.26.38-.3.31-.33.25-.35.19-.35.14-.33.1-.3.07-.26.04-.21.02H8.77l-.69.05-.59.14-.5.22-.41.27-.33.32-.27.35-.2.36-.15.37-.1.35-.07.32-.04.27-.02.21v3.06H3.17l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1.05-.05-1.23.06-1.22.16-1.04.24-.87.32-.71.36-.57.4-.44.42-.33.42-.24.4-.16.36-.1.32-.05.24-.01h.16l.06.01h8.16v-.83H6.18l-.01-2.75-.02-.37.05-.34.11-.31.17-.28.25-.26.31-.23.38-.2.44-.18.51-.15.58-.12.64-.1.71-.06.77-.04.84-.02 1.27.05zm-6.3 1.98l-.23.33-.08.41.08.41.23.34.33.22.41.09.41-.09.33-.22.23-.34.08-.41-.08-.41-.23-.33-.33-.22-.41-.09-.41.09zm13.09 3.95l.28.06.32.12.35.18.36.27.36.35.35.47.32.59.28.73.21.88.14 1.04.05 1.23-.06 1.23-.16 1.04-.24.86-.32.71-.36.57-.4.45-.42.33-.42.24-.4.16-.36.09-.32.05-.24.02-.16-.01h-8.22v.82h5.84l.01 2.76.02.36-.05.34-.11.31-.17.29-.25.25-.31.24-.38.2-.44.17-.51.15-.58.13-.64.09-.71.07-.77.04-.84.01-1.27-.04-1.07-.14-.9-.2-.73-.25-.59-.3-.45-.33-.34-.34-.25-.34-.16-.33-.1-.3-.04-.25-.02-.2.01-.13v-5.34l.05-.64.13-.54.21-.46.26-.38.3-.32.33-.24.35-.2.35-.14.33-.1.3-.06.26-.04.21-.02.13-.01h5.84l.69-.05.59-.14.5-.21.41-.28.33-.32.27-.35.2-.36.15-.36.1-.35.07-.32.04-.28.02-.21V6.07h2.09l.14.01zm-6.47 14.25l-.23.33-.08.41.08.41.23.33.33.23.41.08.41-.08.33-.23.23-.33.08-.41-.08-.41-.23-.33-.33-.23-.41-.08-.41.08z"/></svg>
+                            <span class="text-sm font-medium">Python</span>
+                        </div>
+                        <button onclick="copyCode('pip install alma-memory')" class="copy-btn text-slate-400 hover:text-white p-1 rounded">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-4 bg-slate-950 rounded-b-lg">
+                        <code class="text-green-400 font-mono">pip install alma-memory</code>
+                    </div>
+                </div>
+
+                <div class="code-block relative">
+                    <div class="flex items-center justify-between px-4 py-2 bg-slate-800 rounded-t-lg border-b border-slate-700">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-yellow-400" viewBox="0 0 24 24" fill="currentColor"><path d="M0 0h24v24H0V0zm22.034 18.276c-.175-1.095-.888-2.015-3.003-2.873-.736-.345-1.554-.585-1.797-1.14-.091-.33-.105-.51-.046-.705.15-.646.915-.84 1.515-.66.39.12.75.42.976.9 1.034-.676 1.034-.676 1.755-1.125-.27-.42-.404-.601-.586-.78-.63-.705-1.469-1.065-2.834-1.034l-.705.089c-.676.165-1.32.525-1.71 1.005-1.14 1.291-.811 3.541.569 4.471 1.365 1.02 3.361 1.244 3.616 2.205.24 1.17-.87 1.545-1.966 1.41-.811-.18-1.26-.586-1.755-1.336l-1.83 1.051c.21.48.45.689.81 1.109 1.74 1.756 6.09 1.666 6.871-1.004.029-.09.24-.705.074-1.65l.046.067zm-8.983-7.245h-2.248c0 1.938-.009 3.864-.009 5.805 0 1.232.063 2.363-.138 2.711-.33.689-1.18.601-1.566.48-.396-.196-.597-.466-.83-.855-.063-.105-.11-.196-.127-.196l-1.825 1.125c.305.63.75 1.172 1.324 1.517.855.51 2.004.675 3.207.405.783-.226 1.458-.691 1.811-1.411.51-.93.402-2.07.397-3.346.012-2.054 0-4.109 0-6.179l.004-.056z"/></svg>
+                            <span class="text-sm font-medium">TypeScript / Node.js</span>
+                        </div>
+                        <button onclick="copyCode('npm install @rbkunnela/alma-memory')" class="copy-btn text-slate-400 hover:text-white p-1 rounded">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-4 bg-slate-950 rounded-b-lg">
+                        <code class="text-green-400 font-mono">npm install @rbkunnela/alma-memory</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Examples with Tabs -->
+            <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                <div class="flex border-b border-slate-700">
+                    <button id="tab-python" onclick="showTab('python')" class="tab-active px-6 py-3 text-sm font-medium transition-all">
+                        Python
+                    </button>
+                    <button id="tab-typescript" onclick="showTab('typescript')" class="px-6 py-3 text-sm font-medium text-slate-400 hover:text-white transition-all">
+                        TypeScript
+                    </button>
+                    <button id="tab-mcp" onclick="showTab('mcp')" class="px-6 py-3 text-sm font-medium text-slate-400 hover:text-white transition-all">
+                        MCP Server
+                    </button>
+                </div>
+
+                <div id="code-python" class="p-6">
+<pre><code class="language-python">from alma import ALMA
+
+# Initialize ALMA
+alma = ALMA.from_config(".alma/config.yaml")
+
+# Before task: Get relevant memories
+memories = alma.retrieve(
+    task="Test the login form validation",
+    agent="helena",
+    top_k=5
+)
+
+# Inject memories into your prompt
+prompt = f"""
+## Your Task
+Test the login form validation
+
+## Knowledge from Past Runs
+{memories.to_prompt()}
+"""
+
+# Run your agent with the enriched prompt
+result = run_agent(prompt)
+
+# After task: Learn from the outcome
+alma.learn(
+    agent="helena",
+    task="Test login form",
+    outcome="success",
+    strategy_used="Tested empty fields, invalid email, valid submission"
+)
+
+# Track anti-patterns (what NOT to do)
+alma.add_anti_pattern(
+    agent="helena",
+    pattern="Using sleep() for async waits",
+    why_bad="Causes flaky tests, wastes time",
+    better_alternative="Use explicit waits with conditions"
+)</code></pre>
+                </div>
+
+                <div id="code-typescript" class="p-6 hidden">
+<pre><code class="language-typescript">import { ALMA } from '@rbkunnela/alma-memory';
+
+// Create client
+const alma = new ALMA({
+  baseUrl: 'http://localhost:8765',
+  projectId: 'my-project'
+});
+
+// Before task: Retrieve relevant memories
+const memories = await alma.retrieve({
+  query: 'authentication flow testing',
+  agent: 'helena',
+  topK: 5
+});
+
+// Use memories in your agent prompt
+const prompt = `
+## Your Task
+Test the login form validation
+
+## Knowledge from Past Runs
+${memories.toPrompt()}
+`;
+
+// Run your agent...
+const result = await runAgent(prompt);
+
+// After task: Learn from outcome
+await alma.learn({
+  agent: 'helena',
+  task: 'Test login form',
+  outcome: 'success',
+  strategyUsed: 'Tested empty fields, invalid email, valid submission'
+});
+
+// Add preferences and knowledge
+await alma.addPreference({
+  userId: 'user-123',
+  category: 'code_style',
+  preference: 'Use TypeScript strict mode'
+});
+
+await alma.addKnowledge({
+  agent: 'helena',
+  domain: 'authentication',
+  fact: 'API uses JWT with 24h expiry'
+});</code></pre>
+                </div>
+
+                <div id="code-mcp" class="p-6 hidden">
+<pre><code class="language-bash"># Start the MCP server
+python -m alma.mcp --config .alma/config.yaml</code></pre>
+<pre class="mt-4"><code class="language-json">// Add to .mcp.json for Claude Code
+{
+  "mcpServers": {
+    "alma-memory": {
+      "command": "python",
+      "args": ["-m", "alma.mcp", "--config", ".alma/config.yaml"]
+    }
+  }
+}</code></pre>
+<pre class="mt-4"><code class="language-yaml"># .alma/config.yaml
+alma:
+  project_id: "my-project"
+  storage: sqlite
+  embedding_provider: local
+  storage_dir: .alma
+
+  agents:
+    helena:
+      domain: coding
+      can_learn:
+        - testing_strategies
+        - selector_patterns
+      cannot_learn:
+        - backend_logic
+      share_with: [qa_lead]</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Storage Backends Section -->
+    <section id="docs" class="py-24 bg-slate-950">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Deploy Anywhere</h2>
+                <p class="text-slate-400 text-lg">6 vector database backends. From local development to enterprise scale.</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+                <!-- PostgreSQL -->
+                <div class="flex flex-col items-center p-6 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition">
+                    <svg class="w-12 h-12 mb-3" viewBox="0 0 24 24" fill="#336791">
+                        <path d="M17.128 0a10.134 10.134 0 00-2.755.403l-.063.02a10.922 10.922 0 00-1.267.411c-.34.127-.666.27-.976.429a9.538 9.538 0 00-.743.41H11.3a10.012 10.012 0 00-2.182-.453 10.067 10.067 0 00-3.152.211C4.05 1.614 2.414 2.78 1.593 4.191c-.831 1.43-1.125 3.144-.876 5.092.075.583.181 1.173.321 1.767a32.4 32.4 0 00.67 2.315c.222.688.475 1.365.75 2.028.28.672.593 1.328.934 1.958.343.631.722 1.238 1.132 1.81a14.3 14.3 0 001.392 1.563c.234.22.478.428.731.622a5.622 5.622 0 001.01.582 3.99 3.99 0 001.244.406 3.343 3.343 0 001.262.001 3.023 3.023 0 00.727-.202c.118-.047.23-.104.337-.17.155.197.33.38.518.547.22.193.456.363.705.508a3.89 3.89 0 001.032.418 4.39 4.39 0 001.06.158c.363.008.726-.04 1.079-.144a3.392 3.392 0 001.053-.49c.151-.1.293-.214.426-.34.093-.087.182-.18.264-.278.196.037.397.06.601.07.48.02.96-.047 1.42-.2.423-.143.825-.35 1.19-.616.18-.13.348-.276.504-.436.157-.16.302-.332.428-.517a4.178 4.178 0 00.533-1.104c.076-.238.13-.48.16-.724a9.802 9.802 0 00-.009-1.69 24.93 24.93 0 00-.298-2.007 48.076 48.076 0 00-.434-2.184 60.737 60.737 0 00-.456-1.949 34.4 34.4 0 00-.404-1.461 47.37 47.37 0 00-.347-1.118c-.06-.18-.12-.356-.185-.529-.12-.315-.252-.622-.403-.917a7.08 7.08 0 00-.539-.929c-.13-.186-.27-.364-.42-.532a4.91 4.91 0 00-.455-.442 3.655 3.655 0 00-.534-.372c-.197-.11-.406-.198-.622-.264a3.228 3.228 0 00-.683-.14 3.163 3.163 0 00-.729.03 3.228 3.228 0 00-.765.193 3.464 3.464 0 00-.725.394zM8.882 1.82a8.597 8.597 0 012.603.203 9.465 9.465 0 011.158.373c.32.125.628.268.92.43a8.13 8.13 0 01.71.426c.117.08.232.165.345.254a5.476 5.476 0 00-.32-.022 4.53 4.53 0 00-.9.065 4.96 4.96 0 00-.937.267c-.31.12-.608.273-.888.454a5.21 5.21 0 00-.8.604c-.252.228-.483.482-.69.756a5.816 5.816 0 00-.532.87 6.108 6.108 0 00-.38.964c-.1.33-.172.669-.216 1.011-.046.342-.062.69-.048 1.037.01.232.034.464.073.693a2.71 2.71 0 00-.236-.013 3.028 3.028 0 00-.59.058 2.987 2.987 0 00-.612.187c-.21.09-.41.203-.593.34a2.68 2.68 0 00-.474.44 2.527 2.527 0 00-.35.522 2.383 2.383 0 00-.219.587c-.048.202-.076.407-.083.614a2.47 2.47 0 00.026.445 1.923 1.923 0 00.104.381c.049.12.11.234.18.34.07.104.15.199.24.283.088.083.185.154.29.212a1.53 1.53 0 00.337.134c.118.03.24.046.362.048a1.65 1.65 0 00.36-.029c.117-.023.23-.058.34-.105a1.58 1.58 0 00.31-.183c.095-.073.181-.158.258-.253.076-.095.143-.2.199-.313a1.6 1.6 0 00.126-.36c.029-.128.043-.26.042-.393a1.88 1.88 0 00-.08-.52c-.01-.035-.024-.07-.036-.104.153-.018.308-.04.463-.069.275-.052.548-.12.817-.208.267-.088.53-.195.786-.32.226-.111.448-.238.66-.38.181-.122.356-.255.524-.399a5.9 5.9 0 00.474-.467 6.26 6.26 0 00.76-1.038 6.447 6.447 0 00.558-1.162 6.2 6.2 0 00.325-1.256c.062-.42.09-.845.082-1.27a6.135 6.135 0 00-.137-1.214 5.62 5.62 0 00-.355-1.103 4.58 4.58 0 00-.248-.501c.234-.061.472-.105.714-.133.263-.03.529-.04.794-.03.294.012.586.048.874.106a3.16 3.16 0 01.79.27c.24.117.46.268.658.448.1.09.193.188.28.291.18.217.335.455.46.712.125.255.22.525.286.803.065.28.099.565.1.852.001.287-.031.573-.097.853-.067.28-.166.55-.296.806a3.46 3.46 0 01-.471.721 4.1 4.1 0 01-.618.603c-.228.184-.476.34-.739.465-.264.124-.544.212-.832.263-.144.025-.29.04-.436.044a2.862 2.862 0 01-.436-.02 2.558 2.558 0 01-.426-.085 2.303 2.303 0 01-.406-.16 2.116 2.116 0 01-.374-.243 2.004 2.004 0 01-.323-.32 1.974 1.974 0 01-.257-.39 1.979 1.979 0 01-.175-.446 2.04 2.04 0 01-.08-.47 2.13 2.13 0 01.022-.474c.022-.157.058-.31.108-.46.05-.148.114-.29.19-.426.077-.134.167-.26.27-.375.101-.115.215-.218.34-.308.123-.09.258-.166.402-.226a2.2 2.2 0 01.447-.145c.155-.031.315-.047.476-.045.16.001.32.02.477.056.157.036.31.089.457.158.148.07.287.156.418.257.13.1.25.216.357.346.108.13.202.273.28.426.077.153.138.316.181.486.043.17.068.346.073.522.005.176-.009.353-.042.526a2.283 2.283 0 01-.323.856c-.151.25-.347.465-.579.632-.116.084-.24.153-.372.206a1.692 1.692 0 01-.415.114c-.144.02-.291.02-.436 0a1.632 1.632 0 01-.428-.125 1.568 1.568 0 01-.375-.245 1.494 1.494 0 01-.294-.345 1.447 1.447 0 01-.193-.428 1.45 1.45 0 01-.067-.479 1.503 1.503 0 01.077-.478c.048-.155.122-.299.22-.425a1.52 1.52 0 01.346-.332c.137-.092.29-.16.452-.2.16-.04.327-.05.494-.03.166.02.329.07.48.147.15.077.286.18.403.305.117.124.213.27.283.43.07.158.112.33.126.506a1.14 1.14 0 01-.034.342c.197-.057.38-.148.542-.271.161-.123.299-.275.408-.448.109-.174.186-.366.228-.568a1.7 1.7 0 00-.002-.623 1.716 1.716 0 00-.227-.567 1.728 1.728 0 00-.405-.45 1.755 1.755 0 00-.548-.305 1.792 1.792 0 00-.631-.127 1.839 1.839 0 00-.638.085 1.873 1.873 0 00-.571.29c-.171.13-.318.29-.432.473-.113.183-.192.387-.235.601-.043.213-.05.433-.022.65.028.218.091.429.188.625.098.196.228.375.387.528.16.153.347.277.552.367.205.09.427.145.653.16.226.016.453-.007.67-.068.217-.061.423-.16.608-.293a2.19 2.19 0 00.492-.49c.134-.19.234-.402.295-.629.06-.226.082-.462.063-.696a2.1 2.1 0 00-.175-.66 2.108 2.108 0 00-.395-.575 2.178 2.178 0 00-.567-.43 2.282 2.282 0 00-.69-.249 2.405 2.405 0 00-.74-.04c-.25.027-.494.091-.724.193a2.488 2.488 0 00-.629.4c-.185.162-.345.352-.474.566a2.466 2.466 0 00-.29.687 2.525 2.525 0 00-.082.747c.01.255.056.506.139.745.082.239.2.463.35.662.15.2.332.373.538.512.207.14.437.243.681.305.244.062.498.084.751.063a2.42 2.42 0 00.726-.185c.23-.1.443-.236.632-.404a2.39 2.39 0 00.493-.575 2.34 2.34 0 00.315-.708c.069-.251.1-.513.091-.775a2.313 2.313 0 00-.14-.742 2.29 2.29 0 00-.362-.654 2.304 2.304 0 00-.556-.514 2.375 2.375 0 00-.703-.324 2.508 2.508 0 00-.79-.1c-.272.015-.54.073-.793.173a2.523 2.523 0 00-.687.4c-.206.17-.383.372-.523.6a2.472 2.472 0 00-.327.738c-.072.27-.104.55-.092.83.012.28.067.556.164.818.096.262.233.506.407.722.173.216.382.4.618.544.236.144.497.246.77.3.274.055.556.06.832.016.276-.044.545-.137.792-.275a2.493 2.493 0 00.667-.535c.188-.214.34-.46.448-.726.107-.267.17-.552.183-.84a2.26 2.26 0 00-.113-.782 2.205 2.205 0 00-.379-.677 2.185 2.185 0 00-.597-.507 2.208 2.208 0 00-.754-.285 2.276 2.276 0 00-.827-.019c-.278.045-.547.14-.789.28a2.23 2.23 0 00-.641.536c-.177.213-.316.458-.41.723a2.203 2.203 0 00-.127.823c.018.283.087.56.205.815.117.256.28.487.48.679.2.193.435.346.692.45.258.105.535.16.816.163a2.176 2.176 0 00.823-.148c.262-.1.502-.25.704-.44.203-.19.366-.417.48-.672a2.07 2.07 0 00.187-.804 2.06 2.06 0 00-.136-.78 2.036 2.036 0 00-.415-.656 2.035 2.035 0 00-.636-.468 2.063 2.063 0 00-.794-.225 2.121 2.121 0 00-.823.082c-.268.076-.517.2-.732.37a2.068 2.068 0 00-.546.61c-.141.238-.235.504-.277.781a2.106 2.106 0 00.017.81c.06.27.172.524.33.745.16.22.363.404.596.54.233.135.492.22.76.248.27.029.542.001.8-.081a1.99 1.99 0 00.702-.388c.203-.175.368-.39.484-.634.115-.245.18-.513.186-.785a1.905 1.905 0 00-.119-.71 1.863 1.863 0 00-.376-.593 1.833 1.833 0 00-.581-.41 1.82 1.82 0 00-.713-.178 1.83 1.83 0 00-.717.114c-.227.081-.434.206-.61.37a1.817 1.817 0 00-.43.586c-.103.223-.156.467-.157.713 0 .246.052.49.154.713.103.224.253.42.442.577.188.157.41.271.65.335.24.063.492.073.738.03.245-.044.478-.14.68-.283a1.72 1.72 0 00.517-.549c.127-.217.206-.46.23-.71.024-.25-.009-.502-.098-.737a1.616 1.616 0 00-.393-.607 1.583 1.583 0 00-.613-.377 1.562 1.562 0 00-.72-.084c-.244.03-.478.114-.685.247a1.54 1.54 0 00-.52.526c-.13.214-.21.456-.234.707a1.542 1.542 0 00.077.716c.08.23.213.438.388.604.175.166.389.288.624.355.235.067.483.078.724.034a1.48 1.48 0 00.668-.318c.183-.154.326-.351.418-.575.093-.223.133-.466.116-.707a1.396 1.396 0 00-.195-.64 1.352 1.352 0 00-.467-.467 1.319 1.319 0 00-.637-.195 1.298 1.298 0 00-.65.108 1.279 1.279 0 00-.524.416c-.14.186-.232.405-.267.637a1.298 1.298 0 00.067.664c.076.212.204.402.375.553.17.15.378.257.602.308a1.25 1.25 0 00.675-.018 1.231 1.231 0 00.571-.344c.155-.16.267-.358.327-.575.06-.217.065-.446.015-.666a1.16 1.16 0 00-.295-.55 1.12 1.12 0 00-.528-.324 1.094 1.094 0 00-.618-.02c-.203.051-.39.156-.54.305a1.079 1.079 0 00-.288.543 1.085 1.085 0 00.037.613c.063.196.178.37.332.503.155.134.344.221.547.253a1.015 1.015 0 00.577-.068c.18-.08.335-.21.447-.379.113-.168.18-.366.193-.571a.936.936 0 00-.134-.547.908.908 0 00-.419-.355.873.873 0 00-.54-.07.849.849 0 00-.466.263c-.12.132-.2.297-.231.474a.846.846 0 00.073.513c.073.158.193.29.345.38.153.09.33.133.508.123a.768.768 0 00.474-.196c.128-.116.217-.272.255-.443a.722.722 0 00-.076-.504.686.686 0 00-.37-.31.66.66 0 00-.482.006.637.637 0 00-.35.31c-.077.14-.106.305-.084.467a.604.604 0 00.21.39c.11.092.252.14.395.137a.535.535 0 00.367-.162.502.502 0 00.131-.395.473.473 0 00-.175-.355.445.445 0 00-.394-.092.416.416 0 00-.309.243.393.393 0 00.01.36c.055.104.157.177.275.198a.34.34 0 00.308-.107c.074-.075.11-.18.098-.284a.28.28 0 00-.136-.214.254.254 0 00-.253.01.227.227 0 00-.104.203.203.203 0 00.091.157.178.178 0 00.18.012.156.156 0 00.073-.126.137.137 0 00-.055-.112z"/>
+                    </svg>
+                    <span class="text-sm font-medium mt-2">PostgreSQL</span>
+                    <span class="text-xs text-slate-500">+ pgvector</span>
+                </div>
+
+                <!-- Qdrant -->
+                <div class="flex flex-col items-center p-6 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition">
+                    <div class="w-12 h-12 mb-3 rounded-lg bg-red-500/20 flex items-center justify-center">
+                        <span class="text-2xl font-bold text-red-400">Q</span>
+                    </div>
+                    <span class="text-sm font-medium mt-2">Qdrant</span>
+                    <span class="text-xs text-slate-500">Vector DB</span>
+                </div>
+
+                <!-- Pinecone -->
+                <div class="flex flex-col items-center p-6 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition">
+                    <div class="w-12 h-12 mb-3 rounded-lg bg-green-500/20 flex items-center justify-center">
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L4 6v12l8 4 8-4V6l-8-4z" stroke="#22C55E" stroke-width="2"/>
+                            <circle cx="12" cy="12" r="3" fill="#22C55E"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-medium mt-2">Pinecone</span>
+                    <span class="text-xs text-slate-500">Serverless</span>
+                </div>
+
+                <!-- Chroma -->
+                <div class="flex flex-col items-center p-6 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition">
+                    <div class="w-12 h-12 mb-3 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="3" width="18" height="18" rx="3" stroke="#F97316" stroke-width="2"/>
+                            <rect x="7" y="7" width="4" height="4" fill="#F97316"/>
+                            <rect x="13" y="7" width="4" height="4" fill="#F97316"/>
+                            <rect x="7" y="13" width="4" height="4" fill="#F97316"/>
+                            <rect x="13" y="13" width="4" height="4" fill="#F97316"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-medium mt-2">Chroma</span>
+                    <span class="text-xs text-slate-500">Lightweight</span>
+                </div>
+
+                <!-- SQLite -->
+                <div class="flex flex-col items-center p-6 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition">
+                    <div class="w-12 h-12 mb-3 rounded-lg bg-sky-500/20 flex items-center justify-center">
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="#0EA5E9">
+                            <path d="M12 2C8.13 2 5 3.79 5 6v12c0 2.21 3.13 4 7 4s7-1.79 7-4V6c0-2.21-3.13-4-7-4zm0 2c3.04 0 5 1.29 5 2s-1.96 2-5 2-5-1.29-5-2 1.96-2 5-2z"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-medium mt-2">SQLite</span>
+                    <span class="text-xs text-slate-500">+ FAISS</span>
+                </div>
+
+                <!-- Azure Cosmos -->
+                <div class="flex flex-col items-center p-6 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition">
+                    <div class="w-12 h-12 mb-3 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="#3B82F6">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-medium mt-2">Azure Cosmos</span>
+                    <span class="text-xs text-slate-500">Enterprise</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-24 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl sm:text-4xl font-bold mb-6">
+                Ready to Build <span class="gradient-text">Smarter Agents?</span>
+            </h2>
+            <p class="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
+                Stop watching your AI make the same mistakes. Give your agents memory that persists, learns, and improves.
+            </p>
+
+            <div class="flex flex-wrap justify-center gap-4 mb-12">
+                <a href="https://github.com/RBKunnela/ALMA-memory" target="_blank"
+                   class="group flex items-center space-x-3 px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 font-semibold text-lg transition-all glow-blue">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg>
+                    <span>Star on GitHub</span>
+                    <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                </a>
+                <a href="https://pypi.org/project/alma-memory/" target="_blank"
+                   class="flex items-center space-x-2 px-8 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-semibold text-lg transition">
+                    <svg class="w-6 h-6 text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M14.25.18l.9.2.73.26.59.3.45.32.34.34.25.34.16.33.1.3.04.26.02.2-.01.13V8.5l-.05.63-.13.55-.21.46-.26.38-.3.31-.33.25-.35.19-.35.14-.33.1-.3.07-.26.04-.21.02H8.77l-.69.05-.59.14-.5.22-.41.27-.33.32-.27.35-.2.36-.15.37-.1.35-.07.32-.04.27-.02.21v3.06H3.17l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1.05-.05-1.23.06-1.22.16-1.04.24-.87.32-.71.36-.57.4-.44.42-.33.42-.24.4-.16.36-.1.32-.05.24-.01h.16l.06.01h8.16v-.83H6.18l-.01-2.75-.02-.37.05-.34.11-.31.17-.28.25-.26.31-.23.38-.2.44-.18.51-.15.58-.12.64-.1.71-.06.77-.04.84-.02 1.27.05z"/></svg>
+                    <span>PyPI</span>
+                </a>
+                <a href="https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory" target="_blank"
+                   class="flex items-center space-x-2 px-8 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-semibold text-lg transition">
+                    <svg class="w-6 h-6 text-green-400" viewBox="0 0 24 24" fill="currentColor"><path d="M0 7.334v8h6.666v1.332H12v-1.332h12v-8H0zm6.666 6.664H5.334v-4H3.999v4H1.335V8.667h5.331v5.331zm4 0v1.336H8.001V8.667h5.334v5.332h-2.669v-.001zm12.001 0h-1.33v-4h-1.336v4h-1.335v-4h-1.33v4h-2.671V8.667h8.002v5.331z"/></svg>
+                    <span>npm</span>
+                </a>
+            </div>
+
+            <div class="inline-flex items-center space-x-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700">
+                <span class="text-slate-400">Support continued development:</span>
+                <a href="https://buymeacoffee.com/aiagentsprp" target="_blank"
+                   class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-semibold transition">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-1.001-1.379-.197-.069-.42-.098-.57-.241-.152-.143-.196-.366-.231-.572-.065-.378-.125-.756-.192-1.133-.057-.325-.102-.69-.25-.987-.195-.4-.597-.634-.996-.788a5.723 5.723 0 00-.626-.194c-1-.263-2.05-.36-3.077-.416a25.834 25.834 0 00-3.7.062c-.915.083-1.88.184-2.75.5-.318.116-.646.256-.888.501-.297.302-.393.77-.177 1.146.154.267.415.456.692.58.36.162.737.284 1.123.366 1.075.238 2.189.331 3.287.37 1.218.05 2.437.01 3.65-.118.299-.033.598-.073.896-.119.352-.054.578-.513.474-.834-.124-.38-.457-.531-.834-.473-.466.074-.96.108-1.382.146-1.177.08-2.358.082-3.536.006a22.228 22.228 0 01-1.157-.107c-.086-.01-.18-.025-.258-.036-.243-.036-.484-.08-.724-.13-.111-.027-.111-.185 0-.212h.005c.277-.06.557-.108.838-.147h.002c.131-.009.263-.032.394-.048a25.076 25.076 0 013.426-.12c.674.019 1.347.067 2.017.144l.228.031c.267.04.533.088.798.145.392.085.895.113 1.07.542.055.137.08.288.111.431l.319 1.484a.237.237 0 01-.199.284h-.003c-.037.006-.075.01-.112.015a36.704 36.704 0 01-4.743.295 37.059 37.059 0 01-4.699-.304c-.14-.017-.293-.042-.417-.06-.326-.048-.649-.108-.973-.161-.393-.065-.768-.032-1.123.161-.29.16-.527.404-.675.701-.154.316-.199.66-.267 1-.069.34-.176.707-.135 1.056.087.753.613 1.365 1.37 1.502a39.69 39.69 0 0011.343.376.483.483 0 01.535.53l-.071.697-1.018 9.907c-.041.41-.047.832-.125 1.237-.122.637-.553 1.028-1.182 1.171-.577.131-1.165.2-1.756.205-.656.004-1.31-.025-1.966-.022-.699.004-1.556-.06-2.095-.58-.475-.458-.54-1.174-.605-1.793l-.731-7.013-.322-3.094c-.037-.351-.286-.695-.678-.678-.336.015-.718.3-.678.679l.228 2.185.949 9.112c.147 1.344 1.174 2.068 2.446 2.272.742.12 1.503.144 2.257.156.966.016 1.942.053 2.892-.122 1.408-.258 2.465-1.198 2.616-2.657.34-3.332.683-6.663 1.024-9.995l.215-2.087a.484.484 0 01.39-.426c.402-.078.787-.212 1.074-.518.455-.488.546-1.124.385-1.766zm-1.478.772c-.145.137-.363.201-.578.233-2.416.359-4.866.54-7.308.46-1.748-.06-3.477-.254-5.207-.498-.17-.024-.353-.055-.47-.18-.22-.236-.111-.71-.054-.995.052-.26.152-.609.463-.646.484-.057 1.046.148 1.526.22.577.088 1.156.159 1.737.212 2.48.226 5.002.19 7.472-.14.45-.06.899-.13 1.345-.21.399-.072.84-.206 1.08.206.166.281.188.657.162.974a.544.544 0 01-.169.364z"/></svg>
+                    <span>Buy me a coffee</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 bg-slate-950 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center font-bold text-white">
+                        A
+                    </div>
+                    <span class="text-lg font-bold">ALMA</span>
+                    <span class="text-slate-500">|</span>
+                    <span class="text-sm text-slate-500">Agent Learning Memory Architecture</span>
+                </div>
+
+                <div class="flex items-center space-x-6 text-sm text-slate-400">
+                    <a href="https://github.com/RBKunnela/ALMA-memory" target="_blank" class="hover:text-white transition">GitHub</a>
+                    <a href="https://pypi.org/project/alma-memory/" target="_blank" class="hover:text-white transition">PyPI</a>
+                    <a href="https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory" target="_blank" class="hover:text-white transition">npm</a>
+                    <a href="https://github.com/RBKunnela/ALMA-memory/issues" target="_blank" class="hover:text-white transition">Issues</a>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <span class="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">MIT License</span>
+                    <span class="text-sm text-slate-500">Built by <a href="https://github.com/RBKunnela" target="_blank" class="text-slate-400 hover:text-white transition">@RBKunnela</a></span>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
+                <p>Built for AI agents that get better with every task.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Tab switching for code examples
+        function showTab(tab) {
+            // Hide all code blocks
+            document.getElementById('code-python').classList.add('hidden');
+            document.getElementById('code-typescript').classList.add('hidden');
+            document.getElementById('code-mcp').classList.add('hidden');
+
+            // Remove active state from all tabs
+            document.getElementById('tab-python').classList.remove('tab-active');
+            document.getElementById('tab-python').classList.add('text-slate-400');
+            document.getElementById('tab-typescript').classList.remove('tab-active');
+            document.getElementById('tab-typescript').classList.add('text-slate-400');
+            document.getElementById('tab-mcp').classList.remove('tab-active');
+            document.getElementById('tab-mcp').classList.add('text-slate-400');
+
+            // Show selected tab content and activate tab
+            document.getElementById('code-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('tab-active');
+            document.getElementById('tab-' + tab).classList.remove('text-slate-400');
+
+            // Re-highlight code
+            Prism.highlightAll();
+        }
+
+        // Copy code to clipboard
+        function copyCode(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show feedback (could add a toast notification here)
+                console.log('Copied to clipboard');
+            });
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Highlight syntax on load
+        document.addEventListener('DOMContentLoaded', () => {
+            Prism.highlightAll();
+        });
+
+        // Add scroll effect to navigation
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('shadow-lg');
+            } else {
+                nav.classList.remove('shadow-lg');
+            }
+        });
+    </script>
+</body>
+</html>
