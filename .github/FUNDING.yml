@@ -1,0 +1,8 @@
+# Sponsorship configuration
+# This enables the "Sponsor" button on the GitHub repository
+
+github: [RBKunnela]
+# ko_fi: rbkunnela
+# patreon: rbkunnela
+# open_collective: alma-memory
+# custom: ['https://www.buymeacoffee.com/rbkunnela']

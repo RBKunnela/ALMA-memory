@@ -1,0 +1,98 @@
+site_name: ALMA Memory
+site_url: https://alma-memory.pages.dev
+site_description: Persistent memory for AI agents - Learn, remember, improve. Alternative to Mem0 with scoped learning, anti-patterns, multi-agent sharing, and MCP integration.
+site_author: RBKunnela
+
+repo_name: RBKunnela/ALMA-memory
+repo_url: https://github.com/RBKunnela/ALMA-memory
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - tags
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/RBKunnela/ALMA-memory
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/alma-memory/
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX
+  generator: false
+
+docs_dir: site-docs
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Configuration: getting-started/configuration.md
+  - Guides:
+    - Memory Types: guides/memory-types.md
+    - Multi-Agent Sharing: guides/multi-agent-sharing.md
+    - Storage Backends: guides/storage-backends.md
+    - Event System: guides/events-webhooks.md
+    - MCP Integration: guides/mcp-integration.md
+    - TypeScript SDK: guides/typescript-sdk.md
+    - Testing: guides/testing.md
+  - Comparisons:
+    - ALMA vs Mem0: comparison/mem0-vs-alma.md
+    - ALMA vs LangChain: comparison/langchain-memory-vs-alma.md
+  - API Reference:
+    - Python SDK: api/python.md
+    - TypeScript SDK: api/typescript.md
+    - MCP Tools: api/mcp-tools.md
+  - About:
+    - Why I Built ALMA: about/story.md
+    - Roadmap: about/roadmap.md
+    - Contributing: about/contributing.md
+    - Changelog: about/changelog.md
+
+copyright: Copyright &copy; 2024-2025 RBKunnela - MIT License
