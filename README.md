@@ -1,10 +1,12 @@
 # ALMA - Agent Learning Memory Architecture
 
 [![PyPI version](https://badge.fury.io/py/alma-memory.svg)](https://pypi.org/project/alma-memory/)
+[![npm version](https://img.shields.io/npm/v/@rbkunnela/alma-memory?label=npm&logo=npm)](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Documentation](https://img.shields.io/badge/docs-alma--memory.pages.dev-blue)](https://alma-memory.pages.dev)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/rbkunnela)
 
 > Persistent memory for AI agents that learn and improve over time - without model weight updates.
 
@@ -900,10 +902,26 @@ MIT
 
 ---
 
-## Star History
+## Support the Project
 
-If ALMA helps your AI agents get smarter, consider giving us a star!
+If ALMA helps your AI agents get smarter:
+
+- **Star this repo** - It helps others discover ALMA
+- **[Buy me a coffee](https://www.buymeacoffee.com/rbkunnela)** - Support continued development
+- **[Sponsor on GitHub](https://github.com/sponsors/RBKunnela)** - Become an official sponsor
+- **Contribute** - PRs welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+
+## Links
+
+- **Documentation:** [alma-memory.pages.dev](https://alma-memory.pages.dev)
+- **PyPI:** [pypi.org/project/alma-memory](https://pypi.org/project/alma-memory/)
+- **npm:** [@rbkunnela/alma-memory](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)
+- **Issues:** [GitHub Issues](https://github.com/RBKunnela/ALMA-memory/issues)
 
 ---
 
 **Built for AI agents that get better with every task.**
+
+*Created by [@RBKunnela](https://github.com/RBKunnela)*
