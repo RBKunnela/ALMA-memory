@@ -1,16 +1,45 @@
 # ALMA - Agent Learning Memory Architecture
 
 [![PyPI version](https://badge.fury.io/py/alma-memory.svg)](https://pypi.org/project/alma-memory/)
-[![npm version](https://img.shields.io/npm/v/@rbkunnela/alma-memory?label=npm&logo=npm)](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)
+[![npm version](https://img.shields.io/badge/npm-v0.6.0-cb3837?logo=npm)](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/badge/docs-alma--memory.pages.dev-blue)](https://alma-memory.pages.dev)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/aiagentsprp)
 
-> Persistent memory for AI agents that learn and improve over time - without model weight updates.
+<div align="center">
 
-**[Documentation](https://alma-memory.pages.dev)** · **[Technical Reference](docs/TECHNICAL.md)** · **[PyPI](https://pypi.org/project/alma-memory/)** · **[npm](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)**
+### 🧠 AI Agents That Actually Learn
+
+**Persistent memory for AI agents that improves over time - no fine-tuning required.**
+
+[**🌐 Visit alma-memory.pages.dev →**](https://alma-memory.pages.dev)
+
+</div>
+
+---
+
+**[📖 Documentation](https://alma-memory.pages.dev)** · **[🔧 Technical Reference](docs/TECHNICAL.md)** · **[📦 PyPI](https://pypi.org/project/alma-memory/)** · **[📦 npm](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)** · **[☕ Support](https://buymeacoffee.com/aiagentsprp)**
+
+---
+
+## Looking for a Mem0 Alternative? LangChain Memory Replacement?
+
+**ALMA is the answer.** If you've tried Mem0 or LangChain Memory and found them lacking for production AI agents, ALMA was built specifically to solve those gaps:
+
+| If you need... | Mem0 | LangChain | **ALMA** |
+|----------------|------|-----------|----------|
+| Scoped learning (agents only learn their domain) | ❌ | ❌ | ✅ |
+| Anti-pattern tracking (what NOT to do) | ❌ | ❌ | ✅ |
+| Multi-agent knowledge sharing | ❌ | ❌ | ✅ |
+| TypeScript/JavaScript SDK | ❌ | ✅ | ✅ |
+| MCP integration (Claude Code) | ❌ | ❌ | ✅ |
+| 6 vector database backends | Limited | Limited | ✅ |
+| Graph memory for relationships | Limited | Limited | ✅ |
+| Workflow checkpoints & state merging | ❌ | ❌ | ✅ |
+
+**See detailed comparisons:** [ALMA vs Mem0](https://alma-memory.pages.dev/comparison/mem0-vs-alma.html) · [ALMA vs LangChain Memory](https://alma-memory.pages.dev/comparison/langchain-memory-vs-alma.html)
 
 ---
 
@@ -953,3 +982,21 @@ If ALMA helps your AI agents get smarter:
 ## Technical Documentation
 
 For detailed technical reference including architecture diagrams, API specifications, storage backend configuration, and performance tuning, see the **[Technical Documentation](docs/TECHNICAL.md)**.
+
+---
+
+## Share ALMA
+
+Help other developers discover ALMA:
+
+- **Twitter/X:** "Just found @ALMA_Memory - finally an AI agent memory framework that actually works. Scoped learning, anti-patterns, multi-agent sharing. Way better than Mem0. https://alma-memory.pages.dev"
+- **LinkedIn:** Share how ALMA improved your AI agent workflows
+- **Reddit:** Post in r/MachineLearning, r/LocalLLaMA, r/ClaudeAI, r/artificial
+- **Hacker News:** Submit the landing page - we'd love your upvotes!
+- **Dev.to / Medium:** Write about your experience using ALMA
+
+---
+
+## Keywords
+
+*AI agent memory, persistent memory for LLMs, Mem0 alternative, LangChain memory replacement, agent learning framework, MCP memory server, Claude Code memory, vector database for agents, pgvector memory, Qdrant memory, Pinecone memory, multi-agent memory sharing, AI memory architecture, semantic memory for AI, long-term memory AI agents, memory-augmented AI, retrieval-augmented generation, RAG memory, agentic memory system*

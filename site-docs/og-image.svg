@@ -1,0 +1,49 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="50%" style="stop-color:#1e293b"/>
+      <stop offset="100%" style="stop-color:#0f172a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#3b82f6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="200" fill="#8b5cf6" opacity="0.1"/>
+  <circle cx="1100" cy="530" r="250" fill="#3b82f6" opacity="0.1"/>
+
+  <!-- Brain icon (simplified) -->
+  <g transform="translate(500, 120)">
+    <circle cx="100" cy="80" r="60" fill="none" stroke="url(#accent)" stroke-width="4"/>
+    <path d="M60 80 Q80 40 100 80 Q120 40 140 80" fill="none" stroke="url(#accent)" stroke-width="3"/>
+    <path d="M60 80 Q80 120 100 80 Q120 120 140 80" fill="none" stroke="url(#accent)" stroke-width="3"/>
+    <circle cx="80" cy="70" r="8" fill="#8b5cf6"/>
+    <circle cx="120" cy="70" r="8" fill="#3b82f6"/>
+    <circle cx="100" cy="100" r="6" fill="#a855f7"/>
+  </g>
+
+  <!-- Main title -->
+  <text x="600" y="280" font-family="Inter, system-ui, sans-serif" font-size="72" font-weight="bold" fill="white" text-anchor="middle">ALMA</text>
+
+  <!-- Subtitle -->
+  <text x="600" y="340" font-family="Inter, system-ui, sans-serif" font-size="28" fill="#94a3b8" text-anchor="middle">Agent Learning Memory Architecture</text>
+
+  <!-- Tagline -->
+  <text x="600" y="420" font-family="Inter, system-ui, sans-serif" font-size="36" fill="url(#accent)" text-anchor="middle">AI Agents That Actually Learn</text>
+
+  <!-- Features line -->
+  <text x="600" y="490" font-family="Inter, system-ui, sans-serif" font-size="20" fill="#64748b" text-anchor="middle">Scoped Learning  |  Anti-Patterns  |  Multi-Agent Sharing  |  6 Vector Backends</text>
+
+  <!-- URL -->
+  <text x="600" y="560" font-family="Inter, system-ui, sans-serif" font-size="24" fill="#8b5cf6" text-anchor="middle">alma-memory.pages.dev</text>
+
+  <!-- Version badge -->
+  <rect x="1040" y="30" width="120" height="36" rx="18" fill="#8b5cf6" opacity="0.2"/>
+  <text x="1100" y="55" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#a855f7" text-anchor="middle">v0.6.0</text>
+</svg>

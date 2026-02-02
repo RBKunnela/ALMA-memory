@@ -268,8 +268,7 @@ class SQLiteStorage(StorageBackend):
                 )
             """)
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_checkpoints_run "
-                "ON checkpoints(run_id)"
+                "CREATE INDEX IF NOT EXISTS idx_checkpoints_run ON checkpoints(run_id)"
             )
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_checkpoints_run_branch "
@@ -1637,7 +1636,6 @@ class SQLiteStorage(StorageBackend):
 
     def save_checkpoint(self, checkpoint: "Checkpoint") -> str:
         """Save a workflow checkpoint."""
-        from alma.workflow import Checkpoint  # Import here to avoid circular imports
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -1854,7 +1852,9 @@ class SQLiteStorage(StorageBackend):
         """Get workflow outcomes with optional filtering."""
         candidate_ids = None
         if embedding:
-            search_results = self._search_index("workflow_outcomes", embedding, top_k * 2)
+            search_results = self._search_index(
+                "workflow_outcomes", embedding, top_k * 2
+            )
             candidate_ids = [id for id, _ in search_results]
 
         with self._get_connection() as conn:
@@ -1954,7 +1954,9 @@ class SQLiteStorage(StorageBackend):
                     artifact_ref.mime_type,
                     artifact_ref.size_bytes,
                     artifact_ref.checksum,
-                    json.dumps(artifact_ref.metadata) if artifact_ref.metadata else None,
+                    json.dumps(artifact_ref.metadata)
+                    if artifact_ref.metadata
+                    else None,
                     artifact_ref.created_at.isoformat(),
                 ),
             )
@@ -2005,7 +2007,6 @@ class SQLiteStorage(StorageBackend):
 
     def save_session_handoff(self, handoff: "SessionHandoff") -> str:
         """Save a session handoff for persistence."""
-        from alma.session import SessionHandoff
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -2033,7 +2034,9 @@ class SQLiteStorage(StorageBackend):
                     json.dumps(handoff.test_status),
                     handoff.confidence_level,
                     json.dumps(handoff.risk_flags),
-                    handoff.session_start.isoformat() if handoff.session_start else None,
+                    handoff.session_start.isoformat()
+                    if handoff.session_start
+                    else None,
                     handoff.session_end.isoformat() if handoff.session_end else None,
                     handoff.duration_ms,
                     json.dumps(handoff.metadata),
@@ -2104,7 +2107,9 @@ class SQLiteStorage(StorageBackend):
             last_action=row["last_action"],
             last_outcome=row["last_outcome"],
             current_goal=row["current_goal"] or "",
-            key_decisions=json.loads(row["key_decisions"]) if row["key_decisions"] else [],
+            key_decisions=json.loads(row["key_decisions"])
+            if row["key_decisions"]
+            else [],
             active_files=json.loads(row["active_files"]) if row["active_files"] else [],
             blockers=json.loads(row["blockers"]) if row["blockers"] else [],
             next_steps=json.loads(row["next_steps"]) if row["next_steps"] else [],

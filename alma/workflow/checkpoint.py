@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-
 # Default maximum state size (1MB)
 DEFAULT_MAX_STATE_SIZE = 1024 * 1024
 

@@ -18,37 +18,24 @@ from alma.mcp.resources import (
     list_resources,
 )
 from alma.mcp.tools import (
-    alma_add_knowledge,
-    alma_add_preference,
-    alma_consolidate,
-    alma_forget,
-    alma_health,
-    alma_learn,
-    alma_retrieve,
-    alma_stats,
-    # Workflow tools (v0.6.0)
-    alma_checkpoint,
-    alma_resume,
-    alma_merge_states,
-    alma_workflow_learn,
-    alma_link_artifact,
-    alma_get_artifacts,
     alma_cleanup_checkpoints,
-    alma_retrieve_scoped,
-    # Async variants
+    alma_consolidate,
+    alma_get_artifacts,
+    alma_health,
+    alma_merge_states,
     async_alma_add_knowledge,
     async_alma_add_preference,
+    # Async workflow variants
+    async_alma_checkpoint,
     async_alma_forget,
     async_alma_health,
     async_alma_learn,
-    async_alma_retrieve,
-    async_alma_stats,
-    # Async workflow variants
-    async_alma_checkpoint,
-    async_alma_resume,
-    async_alma_workflow_learn,
     async_alma_link_artifact,
+    async_alma_resume,
+    async_alma_retrieve,
     async_alma_retrieve_scoped,
+    async_alma_stats,
+    async_alma_workflow_learn,
 )
 
 logger = logging.getLogger(__name__)
@@ -390,7 +377,13 @@ class ALMAMCPServer:
                         },
                         "result": {
                             "type": "string",
-                            "enum": ["success", "failure", "partial", "cancelled", "timeout"],
+                            "enum": [
+                                "success",
+                                "failure",
+                                "partial",
+                                "cancelled",
+                                "timeout",
+                            ],
                             "description": "Result status",
                         },
                         "summary": {
@@ -527,7 +520,14 @@ class ALMAMCPServer:
                         },
                         "scope": {
                             "type": "string",
-                            "enum": ["node", "run", "workflow", "agent", "tenant", "global"],
+                            "enum": [
+                                "node",
+                                "run",
+                                "workflow",
+                                "agent",
+                                "tenant",
+                                "global",
+                            ],
                             "description": "Scope level for filtering (default: agent)",
                             "default": "agent",
                         },

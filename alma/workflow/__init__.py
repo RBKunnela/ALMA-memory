@@ -8,16 +8,22 @@ Sprint 1 Task 1.7
 """
 
 # Context and scoping
-from alma.workflow.context import (
-    RetrievalScope,
-    WorkflowContext,
+# Artifact linking
+from alma.workflow.artifacts import (
+    ArtifactRef,
+    ArtifactType,
+    link_artifact,
 )
 
 # Checkpoints for crash recovery
 from alma.workflow.checkpoint import (
+    DEFAULT_MAX_STATE_SIZE,
     Checkpoint,
     CheckpointManager,
-    DEFAULT_MAX_STATE_SIZE,
+)
+from alma.workflow.context import (
+    RetrievalScope,
+    WorkflowContext,
 )
 
 # Workflow outcomes for learning
@@ -26,29 +32,22 @@ from alma.workflow.outcomes import (
     WorkflowResult,
 )
 
-# Artifact linking
-from alma.workflow.artifacts import (
-    ArtifactRef,
-    ArtifactType,
-    link_artifact,
-)
-
 # State reducers for parallel merge
 from alma.workflow.reducers import (
-    StateReducer,
+    BUILTIN_REDUCERS,
     AppendReducer,
-    MergeDictReducer,
-    LastValueReducer,
     FirstValueReducer,
-    SumReducer,
+    LastValueReducer,
     MaxReducer,
+    MergeDictReducer,
     MinReducer,
-    UnionReducer,
     ReducerConfig,
     StateMerger,
+    StateReducer,
+    SumReducer,
+    UnionReducer,
     get_reducer,
     merge_states,
-    BUILTIN_REDUCERS,
 )
 
 __all__ = [

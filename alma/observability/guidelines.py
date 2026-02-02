@@ -132,29 +132,24 @@ OPERATION_LOG_LEVELS = {
     "batch_save_success": logging.DEBUG,
     "delete_success": logging.DEBUG,
     "delete_failure": logging.ERROR,
-
     # Retrieval operations
     "cache_hit": logging.DEBUG,
     "cache_miss": logging.DEBUG,
     "cache_invalidate": logging.DEBUG,
     "retrieval_complete": logging.INFO,
-
     # Learning operations
     "learn_complete": logging.INFO,
     "heuristic_updated": logging.DEBUG,
-
     # Lifecycle events
     "service_start": logging.INFO,
     "service_stop": logging.INFO,
     "connection_established": logging.INFO,
     "config_loaded": logging.INFO,
-
     # Warnings
     "missing_scope": logging.WARNING,
     "optional_feature_unavailable": logging.WARNING,
     "retry_attempt": logging.WARNING,
     "deprecation": logging.WARNING,
-
     # Errors
     "operation_failure": logging.ERROR,
     "connection_failure": logging.ERROR,
