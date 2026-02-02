@@ -47,19 +47,6 @@ from alma.consolidation import (
 )
 from alma.core import ALMA
 
-# Extraction / AutoLearner (Phase 15)
-from alma.extraction import (
-    AutoLearner,
-    ExtractedFact,
-    ExtractionResult,
-    FactExtractor,
-    FactType,
-    LLMFactExtractor,
-    RuleBasedExtractor,
-    add_auto_learning_to_alma,
-    create_extractor,
-)
-
 # Domain Memory Factory (Phase 10)
 from alma.domains import (
     DomainMemoryFactory,
@@ -91,6 +78,19 @@ from alma.exceptions import (
     RetrievalError,
     ScopeViolationError,
     StorageError,
+)
+
+# Extraction / AutoLearner (Phase 15)
+from alma.extraction import (
+    AutoLearner,
+    ExtractedFact,
+    ExtractionResult,
+    FactExtractor,
+    FactType,
+    LLMFactExtractor,
+    RuleBasedExtractor,
+    add_auto_learning_to_alma,
+    create_extractor,
 )
 
 # Harness Pattern
@@ -146,28 +146,6 @@ from alma.session import (
     SessionManager,
     SessionOutcome,
 )
-
-# Workflow Context Layer (v0.6.0)
-from alma.workflow import (
-    # Context and scoping
-    RetrievalScope,
-    WorkflowContext,
-    # Checkpoints
-    Checkpoint,
-    CheckpointManager,
-    # Workflow outcomes
-    WorkflowOutcome,
-    WorkflowResult,
-    # Artifacts
-    ArtifactRef,
-    ArtifactType,
-    link_artifact,
-    # State reducers
-    ReducerConfig,
-    StateMerger,
-    merge_states,
-)
-
 from alma.types import (
     AntiPattern,
     DomainKnowledge,
@@ -184,6 +162,27 @@ from alma.utils.tokenizer import (
     TokenEstimator,
     get_default_token_budget,
     get_token_estimator,
+)
+
+# Workflow Context Layer (v0.6.0)
+from alma.workflow import (
+    # Artifacts
+    ArtifactRef,
+    ArtifactType,
+    # Checkpoints
+    Checkpoint,
+    CheckpointManager,
+    # State reducers
+    ReducerConfig,
+    # Context and scoping
+    RetrievalScope,
+    StateMerger,
+    WorkflowContext,
+    # Workflow outcomes
+    WorkflowOutcome,
+    WorkflowResult,
+    link_artifact,
+    merge_states,
 )
 
 __all__ = [

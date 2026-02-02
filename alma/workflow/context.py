@@ -48,11 +48,11 @@ class RetrievalScope(Enum):
         """Convert string to RetrievalScope enum."""
         try:
             return cls(value.lower())
-        except ValueError:
+        except ValueError as err:
             raise ValueError(
                 f"Invalid RetrievalScope: '{value}'. "
                 f"Valid options: {[s.value for s in cls]}"
-            )
+            ) from err
 
     def is_broader_than(self, other: "RetrievalScope") -> bool:
         """Check if this scope is broader than another scope."""
