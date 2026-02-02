@@ -105,7 +105,7 @@ PRPs/
 supabase/
 
 # Development & Testing
-tests/
+# tests/ - REMOVED: tests should be public for open source
 scripts/
 .benchmarks/
 
