@@ -40,6 +40,10 @@ from alma.observability.config import (
     configure_observability,
     shutdown_observability,
 )
+from alma.observability.guidelines import (
+    OPERATION_LOG_LEVELS,
+    get_recommended_level,
+)
 from alma.observability.logging import (
     JSONFormatter,
     StructuredLogger,
@@ -58,10 +62,6 @@ from alma.observability.tracing import (
     get_tracer,
     trace_async,
     trace_method,
-)
-from alma.observability.guidelines import (
-    OPERATION_LOG_LEVELS,
-    get_recommended_level,
 )
 
 __all__ = [

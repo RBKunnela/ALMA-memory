@@ -10,7 +10,10 @@ This module addresses Issue #11 (LOW-001): Token Estimation is Rough.
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional
+
+if TYPE_CHECKING:
+    import tiktoken
 
 logger = logging.getLogger(__name__)
 
@@ -226,9 +229,7 @@ class TokenEstimator:
 
             return True
         except ImportError:
-            logger.debug(
-                "tiktoken not available, using approximate token estimation"
-            )
+            logger.debug("tiktoken not available, using approximate token estimation")
             return False
 
     def _detect_model_family(self, model: str) -> ModelFamily:
@@ -304,9 +305,7 @@ class TokenEstimator:
                 logger.debug(f"tiktoken encoding failed, using fallback: {e}")
 
         # Fallback: character-based estimation
-        ratio = self.TOKENS_PER_CHAR_RATIOS.get(
-            self.model_family, 0.25
-        )
+        ratio = self.TOKENS_PER_CHAR_RATIOS.get(self.model_family, 0.25)
         return int(len(text) * ratio)
 
     def count_tokens_for_messages(
@@ -329,9 +328,9 @@ class TokenEstimator:
         # Per-message overhead varies by model
         # GPT-4/3.5: ~4 tokens per message for formatting
         # Claude: ~3 tokens per message
-        overhead_per_message = 4 if self.model_family in (
-            ModelFamily.GPT4, ModelFamily.GPT35
-        ) else 3
+        overhead_per_message = (
+            4 if self.model_family in (ModelFamily.GPT4, ModelFamily.GPT35) else 3
+        )
 
         for message in messages:
             content = message.get("content", "")

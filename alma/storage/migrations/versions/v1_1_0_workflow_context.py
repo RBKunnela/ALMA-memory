@@ -16,10 +16,10 @@ from typing import Any
 
 from alma.storage.migrations.base import Migration, register_migration
 
-
 # =============================================================================
 # POSTGRESQL MIGRATIONS
 # =============================================================================
+
 
 @register_migration(backend="postgresql")
 class PostgreSQLWorkflowContextMigration(Migration):
@@ -30,7 +30,9 @@ class PostgreSQLWorkflowContextMigration(Migration):
     """
 
     version = "1.1.0"
-    description = "Add workflow context layer (checkpoints, workflow_outcomes, artifact_links)"
+    description = (
+        "Add workflow context layer (checkpoints, workflow_outcomes, artifact_links)"
+    )
     depends_on = "1.0.0"
 
     def upgrade(self, connection: Any) -> None:
@@ -38,7 +40,7 @@ class PostgreSQLWorkflowContextMigration(Migration):
         cursor = connection.cursor()
 
         # Get schema from connection or default to public
-        schema = getattr(connection, '_schema', 'public')
+        schema = getattr(connection, "_schema", "public")
 
         # Check if pgvector is available
         cursor.execute("""
@@ -253,46 +255,50 @@ class PostgreSQLWorkflowContextMigration(Migration):
 
         # Add workflow columns to heuristics (if they don't exist)
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_heuristics', 'tenant_id', "TEXT DEFAULT 'default'"
+            cursor, schema, "alma_heuristics", "tenant_id", "TEXT DEFAULT 'default'"
         )
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_heuristics', 'workflow_id', "TEXT"
+            cursor, schema, "alma_heuristics", "workflow_id", "TEXT"
         )
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_heuristics', 'run_id', "TEXT"
+            cursor, schema, "alma_heuristics", "run_id", "TEXT"
         )
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_heuristics', 'node_id', "TEXT"
+            cursor, schema, "alma_heuristics", "node_id", "TEXT"
         )
 
         # Add workflow columns to outcomes
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_outcomes', 'tenant_id', "TEXT DEFAULT 'default'"
+            cursor, schema, "alma_outcomes", "tenant_id", "TEXT DEFAULT 'default'"
         )
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_outcomes', 'workflow_id', "TEXT"
+            cursor, schema, "alma_outcomes", "workflow_id", "TEXT"
         )
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_outcomes', 'run_id', "TEXT"
+            cursor, schema, "alma_outcomes", "run_id", "TEXT"
         )
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_outcomes', 'node_id', "TEXT"
+            cursor, schema, "alma_outcomes", "node_id", "TEXT"
         )
 
         # Add workflow columns to domain_knowledge
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_domain_knowledge', 'tenant_id', "TEXT DEFAULT 'default'"
+            cursor,
+            schema,
+            "alma_domain_knowledge",
+            "tenant_id",
+            "TEXT DEFAULT 'default'",
         )
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_domain_knowledge', 'workflow_id', "TEXT"
+            cursor, schema, "alma_domain_knowledge", "workflow_id", "TEXT"
         )
 
         # Add workflow columns to anti_patterns
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_anti_patterns', 'tenant_id', "TEXT DEFAULT 'default'"
+            cursor, schema, "alma_anti_patterns", "tenant_id", "TEXT DEFAULT 'default'"
         )
         self._add_column_if_not_exists(
-            cursor, schema, 'alma_anti_patterns', 'workflow_id', "TEXT"
+            cursor, schema, "alma_anti_patterns", "workflow_id", "TEXT"
         )
 
         # Add indexes for scope filtering
@@ -341,7 +347,7 @@ class PostgreSQLWorkflowContextMigration(Migration):
     def downgrade(self, connection: Any) -> None:
         """Revert workflow context schema changes."""
         cursor = connection.cursor()
-        schema = getattr(connection, '_schema', 'public')
+        schema = getattr(connection, "_schema", "public")
 
         # Drop new tables (in reverse dependency order)
         cursor.execute(f"DROP TABLE IF EXISTS {schema}.alma_artifact_links CASCADE")
@@ -358,6 +364,7 @@ class PostgreSQLWorkflowContextMigration(Migration):
 # SQLITE MIGRATIONS
 # =============================================================================
 
+
 @register_migration(backend="sqlite")
 class SQLiteWorkflowContextMigration(Migration):
     """
@@ -367,7 +374,9 @@ class SQLiteWorkflowContextMigration(Migration):
     """
 
     version = "1.1.0"
-    description = "Add workflow context layer (checkpoints, workflow_outcomes, artifact_links)"
+    description = (
+        "Add workflow context layer (checkpoints, workflow_outcomes, artifact_links)"
+    )
     depends_on = "1.0.0"
 
     def upgrade(self, connection: Any) -> None:
@@ -475,12 +484,17 @@ class SQLiteWorkflowContextMigration(Migration):
         # =====================================================================
         # SQLite doesn't support IF NOT EXISTS for ALTER TABLE, so we need to check
 
-        existing_tables = ['heuristics', 'outcomes', 'domain_knowledge', 'anti_patterns']
+        existing_tables = [
+            "heuristics",
+            "outcomes",
+            "domain_knowledge",
+            "anti_patterns",
+        ]
         new_columns = [
-            ('tenant_id', "TEXT DEFAULT 'default'"),
-            ('workflow_id', 'TEXT'),
-            ('run_id', 'TEXT'),
-            ('node_id', 'TEXT'),
+            ("tenant_id", "TEXT DEFAULT 'default'"),
+            ("workflow_id", "TEXT"),
+            ("run_id", "TEXT"),
+            ("node_id", "TEXT"),
         ]
 
         for table in existing_tables:
@@ -489,12 +503,16 @@ class SQLiteWorkflowContextMigration(Migration):
             existing_cols = {row[1] for row in cursor.fetchall()}
 
             # Only add run_id and node_id to heuristics and outcomes
-            cols_to_add = new_columns if table in ['heuristics', 'outcomes'] else new_columns[:2]
+            cols_to_add = (
+                new_columns if table in ["heuristics", "outcomes"] else new_columns[:2]
+            )
 
             for col_name, col_def in cols_to_add:
                 if col_name not in existing_cols:
                     try:
-                        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}")
+                        cursor.execute(
+                            f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}"
+                        )
                     except Exception:
                         pass  # Column might already exist
 

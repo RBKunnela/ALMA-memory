@@ -10,7 +10,10 @@ Sprint 1 Tasks 1.8-1.10
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypeVar, Union
+
+if TYPE_CHECKING:
+    from alma.workflow.checkpoint import Checkpoint
 
 T = TypeVar("T")
 

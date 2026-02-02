@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://alma-memory.pages.dev/sitemap.xml
