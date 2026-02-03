@@ -51,10 +51,41 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Get package info
+        id: package_info
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if version already exists
+        id: check_version
+        run: |
+          PACKAGE_NAME=${{ steps.package_info.outputs.name }}
+          PACKAGE_VERSION=${{ steps.package_info.outputs.version }}
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null; then
+            echo "Version ${PACKAGE_VERSION} already exists"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version ${PACKAGE_VERSION} not found, will publish"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish to GitHub Packages
+        if: steps.check_version.outputs.exists == 'false'
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip publish (version exists)
+        if: steps.check_version.outputs.exists == 'true'
+        run: |
+          echo "::notice::Version ${{ steps.package_info.outputs.version }} already published - skipping"
+          echo "## npm Publish Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "Version **${{ steps.package_info.outputs.version }}** already exists." >> $GITHUB_STEP_SUMMARY
 
   # Optional: Also test the JS SDK in the CI workflow
   test-js-sdk:
