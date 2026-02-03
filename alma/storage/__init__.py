@@ -1,5 +1,11 @@
 """ALMA Storage Backends."""
 
+from alma.storage.archive import (
+    ArchiveConfig,
+    ArchivedMemory,
+    ArchiveReason,
+    ArchiveStats,
+)
 from alma.storage.base import StorageBackend
 from alma.storage.constants import (
     AZURE_COSMOS_CONTAINER_NAMES,
@@ -80,6 +86,11 @@ __all__ = [
     "MigrationRegistry",
     "MigrationRunner",
     "SchemaVersion",
+    # Archive system (v0.7.0+)
+    "ArchivedMemory",
+    "ArchiveConfig",
+    "ArchiveReason",
+    "ArchiveStats",
     # Constants for consistent naming
     "MemoryType",
     "get_table_name",

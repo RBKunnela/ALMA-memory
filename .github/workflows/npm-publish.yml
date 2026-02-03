@@ -1,0 +1,90 @@
+# ALMA-memory JavaScript SDK Publish Workflow
+#
+# Publishes the TypeScript/JavaScript SDK to GitHub Packages.
+# Triggers on version tags (v*) or can be run manually.
+
+name: Publish npm Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (leave empty to use package.json version)'
+        required: false
+        type: string
+
+defaults:
+  run:
+    working-directory: packages/alma-memory-js
+
+jobs:
+  build-and-publish:
+    name: Build and Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@rbkunnela'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Build package
+        run: npm run build
+
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Optional: Also test the JS SDK in the CI workflow
+  test-js-sdk:
+    name: Test JS SDK
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['18', '20', '22']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        working-directory: packages/alma-memory-js
+        run: npm ci
+
+      - name: Run tests
+        working-directory: packages/alma-memory-js
+        run: npm test
+
+      - name: Run linting
+        working-directory: packages/alma-memory-js
+        run: npm run lint
+
+      - name: Build
+        working-directory: packages/alma-memory-js
+        run: npm run build

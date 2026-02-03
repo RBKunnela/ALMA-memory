@@ -4,6 +4,14 @@ ALMA Learning Protocols.
 Provides learning, validation, forgetting, and heuristic extraction.
 """
 
+from alma.learning.decay import (
+    DecayConfig,
+    DecayManager,
+    MemoryStrength,
+    StrengthState,
+    calculate_projected_strength,
+    days_until_threshold,
+)
 from alma.learning.forgetting import (
     CleanupJob,
     CleanupResult,
@@ -69,6 +77,13 @@ __all__ = [
     # Confidence Decay
     "ConfidenceDecayer",
     "DecayResult",
+    # Memory Strength Decay (v0.7.0)
+    "MemoryStrength",
+    "StrengthState",
+    "DecayConfig",
+    "DecayManager",
+    "calculate_projected_strength",
+    "days_until_threshold",
     # Memory Health Monitoring
     "MemoryHealthMonitor",
     "MemoryHealthMetrics",

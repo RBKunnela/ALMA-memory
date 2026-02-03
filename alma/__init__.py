@@ -29,7 +29,7 @@ Testing Support:
     - create_test_heuristic(), create_test_outcome(), etc.
 """
 
-__version__ = "0.6.0-dev"
+__version__ = "0.7.0"
 
 # Core
 # Confidence Engine (Phase 12)

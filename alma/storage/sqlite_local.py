@@ -32,7 +32,9 @@ from alma.types import (
 )
 
 if TYPE_CHECKING:
+    from alma.learning.decay import MemoryStrength
     from alma.session import SessionHandoff
+    from alma.storage.archive import ArchivedMemory
     from alma.workflow import ArtifactRef, Checkpoint, WorkflowOutcome
 
 logger = logging.getLogger(__name__)
@@ -366,6 +368,72 @@ class SQLiteStorage(StorageBackend):
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_session_handoffs_agent_created "
                 "ON session_handoffs(agent, created_at DESC)"
+            )
+
+            # ==================== MEMORY STRENGTH TABLE (v0.7.0+) ====================
+
+            # Memory strength tracking for decay-based forgetting
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS memory_strength (
+                    memory_id TEXT PRIMARY KEY,
+                    memory_type TEXT NOT NULL,
+                    project_id TEXT,
+                    agent TEXT,
+                    initial_strength REAL DEFAULT 1.0,
+                    decay_half_life_days INTEGER DEFAULT 30,
+                    created_at TEXT NOT NULL,
+                    last_accessed TEXT NOT NULL,
+                    access_count INTEGER DEFAULT 0,
+                    explicit_importance REAL DEFAULT 0.5,
+                    reinforcement_events TEXT DEFAULT '[]'
+                )
+            """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_memory_strength_last_accessed "
+                "ON memory_strength(last_accessed)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_memory_strength_project_agent "
+                "ON memory_strength(project_id, agent)"
+            )
+
+            # ==================== MEMORY ARCHIVE TABLE (v0.7.0+) ====================
+
+            # Memory archive for soft-deleted memories
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS memory_archive (
+                    id TEXT PRIMARY KEY,
+                    original_id TEXT NOT NULL,
+                    memory_type TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    embedding BLOB,
+                    metadata TEXT,
+                    original_created_at TEXT NOT NULL,
+                    archived_at TEXT NOT NULL,
+                    archive_reason TEXT NOT NULL,
+                    final_strength REAL NOT NULL,
+                    project_id TEXT NOT NULL,
+                    agent TEXT NOT NULL,
+                    restored INTEGER DEFAULT 0,
+                    restored_at TEXT,
+                    restored_as TEXT
+                )
+            """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_archive_project_agent "
+                "ON memory_archive(project_id, agent)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_archive_reason "
+                "ON memory_archive(archive_reason)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_archive_date "
+                "ON memory_archive(archived_at)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_archive_restored "
+                "ON memory_archive(restored)"
             )
 
     def _load_faiss_indices(self, memory_types: Optional[List[str]] = None):
@@ -2123,4 +2191,836 @@ class SQLiteStorage(StorageBackend):
             metadata=json.loads(row["metadata"]) if row["metadata"] else {},
             created_at=self._parse_datetime(row["created_at"])
             or datetime.now(timezone.utc),
+        )
+
+    # ==================== MEMORY STRENGTH OPERATIONS (v0.7.0+) ====================
+
+    def save_memory_strength(self, strength: "MemoryStrength") -> str:
+        """
+        Save or update a memory strength record.
+
+        Args:
+            strength: MemoryStrength instance to save
+
+        Returns:
+            The memory ID
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Check if record exists
+            cursor.execute(
+                "SELECT 1 FROM memory_strength WHERE memory_id = ?",
+                (strength.memory_id,),
+            )
+            exists = cursor.fetchone() is not None
+
+            reinforcement_events_json = json.dumps(
+                [r.isoformat() for r in strength.reinforcement_events]
+            )
+
+            if exists:
+                # Update existing record
+                cursor.execute(
+                    """
+                    UPDATE memory_strength SET
+                        memory_type = ?,
+                        initial_strength = ?,
+                        decay_half_life_days = ?,
+                        last_accessed = ?,
+                        access_count = ?,
+                        explicit_importance = ?,
+                        reinforcement_events = ?
+                    WHERE memory_id = ?
+                    """,
+                    (
+                        strength.memory_type,
+                        strength.initial_strength,
+                        strength.decay_half_life_days,
+                        strength.last_accessed.isoformat(),
+                        strength.access_count,
+                        strength.explicit_importance,
+                        reinforcement_events_json,
+                        strength.memory_id,
+                    ),
+                )
+            else:
+                # Insert new record
+                # Try to extract project_id and agent from the memory
+                project_id = None
+                agent = None
+
+                # Look up the memory to get project_id and agent
+                for table in ["heuristics", "outcomes", "domain_knowledge", "anti_patterns"]:
+                    cursor.execute(
+                        f"SELECT project_id, agent FROM {table} WHERE id = ?",
+                        (strength.memory_id,),
+                    )
+                    row = cursor.fetchone()
+                    if row:
+                        project_id = row["project_id"]
+                        agent = row["agent"]
+                        break
+
+                cursor.execute(
+                    """
+                    INSERT INTO memory_strength (
+                        memory_id, memory_type, project_id, agent,
+                        initial_strength, decay_half_life_days,
+                        created_at, last_accessed, access_count,
+                        explicit_importance, reinforcement_events
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        strength.memory_id,
+                        strength.memory_type,
+                        project_id,
+                        agent,
+                        strength.initial_strength,
+                        strength.decay_half_life_days,
+                        strength.created_at.isoformat(),
+                        strength.last_accessed.isoformat(),
+                        strength.access_count,
+                        strength.explicit_importance,
+                        reinforcement_events_json,
+                    ),
+                )
+
+        return strength.memory_id
+
+    def get_memory_strength(self, memory_id: str) -> Optional["MemoryStrength"]:
+        """
+        Get a memory strength record by memory ID.
+
+        Args:
+            memory_id: The memory ID to look up
+
+        Returns:
+            MemoryStrength instance, or None if not found
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM memory_strength WHERE memory_id = ?",
+                (memory_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_memory_strength(row)
+
+    def get_all_memory_strengths(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+    ) -> List["MemoryStrength"]:
+        """
+        Get all memory strength records for a project/agent.
+
+        Args:
+            project_id: Project to query
+            agent: Optional agent filter
+
+        Returns:
+            List of MemoryStrength instances
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            if agent:
+                cursor.execute(
+                    """
+                    SELECT * FROM memory_strength
+                    WHERE project_id = ? AND agent = ?
+                    """,
+                    (project_id, agent),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT * FROM memory_strength
+                    WHERE project_id = ?
+                    """,
+                    (project_id,),
+                )
+
+            rows = cursor.fetchall()
+            return [self._row_to_memory_strength(row) for row in rows]
+
+    def delete_memory_strength(self, memory_id: str) -> bool:
+        """
+        Delete a memory strength record.
+
+        Args:
+            memory_id: The memory ID
+
+        Returns:
+            True if deleted, False if not found
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM memory_strength WHERE memory_id = ?",
+                (memory_id,),
+            )
+            return cursor.rowcount > 0
+
+    def _row_to_memory_strength(self, row: sqlite3.Row) -> "MemoryStrength":
+        """Convert database row to MemoryStrength."""
+        from alma.learning.decay import MemoryStrength
+
+        reinforcement_events = []
+        if row["reinforcement_events"]:
+            events_json = json.loads(row["reinforcement_events"])
+            for event in events_json:
+                if isinstance(event, str):
+                    dt_str = event.replace("Z", "+00:00")
+                    reinforcement_events.append(datetime.fromisoformat(dt_str))
+
+        return MemoryStrength(
+            memory_id=row["memory_id"],
+            memory_type=row["memory_type"] or "unknown",
+            initial_strength=row["initial_strength"] or 1.0,
+            decay_half_life_days=row["decay_half_life_days"] or 30,
+            created_at=self._parse_datetime(row["created_at"])
+            or datetime.now(timezone.utc),
+            last_accessed=self._parse_datetime(row["last_accessed"])
+            or datetime.now(timezone.utc),
+            access_count=row["access_count"] or 0,
+            reinforcement_events=reinforcement_events,
+            explicit_importance=row["explicit_importance"] or 0.5,
+        )
+
+    # ==================== ARCHIVE OPERATIONS (v0.7.0+) ====================
+
+    def archive_memory(
+        self,
+        memory_id: str,
+        memory_type: str,
+        reason: str,
+        final_strength: float,
+    ) -> "ArchivedMemory":
+        """
+        Archive a memory before deletion.
+
+        Captures full memory data including content, embedding, and metadata
+        for potential future recovery or compliance auditing.
+
+        Args:
+            memory_id: ID of the memory to archive
+            memory_type: Type of memory (heuristic, outcome, etc.)
+            reason: Why being archived (decay, manual, consolidation, etc.)
+            final_strength: Memory strength at time of archival
+
+        Returns:
+            ArchivedMemory instance
+        """
+        from alma.storage.archive import ArchivedMemory
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Get the memory data based on type
+            table_map = {
+                "heuristic": "heuristics",
+                "outcome": "outcomes",
+                "domain_knowledge": "domain_knowledge",
+                "anti_pattern": "anti_patterns",
+                "preference": "preferences",
+            }
+
+            table_name = table_map.get(memory_type)
+            if not table_name:
+                raise ValueError(f"Unknown memory type: {memory_type}")
+
+            cursor.execute(f"SELECT * FROM {table_name} WHERE id = ?", (memory_id,))
+            row = cursor.fetchone()
+
+            if row is None:
+                raise ValueError(f"Memory not found: {memory_id}")
+
+            # Extract content and metadata from the memory
+            content = self._extract_memory_content(memory_type, row)
+            metadata = json.loads(row["metadata"]) if row["metadata"] else {}
+
+            # Get the embedding if available
+            cursor.execute(
+                "SELECT embedding FROM embeddings WHERE memory_type = ? AND memory_id = ?",
+                (memory_type, memory_id),
+            )
+            embedding_row = cursor.fetchone()
+            embedding = None
+            if embedding_row and embedding_row["embedding"]:
+                embedding = np.frombuffer(
+                    embedding_row["embedding"], dtype=np.float32
+                ).tolist()
+
+            # Parse original creation date - row is sqlite3.Row, need safe access
+            row_keys = row.keys()
+            created_at_str = (
+                row["created_at"] if "created_at" in row_keys else None
+            ) or (row["timestamp"] if "timestamp" in row_keys else None)
+            original_created_at = (
+                self._parse_datetime(created_at_str)
+                if created_at_str
+                else datetime.now(timezone.utc)
+            )
+
+            # Get project_id and agent
+            project_id = row["project_id"] if "project_id" in row_keys else ""
+            agent = row["agent"] if "agent" in row_keys else ""
+
+            # If it's a preference, use user_id as project_id
+            if memory_type == "preference":
+                project_id = row["user_id"] if "user_id" in row_keys else ""
+                agent = "user"
+
+            # Create the archived memory
+            archived = ArchivedMemory.create(
+                original_id=memory_id,
+                memory_type=memory_type,
+                content=content,
+                project_id=project_id,
+                agent=agent,
+                archive_reason=reason,
+                final_strength=final_strength,
+                original_created_at=original_created_at,
+                embedding=embedding,
+                metadata=metadata,
+            )
+
+            # Serialize embedding for storage
+            embedding_blob = None
+            if archived.embedding:
+                embedding_blob = np.array(archived.embedding, dtype=np.float32).tobytes()
+
+            # Insert into archive table
+            cursor.execute(
+                """
+                INSERT INTO memory_archive (
+                    id, original_id, memory_type, content, embedding,
+                    metadata, original_created_at, archived_at, archive_reason,
+                    final_strength, project_id, agent, restored, restored_at, restored_as
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    archived.id,
+                    archived.original_id,
+                    archived.memory_type,
+                    archived.content,
+                    embedding_blob,
+                    json.dumps(archived.metadata),
+                    archived.original_created_at.isoformat(),
+                    archived.archived_at.isoformat(),
+                    archived.archive_reason,
+                    archived.final_strength,
+                    archived.project_id,
+                    archived.agent,
+                    0,  # not restored
+                    None,
+                    None,
+                ),
+            )
+
+            return archived
+
+    def _extract_memory_content(self, memory_type: str, row: sqlite3.Row) -> str:
+        """Extract the main content from a memory row as JSON."""
+        if memory_type == "heuristic":
+            return json.dumps({
+                "condition": row["condition"],
+                "strategy": row["strategy"],
+                "confidence": row["confidence"],
+                "occurrence_count": row["occurrence_count"],
+                "success_count": row["success_count"],
+            })
+        elif memory_type == "outcome":
+            return json.dumps({
+                "task_type": row["task_type"],
+                "task_description": row["task_description"],
+                "success": bool(row["success"]),
+                "strategy_used": row["strategy_used"],
+                "duration_ms": row["duration_ms"],
+                "error_message": row["error_message"],
+                "user_feedback": row["user_feedback"],
+            })
+        elif memory_type == "domain_knowledge":
+            return json.dumps({
+                "domain": row["domain"],
+                "fact": row["fact"],
+                "source": row["source"],
+                "confidence": row["confidence"],
+            })
+        elif memory_type == "anti_pattern":
+            return json.dumps({
+                "pattern": row["pattern"],
+                "why_bad": row["why_bad"],
+                "better_alternative": row["better_alternative"],
+                "occurrence_count": row["occurrence_count"],
+            })
+        elif memory_type == "preference":
+            return json.dumps({
+                "category": row["category"],
+                "preference": row["preference"],
+                "source": row["source"],
+                "confidence": row["confidence"],
+            })
+        else:
+            return json.dumps(dict(row))
+
+    def get_archive(self, archive_id: str) -> Optional["ArchivedMemory"]:
+        """
+        Get an archived memory by its archive ID.
+
+        Args:
+            archive_id: The archive ID
+
+        Returns:
+            ArchivedMemory instance, or None if not found
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM memory_archive WHERE id = ?",
+                (archive_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                return None
+
+            return self._row_to_archived_memory(row)
+
+    def list_archives(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+        reason: Optional[str] = None,
+        memory_type: Optional[str] = None,
+        older_than: Optional[datetime] = None,
+        younger_than: Optional[datetime] = None,
+        include_restored: bool = False,
+        limit: int = 100,
+    ) -> List["ArchivedMemory"]:
+        """
+        List archived memories with filtering.
+
+        Args:
+            project_id: Project to query
+            agent: Optional agent filter
+            reason: Optional archive reason filter
+            memory_type: Optional memory type filter
+            older_than: Optional filter for archives older than this time
+            younger_than: Optional filter for archives younger than this time
+            include_restored: Whether to include archives that have been restored
+            limit: Maximum number of archives to return
+
+        Returns:
+            List of ArchivedMemory instances
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            conditions = ["project_id = ?"]
+            params: List[Any] = [project_id]
+
+            if agent:
+                conditions.append("agent = ?")
+                params.append(agent)
+
+            if reason:
+                conditions.append("archive_reason = ?")
+                params.append(reason)
+
+            if memory_type:
+                conditions.append("memory_type = ?")
+                params.append(memory_type)
+
+            if older_than:
+                conditions.append("archived_at < ?")
+                params.append(older_than.isoformat())
+
+            if younger_than:
+                conditions.append("archived_at > ?")
+                params.append(younger_than.isoformat())
+
+            if not include_restored:
+                conditions.append("restored = 0")
+
+            where_clause = " AND ".join(conditions)
+            params.append(limit)
+
+            cursor.execute(
+                f"""
+                SELECT * FROM memory_archive
+                WHERE {where_clause}
+                ORDER BY archived_at DESC
+                LIMIT ?
+                """,
+                params,
+            )
+
+            rows = cursor.fetchall()
+            return [self._row_to_archived_memory(row) for row in rows]
+
+    def restore_from_archive(self, archive_id: str) -> str:
+        """
+        Restore an archived memory, creating a new memory from archive data.
+
+        The original archive is marked as restored but retained for audit purposes.
+
+        Args:
+            archive_id: The archive ID to restore
+
+        Returns:
+            New memory ID of the restored memory
+
+        Raises:
+            ValueError: If archive not found or already restored
+        """
+        import uuid
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Get the archive
+            cursor.execute(
+                "SELECT * FROM memory_archive WHERE id = ?",
+                (archive_id,),
+            )
+            row = cursor.fetchone()
+
+            if row is None:
+                raise ValueError(f"Archive not found: {archive_id}")
+
+            if row["restored"]:
+                raise ValueError(
+                    f"Archive already restored as: {row['restored_as']}"
+                )
+
+            archived = self._row_to_archived_memory(row)
+            content = json.loads(archived.content)
+
+            # Generate new memory ID
+            new_id = f"{archived.memory_type[:3]}-{uuid.uuid4().hex[:12]}"
+
+            # Restore based on memory type
+            if archived.memory_type == "heuristic":
+                cursor.execute(
+                    """
+                    INSERT INTO heuristics (
+                        id, agent, project_id, condition, strategy, confidence,
+                        occurrence_count, success_count, last_validated, created_at, metadata
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        new_id,
+                        archived.agent,
+                        archived.project_id,
+                        content.get("condition", ""),
+                        content.get("strategy", ""),
+                        content.get("confidence", 0.5),
+                        content.get("occurrence_count", 1),
+                        content.get("success_count", 0),
+                        datetime.now(timezone.utc).isoformat(),
+                        datetime.now(timezone.utc).isoformat(),
+                        json.dumps(archived.metadata),
+                    ),
+                )
+            elif archived.memory_type == "outcome":
+                cursor.execute(
+                    """
+                    INSERT INTO outcomes (
+                        id, agent, project_id, task_type, task_description, success,
+                        strategy_used, duration_ms, error_message, user_feedback,
+                        timestamp, metadata
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        new_id,
+                        archived.agent,
+                        archived.project_id,
+                        content.get("task_type"),
+                        content.get("task_description", ""),
+                        1 if content.get("success") else 0,
+                        content.get("strategy_used"),
+                        content.get("duration_ms"),
+                        content.get("error_message"),
+                        content.get("user_feedback"),
+                        datetime.now(timezone.utc).isoformat(),
+                        json.dumps(archived.metadata),
+                    ),
+                )
+            elif archived.memory_type == "domain_knowledge":
+                cursor.execute(
+                    """
+                    INSERT INTO domain_knowledge (
+                        id, agent, project_id, domain, fact, source, confidence,
+                        last_verified, metadata
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        new_id,
+                        archived.agent,
+                        archived.project_id,
+                        content.get("domain"),
+                        content.get("fact", ""),
+                        content.get("source"),
+                        content.get("confidence", 1.0),
+                        datetime.now(timezone.utc).isoformat(),
+                        json.dumps(archived.metadata),
+                    ),
+                )
+            elif archived.memory_type == "anti_pattern":
+                cursor.execute(
+                    """
+                    INSERT INTO anti_patterns (
+                        id, agent, project_id, pattern, why_bad, better_alternative,
+                        occurrence_count, last_seen, created_at, metadata
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        new_id,
+                        archived.agent,
+                        archived.project_id,
+                        content.get("pattern", ""),
+                        content.get("why_bad"),
+                        content.get("better_alternative"),
+                        content.get("occurrence_count", 1),
+                        datetime.now(timezone.utc).isoformat(),
+                        datetime.now(timezone.utc).isoformat(),
+                        json.dumps(archived.metadata),
+                    ),
+                )
+            elif archived.memory_type == "preference":
+                cursor.execute(
+                    """
+                    INSERT INTO preferences (
+                        id, user_id, category, preference, source, confidence,
+                        timestamp, metadata
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        new_id,
+                        archived.project_id,  # For preferences, project_id is user_id
+                        content.get("category"),
+                        content.get("preference", ""),
+                        content.get("source"),
+                        content.get("confidence", 1.0),
+                        datetime.now(timezone.utc).isoformat(),
+                        json.dumps(archived.metadata),
+                    ),
+                )
+            else:
+                raise ValueError(f"Cannot restore memory type: {archived.memory_type}")
+
+            # Restore embedding if available
+            if archived.embedding:
+                embedding_blob = np.array(
+                    archived.embedding, dtype=np.float32
+                ).tobytes()
+                cursor.execute(
+                    """
+                    INSERT INTO embeddings (memory_type, memory_id, embedding)
+                    VALUES (?, ?, ?)
+                    """,
+                    (archived.memory_type, new_id, embedding_blob),
+                )
+
+            # Mark archive as restored
+            cursor.execute(
+                """
+                UPDATE memory_archive
+                SET restored = 1, restored_at = ?, restored_as = ?
+                WHERE id = ?
+                """,
+                (datetime.now(timezone.utc).isoformat(), new_id, archive_id),
+            )
+
+            return new_id
+
+    def purge_archives(
+        self,
+        older_than: datetime,
+        project_id: Optional[str] = None,
+        reason: Optional[str] = None,
+    ) -> int:
+        """
+        Permanently delete archived memories.
+
+        This is a destructive operation - archives cannot be recovered after purging.
+
+        Args:
+            older_than: Delete archives older than this datetime
+            project_id: Optional project filter
+            reason: Optional reason filter
+
+        Returns:
+            Number of archives permanently deleted
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            conditions = ["archived_at < ?"]
+            params: List[Any] = [older_than.isoformat()]
+
+            if project_id:
+                conditions.append("project_id = ?")
+                params.append(project_id)
+
+            if reason:
+                conditions.append("archive_reason = ?")
+                params.append(reason)
+
+            where_clause = " AND ".join(conditions)
+
+            cursor.execute(
+                f"DELETE FROM memory_archive WHERE {where_clause}",
+                params,
+            )
+
+            return cursor.rowcount
+
+    def get_archive_stats(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get statistics about archived memories.
+
+        Args:
+            project_id: Project to query
+            agent: Optional agent filter
+
+        Returns:
+            Dict with archive statistics (counts, by reason, by type, etc.)
+        """
+        from alma.storage.archive import ArchiveStats
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Build base filter
+            base_conditions = ["project_id = ?"]
+            base_params: List[Any] = [project_id]
+
+            if agent:
+                base_conditions.append("agent = ?")
+                base_params.append(agent)
+
+            base_where = " AND ".join(base_conditions)
+
+            # Total count
+            cursor.execute(
+                f"SELECT COUNT(*) as cnt FROM memory_archive WHERE {base_where}",
+                base_params,
+            )
+            total_count = cursor.fetchone()["cnt"]
+
+            # Restored count
+            cursor.execute(
+                f"SELECT COUNT(*) as cnt FROM memory_archive WHERE {base_where} AND restored = 1",
+                base_params,
+            )
+            restored_count = cursor.fetchone()["cnt"]
+
+            # Count by reason
+            cursor.execute(
+                f"""
+                SELECT archive_reason, COUNT(*) as cnt
+                FROM memory_archive
+                WHERE {base_where}
+                GROUP BY archive_reason
+                """,
+                base_params,
+            )
+            by_reason = {row["archive_reason"]: row["cnt"] for row in cursor.fetchall()}
+
+            # Count by type
+            cursor.execute(
+                f"""
+                SELECT memory_type, COUNT(*) as cnt
+                FROM memory_archive
+                WHERE {base_where}
+                GROUP BY memory_type
+                """,
+                base_params,
+            )
+            by_type = {row["memory_type"]: row["cnt"] for row in cursor.fetchall()}
+
+            # Count by agent
+            cursor.execute(
+                """
+                SELECT agent, COUNT(*) as cnt
+                FROM memory_archive
+                WHERE project_id = ?
+                GROUP BY agent
+                """,
+                (project_id,),
+            )
+            by_agent = {row["agent"]: row["cnt"] for row in cursor.fetchall()}
+
+            # Date range
+            cursor.execute(
+                f"SELECT MIN(archived_at) as oldest, MAX(archived_at) as newest FROM memory_archive WHERE {base_where}",
+                base_params,
+            )
+            dates = cursor.fetchone()
+            oldest_archive = (
+                self._parse_datetime(dates["oldest"]) if dates["oldest"] else None
+            )
+            newest_archive = (
+                self._parse_datetime(dates["newest"]) if dates["newest"] else None
+            )
+
+            stats = ArchiveStats(
+                total_count=total_count,
+                by_reason=by_reason,
+                by_type=by_type,
+                by_agent=by_agent,
+                restored_count=restored_count,
+                oldest_archive=oldest_archive,
+                newest_archive=newest_archive,
+            )
+
+            return stats.to_dict()
+
+    def _row_to_archived_memory(self, row: sqlite3.Row) -> "ArchivedMemory":
+        """Convert database row to ArchivedMemory."""
+        from alma.storage.archive import ArchivedMemory
+
+        # Parse embedding
+        embedding = None
+        if row["embedding"]:
+            embedding = np.frombuffer(row["embedding"], dtype=np.float32).tolist()
+
+        # Parse metadata
+        metadata = json.loads(row["metadata"]) if row["metadata"] else {}
+
+        # Parse restored_at
+        restored_at = None
+        if row["restored_at"]:
+            restored_at = self._parse_datetime(row["restored_at"])
+
+        return ArchivedMemory(
+            id=row["id"],
+            original_id=row["original_id"],
+            memory_type=row["memory_type"],
+            content=row["content"],
+            embedding=embedding,
+            metadata=metadata,
+            original_created_at=self._parse_datetime(row["original_created_at"])
+            or datetime.now(timezone.utc),
+            archived_at=self._parse_datetime(row["archived_at"])
+            or datetime.now(timezone.utc),
+            archive_reason=row["archive_reason"],
+            final_strength=row["final_strength"],
+            project_id=row["project_id"],
+            agent=row["agent"],
+            restored=bool(row["restored"]),
+            restored_at=restored_at,
+            restored_as=row["restored_as"],
         )
