@@ -732,7 +732,7 @@ export class ALMA {
    */
   private async callTool<T>(
     toolName: string,
-    params: Record<string, unknown>
+    params: Record<string, unknown>,
   ): Promise<T> {
     const request: MCPRequest = {
       jsonrpc: '2.0',
@@ -770,7 +770,7 @@ export class ALMA {
         if (attempt < maxRetries) {
           const delay = Math.min(
             baseDelay * Math.pow(2, attempt),
-            maxDelay
+            maxDelay,
           );
           await this.sleep(delay);
         }
@@ -787,7 +787,7 @@ export class ALMA {
     const controller = new AbortController();
     const timeoutId = setTimeout(
       () => controller.abort(),
-      this.config.timeout
+      this.config.timeout,
     );
 
     try {
@@ -801,7 +801,7 @@ export class ALMA {
       if (!response.ok) {
         throw new ServerError(
           `HTTP ${response.status}: ${response.statusText}`,
-          { statusCode: response.status }
+          { statusCode: response.status },
         );
       }
 
@@ -817,7 +817,7 @@ export class ALMA {
       if (err.name === 'AbortError') {
         throw new TimeoutError(
           `Request timed out after ${this.config.timeout}ms`,
-          this.config.timeout
+          this.config.timeout,
         );
       }
 
@@ -828,7 +828,7 @@ export class ALMA {
       ) {
         throw new ConnectionError(
           `Failed to connect to ${this.config.baseUrl}: ${err.message}`,
-          { url: this.config.baseUrl, cause: err }
+          { url: this.config.baseUrl, cause: err },
         );
       }
 
@@ -880,10 +880,10 @@ export class ALMA {
    * Remove undefined values from an object.
    */
   private filterUndefined(
-    obj: Record<string, unknown>
+    obj: Record<string, unknown>,
   ): Record<string, unknown> {
     return Object.fromEntries(
-      Object.entries(obj).filter(([_, v]) => v !== undefined)
+      Object.entries(obj).filter(([_, v]) => v !== undefined),
     );
   }
 
