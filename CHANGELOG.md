@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2026-02-03
+
+### Added - Memory Wall Enhancements
+
+- **Memory Decay** (`alma/learning/decay.py`)
+  - Time-based confidence decay for aging memories
+  - Configurable decay rates per memory type
+  - Automatic refresh on memory access
+
+- **Memory Compression** (`alma/compression/`)
+  - LLM-powered memory summarization
+  - Reduce storage footprint while preserving key insights
+  - Configurable compression thresholds
+
+- **Retrieval Verification** (`alma/retrieval/verification.py`)
+  - Verify retrieved memories are still relevant
+  - Cross-check with current context
+  - Filter out stale or contradictory memories
+
+- **Retrieval Modes** (`alma/retrieval/modes.py`)
+  - `standard`: Default similarity-based retrieval
+  - `progressive`: Start broad, narrow down
+  - `verified`: Include relevance verification
+  - `budget`: Token-aware retrieval with limits
+
+- **Trust-Integrated Retrieval** (`alma/retrieval/`)
+  - Agent trust scoring for memory weighting
+  - Trust context propagation
+  - Configurable trust thresholds
+
+- **Token Budget Management**
+  - Set maximum tokens for retrieved memories
+  - Intelligent truncation preserving most relevant content
+  - Budget allocation across memory types
+
+- **Progressive Disclosure**
+  - Start with summaries, expand on demand
+  - Reduce context window usage
+  - User-controlled detail levels
+
+### Changed
+
+- Updated version badges in README
+- Added quick comparison table vs Mem0 and Graphiti
+- Comprehensive test suite added to repository (26,000+ lines)
+
+### Fixed
+
+- Resolved ruff linting errors across codebase
+- Fixed missing exports in retrieval and learning modules
+- ESLint errors resolved in JavaScript SDK
+
+---
+
 ## [0.6.0] - 2026-01-31
 
 ### Added - Workflow Context Layer (AGtestari Integration)

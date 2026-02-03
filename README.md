@@ -1,7 +1,7 @@
 # ALMA - Agent Learning Memory Architecture
 
 [![PyPI version](https://badge.fury.io/py/alma-memory.svg)](https://pypi.org/project/alma-memory/)
-[![npm version](https://img.shields.io/badge/npm-v0.6.0-cb3837?logo=npm)](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)
+[![npm version](https://img.shields.io/badge/npm-v0.7.0-cb3837?logo=npm)](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml)
@@ -101,49 +101,56 @@ ALMA isn't just another memory framework. Here's what sets it apart from alterna
 
 ---
 
-## What's New in v0.6.0
+## What's New in v0.7.0
 
-### Workflow Context Layer
+### Memory Wall Enhancements
 
-The major theme of v0.6.0 is **multi-agent workflow support** - enabling agents to coordinate across long-running tasks with checkpoints, state merging, and artifact tracking.
+The major theme of v0.7.0 is **smarter memory management** - preventing memory bloat while keeping the most valuable knowledge accessible.
 
-- **Checkpoint & Resume** (`alma/workflow/`)
-  - Save workflow state at any point: `alma.checkpoint(workflow_id, state, metadata)`
-  - Resume from checkpoints after failures or handoffs: `alma.resume(workflow_id)`
-  - Automatic cleanup of old checkpoints: `alma.cleanup_checkpoints(older_than_days=7)`
+- **Memory Decay** - Time-based confidence decay for aging memories
+  - Configurable decay rates per memory type
+  - Automatic refresh on memory access
+  - Keeps active memories fresh, fades unused ones
 
-- **State Reducers for Multi-Agent Workflows**
-  - Merge states from parallel agents: `alma.merge_states(workflow_id, states, reducer)`
-  - Built-in reducers: `latest_wins`, `merge_lists`, `priority_agent`
-  - Custom reducer functions for complex merge logic
+- **Memory Compression** - LLM-powered memory summarization
+  - Reduce storage footprint while preserving key insights
+  - Configurable compression thresholds
+  - Ideal for long-running agents
 
-- **Artifact Linking**
-  - Link outputs to workflows: `alma.link_artifact(workflow_id, artifact_type, ref)`
-  - Artifact types: `code`, `test`, `document`, `config`, `deployment`
-  - Retrieve all artifacts: `alma.get_artifacts(workflow_id)`
+- **Retrieval Verification** - Verify retrieved memories are still relevant
+  - Cross-check with current context
+  - Filter out stale or contradictory memories
+  - Higher quality context for your agents
 
-- **Scoped Retrieval**
-  - Filter memories by workflow context: `alma.retrieve_scoped(query, scope)`
-  - Scopes: `workflow_only`, `agent_only`, `project_wide`
+- **Retrieval Modes** - Choose how memories are retrieved:
+  - `standard`: Default similarity-based retrieval
+  - `progressive`: Start broad, narrow down
+  - `verified`: Include relevance verification
+  - `budget`: Token-aware retrieval with limits
 
-- **Session Persistence**
-  - Session handoffs now persist to storage backend
-  - Lazy loading for performance
-  - Survives process restarts
+- **Trust-Integrated Retrieval** - Weight memories by agent trust
+  - Agent trust scoring for memory weighting
+  - Trust context propagation across agents
+  - Configurable trust thresholds
 
-- **MCP Workflow Tools** (8 new tools)
-  - `alma_consolidate`, `alma_checkpoint`, `alma_resume`
-  - `alma_merge_states`, `alma_workflow_learn`
-  - `alma_link_artifact`, `alma_get_artifacts`
-  - `alma_cleanup_checkpoints`, `alma_retrieve_scoped`
-
-- **TypeScript SDK v0.6.0** (`packages/alma-memory-js/`)
-  - Full workflow API parity with Python SDK
-  - 9 new methods: `consolidate()`, `checkpoint()`, `resume()`, `mergeStates()`, `workflowLearn()`, `linkArtifact()`, `getArtifacts()`, `cleanupCheckpoints()`, `retrieveScoped()`
-  - 25+ new TypeScript types for workflow context
-  - Published to GitHub Packages: `@rbkunnela/alma-memory`
+- **Token Budget Management** - Control context window usage
+  - Set maximum tokens for retrieved memories
+  - Intelligent truncation preserving most relevant content
+  - Budget allocation across memory types
 
 ### Previous Releases
+
+<details>
+<summary>v0.6.0 - Workflow Context Layer</summary>
+
+- **Checkpoint & Resume** - Save/restore workflow state
+- **State Reducers** - Merge parallel agent states
+- **Artifact Linking** - Link outputs to workflows
+- **Scoped Retrieval** - Filter by workflow context
+- **MCP Workflow Tools** - 8 new tools for workflows
+- **TypeScript SDK v0.6.0** - Full workflow API parity
+
+</details>
 
 <details>
 <summary>v0.5.0 - Vector Database Backends</summary>
