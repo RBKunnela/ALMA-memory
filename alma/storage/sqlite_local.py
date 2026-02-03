@@ -2251,7 +2251,12 @@ class SQLiteStorage(StorageBackend):
                 agent = None
 
                 # Look up the memory to get project_id and agent
-                for table in ["heuristics", "outcomes", "domain_knowledge", "anti_patterns"]:
+                for table in [
+                    "heuristics",
+                    "outcomes",
+                    "domain_knowledge",
+                    "anti_patterns",
+                ]:
                     cursor.execute(
                         f"SELECT project_id, agent FROM {table} WHERE id = ?",
                         (strength.memory_id,),
@@ -2494,7 +2499,9 @@ class SQLiteStorage(StorageBackend):
             # Serialize embedding for storage
             embedding_blob = None
             if archived.embedding:
-                embedding_blob = np.array(archived.embedding, dtype=np.float32).tobytes()
+                embedding_blob = np.array(
+                    archived.embedding, dtype=np.float32
+                ).tobytes()
 
             # Insert into archive table
             cursor.execute(
@@ -2529,44 +2536,54 @@ class SQLiteStorage(StorageBackend):
     def _extract_memory_content(self, memory_type: str, row: sqlite3.Row) -> str:
         """Extract the main content from a memory row as JSON."""
         if memory_type == "heuristic":
-            return json.dumps({
-                "condition": row["condition"],
-                "strategy": row["strategy"],
-                "confidence": row["confidence"],
-                "occurrence_count": row["occurrence_count"],
-                "success_count": row["success_count"],
-            })
+            return json.dumps(
+                {
+                    "condition": row["condition"],
+                    "strategy": row["strategy"],
+                    "confidence": row["confidence"],
+                    "occurrence_count": row["occurrence_count"],
+                    "success_count": row["success_count"],
+                }
+            )
         elif memory_type == "outcome":
-            return json.dumps({
-                "task_type": row["task_type"],
-                "task_description": row["task_description"],
-                "success": bool(row["success"]),
-                "strategy_used": row["strategy_used"],
-                "duration_ms": row["duration_ms"],
-                "error_message": row["error_message"],
-                "user_feedback": row["user_feedback"],
-            })
+            return json.dumps(
+                {
+                    "task_type": row["task_type"],
+                    "task_description": row["task_description"],
+                    "success": bool(row["success"]),
+                    "strategy_used": row["strategy_used"],
+                    "duration_ms": row["duration_ms"],
+                    "error_message": row["error_message"],
+                    "user_feedback": row["user_feedback"],
+                }
+            )
         elif memory_type == "domain_knowledge":
-            return json.dumps({
-                "domain": row["domain"],
-                "fact": row["fact"],
-                "source": row["source"],
-                "confidence": row["confidence"],
-            })
+            return json.dumps(
+                {
+                    "domain": row["domain"],
+                    "fact": row["fact"],
+                    "source": row["source"],
+                    "confidence": row["confidence"],
+                }
+            )
         elif memory_type == "anti_pattern":
-            return json.dumps({
-                "pattern": row["pattern"],
-                "why_bad": row["why_bad"],
-                "better_alternative": row["better_alternative"],
-                "occurrence_count": row["occurrence_count"],
-            })
+            return json.dumps(
+                {
+                    "pattern": row["pattern"],
+                    "why_bad": row["why_bad"],
+                    "better_alternative": row["better_alternative"],
+                    "occurrence_count": row["occurrence_count"],
+                }
+            )
         elif memory_type == "preference":
-            return json.dumps({
-                "category": row["category"],
-                "preference": row["preference"],
-                "source": row["source"],
-                "confidence": row["confidence"],
-            })
+            return json.dumps(
+                {
+                    "category": row["category"],
+                    "preference": row["preference"],
+                    "source": row["source"],
+                    "confidence": row["confidence"],
+                }
+            )
         else:
             return json.dumps(dict(row))
 
@@ -2696,9 +2713,7 @@ class SQLiteStorage(StorageBackend):
                 raise ValueError(f"Archive not found: {archive_id}")
 
             if row["restored"]:
-                raise ValueError(
-                    f"Archive already restored as: {row['restored_as']}"
-                )
+                raise ValueError(f"Archive already restored as: {row['restored_as']}")
 
             archived = self._row_to_archived_memory(row)
             content = json.loads(archived.content)

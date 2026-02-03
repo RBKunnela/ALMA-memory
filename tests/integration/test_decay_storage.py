@@ -184,11 +184,17 @@ class TestDecayStorageIntegration:
         storage.save_heuristic(h2)
 
         # Create strength records
-        storage.save_memory_strength(MemoryStrength(memory_id="h-a1", memory_type="heuristic"))
-        storage.save_memory_strength(MemoryStrength(memory_id="h-b1", memory_type="heuristic"))
+        storage.save_memory_strength(
+            MemoryStrength(memory_id="h-a1", memory_type="heuristic")
+        )
+        storage.save_memory_strength(
+            MemoryStrength(memory_id="h-b1", memory_type="heuristic")
+        )
 
         # Query by agent
-        agent_a_strengths = storage.get_all_memory_strengths("project-x", agent="agent-a")
+        agent_a_strengths = storage.get_all_memory_strengths(
+            "project-x", agent="agent-a"
+        )
         assert len(agent_a_strengths) == 1
         assert agent_a_strengths[0].memory_id == "h-a1"
 

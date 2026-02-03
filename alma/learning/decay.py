@@ -109,8 +109,7 @@ class MemoryStrength:
         # Recency of reinforcements (within last 7 days)
         # Each recent reinforcement adds 0.1, capped at 0.3
         recent_reinforcements = sum(
-            1 for r in self.reinforcement_events
-            if self._days_ago(r) < 7
+            1 for r in self.reinforcement_events if self._days_ago(r) < 7
         )
         reinforcement_bonus = min(0.3, recent_reinforcements * 0.1)
 
@@ -279,13 +278,15 @@ class DecayConfig:
     strong_threshold: float = 0.7
 
     # Half-life by memory type (days until half strength)
-    half_life_by_type: Dict[str, int] = field(default_factory=lambda: {
-        "heuristic": 60,      # Heuristics are valuable, decay slowly
-        "outcome": 30,        # Outcomes decay at normal rate
-        "preference": 365,    # User preferences are very stable
-        "knowledge": 90,      # Domain knowledge decays slowly
-        "anti_pattern": 45,   # Anti-patterns decay moderately
-    })
+    half_life_by_type: Dict[str, int] = field(
+        default_factory=lambda: {
+            "heuristic": 60,  # Heuristics are valuable, decay slowly
+            "outcome": 30,  # Outcomes decay at normal rate
+            "preference": 365,  # User preferences are very stable
+            "knowledge": 90,  # Domain knowledge decays slowly
+            "anti_pattern": 45,  # Anti-patterns decay moderately
+        }
+    )
 
     def get_half_life(self, memory_type: str) -> int:
         """Get half-life for a memory type."""
@@ -300,13 +301,16 @@ class DecayConfig:
             forget_threshold=data.get("forget_threshold", 0.1),
             weak_threshold=data.get("weak_threshold", 0.3),
             strong_threshold=data.get("strong_threshold", 0.7),
-            half_life_by_type=data.get("half_life_by_type", {
-                "heuristic": 60,
-                "outcome": 30,
-                "preference": 365,
-                "knowledge": 90,
-                "anti_pattern": 45,
-            }),
+            half_life_by_type=data.get(
+                "half_life_by_type",
+                {
+                    "heuristic": 60,
+                    "outcome": 30,
+                    "preference": 365,
+                    "knowledge": 90,
+                    "anti_pattern": 45,
+                },
+            ),
         )
 
 
@@ -337,7 +341,9 @@ class DecayManager:
         self.config = config or DecayConfig()
         self._strength_cache: Dict[str, MemoryStrength] = {}
 
-    def get_strength(self, memory_id: str, memory_type: str = "unknown") -> MemoryStrength:
+    def get_strength(
+        self, memory_id: str, memory_type: str = "unknown"
+    ) -> MemoryStrength:
         """
         Get or create strength record for a memory.
 
@@ -451,11 +457,13 @@ class DecayManager:
         for strength in all_strengths:
             current = strength.current_strength()
             if current < threshold:
-                forgettable.append((
-                    strength.memory_id,
-                    strength.memory_type,
-                    current,
-                ))
+                forgettable.append(
+                    (
+                        strength.memory_id,
+                        strength.memory_type,
+                        current,
+                    )
+                )
 
         # Sort by strength (weakest first)
         return sorted(forgettable, key=lambda x: x[2])
@@ -483,11 +491,13 @@ class DecayManager:
         weak = []
         for strength in all_strengths:
             if strength.is_recoverable():
-                weak.append((
-                    strength.memory_id,
-                    strength.memory_type,
-                    strength.current_strength(),
-                ))
+                weak.append(
+                    (
+                        strength.memory_id,
+                        strength.memory_type,
+                        strength.current_strength(),
+                    )
+                )
 
         # Sort by strength (weakest first for prioritization)
         return sorted(weak, key=lambda x: x[2])
@@ -513,11 +523,13 @@ class DecayManager:
         for strength in all_strengths:
             current = strength.current_strength()
             if current > self.config.strong_threshold:
-                strong.append((
-                    strength.memory_id,
-                    strength.memory_type,
-                    current,
-                ))
+                strong.append(
+                    (
+                        strength.memory_id,
+                        strength.memory_type,
+                        current,
+                    )
+                )
 
         # Sort by strength (strongest first)
         return sorted(strong, key=lambda x: x[2], reverse=True)
@@ -704,10 +716,14 @@ class DecayManager:
         }
 
         if dry_run:
-            result["would_archive"] = [
-                {"id": mid, "type": mtype, "strength": s}
-                for mid, mtype, s in forgettable
-            ] if archive else []
+            result["would_archive"] = (
+                [
+                    {"id": mid, "type": mtype, "strength": s}
+                    for mid, mtype, s in forgettable
+                ]
+                if archive
+                else []
+            )
             result["would_delete"] = [
                 {"id": mid, "type": mtype, "strength": s}
                 for mid, mtype, s in forgettable
@@ -725,26 +741,28 @@ class DecayManager:
                             reason="decay",
                             final_strength=current_strength,
                         )
-                        result["archived"].append({
-                            "memory_id": memory_id,
-                            "archive_id": archived.id,
-                            "memory_type": memory_type,
-                            "final_strength": current_strength,
-                        })
+                        result["archived"].append(
+                            {
+                                "memory_id": memory_id,
+                                "archive_id": archived.id,
+                                "memory_type": memory_type,
+                                "final_strength": current_strength,
+                            }
+                        )
                         logger.info(
                             f"Archived memory {memory_id} as {archived.id} "
                             f"(strength: {current_strength:.3f})"
                         )
                     except Exception as e:
                         # Log but continue - still try to delete
-                        logger.warning(
-                            f"Failed to archive memory {memory_id}: {e}"
+                        logger.warning(f"Failed to archive memory {memory_id}: {e}")
+                        result["errors"].append(
+                            {
+                                "memory_id": memory_id,
+                                "operation": "archive",
+                                "error": str(e),
+                            }
                         )
-                        result["errors"].append({
-                            "memory_id": memory_id,
-                            "operation": "archive",
-                            "error": str(e),
-                        })
 
                 # Delete the memory
                 deleted = self._delete_memory(memory_id, memory_type)
@@ -753,28 +771,34 @@ class DecayManager:
                     self.storage.delete_memory_strength(memory_id)
                     # Clear from cache
                     self._strength_cache.pop(memory_id, None)
-                    result["deleted"].append({
-                        "memory_id": memory_id,
-                        "memory_type": memory_type,
-                    })
+                    result["deleted"].append(
+                        {
+                            "memory_id": memory_id,
+                            "memory_type": memory_type,
+                        }
+                    )
                     logger.info(
                         f"Deleted memory {memory_id} (type: {memory_type}, "
                         f"strength: {current_strength:.3f})"
                     )
                 else:
-                    result["errors"].append({
-                        "memory_id": memory_id,
-                        "operation": "delete",
-                        "error": "Delete returned False",
-                    })
+                    result["errors"].append(
+                        {
+                            "memory_id": memory_id,
+                            "operation": "delete",
+                            "error": "Delete returned False",
+                        }
+                    )
 
             except Exception as e:
                 logger.error(f"Error processing memory {memory_id}: {e}")
-                result["errors"].append({
-                    "memory_id": memory_id,
-                    "operation": "process",
-                    "error": str(e),
-                })
+                result["errors"].append(
+                    {
+                        "memory_id": memory_id,
+                        "operation": "process",
+                        "error": str(e),
+                    }
+                )
 
         return result
 
@@ -812,9 +836,7 @@ def calculate_projected_strength(
 
     # Calculate decay factor for future date
     if strength.decay_half_life_days > 0:
-        decay_factor = math.exp(
-            -0.693 * days_ahead / strength.decay_half_life_days
-        )
+        decay_factor = math.exp(-0.693 * days_ahead / strength.decay_half_life_days)
     else:
         decay_factor = 1.0
 

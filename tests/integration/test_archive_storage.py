@@ -84,6 +84,7 @@ class TestArchiveStorageIntegration:
 
         # Verify content preserved
         import json
+
         content = json.loads(archived.content)
         assert content["condition"] == "when testing archive"
         assert content["strategy"] == "use sample data"
@@ -102,6 +103,7 @@ class TestArchiveStorageIntegration:
         assert archived.archive_reason == "manual"
 
         import json
+
         content = json.loads(archived.content)
         assert content["task_type"] == "testing"
         assert content["success"] is True
@@ -251,7 +253,9 @@ class TestArchiveStorageIntegration:
         assert len(archives) == 1
         assert archives[0].archive_reason == "decay"
 
-    def test_list_archives_by_memory_type(self, storage, sample_heuristic, sample_outcome):
+    def test_list_archives_by_memory_type(
+        self, storage, sample_heuristic, sample_outcome
+    ):
         """Should filter archives by memory type."""
         storage.archive_memory(
             memory_id=sample_heuristic.id,
@@ -561,6 +565,7 @@ class TestArchiveWithDomainKnowledge:
         assert archived.archive_reason == "consolidation"
 
         import json
+
         content = json.loads(archived.content)
         assert content["domain"] == "testing"
         assert content["fact"] == "Archive system works"
@@ -633,6 +638,7 @@ class TestArchiveWithAntiPattern:
         assert archived.archive_reason == "superseded"
 
         import json
+
         content = json.loads(archived.content)
         assert content["pattern"] == "Testing without archiving"
         assert content["why_bad"] == "Data loss risk"

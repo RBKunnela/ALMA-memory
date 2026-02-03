@@ -321,7 +321,11 @@ class RetrievalEngine:
             if not bypass_cache:
                 cache_key_suffix = f"_mode_{mode.value}"
                 cached = self.cache.get(
-                    query + cache_key_suffix, agent, project_id, user_id, effective_top_k
+                    query + cache_key_suffix,
+                    agent,
+                    project_id,
+                    user_id,
+                    effective_top_k,
                 )
                 if cached is not None:
                     cached.retrieval_time_ms = int((time.time() - start_time) * 1000)

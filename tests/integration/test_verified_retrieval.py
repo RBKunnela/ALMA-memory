@@ -79,9 +79,12 @@ class MockLLMClient:
     """Mock LLM client for testing."""
 
     def __init__(self, default_response: Optional[str] = None):
-        self.default_response = default_response or """STATUS: verified
+        self.default_response = (
+            default_response
+            or """STATUS: verified
 CONFIDENCE: 0.85
 REASON: Memory appears accurate"""
+        )
         self.call_count = 0
         self.responses = []
 
@@ -272,24 +275,27 @@ CONTRADICTION: The API endpoint has changed"""
         llm = MockLLMClient()
 
         # Set up alternating responses
-        llm.set_responses([
-            """STATUS: verified
+        llm.set_responses(
+            [
+                """STATUS: verified
 CONFIDENCE: 0.9
 REASON: Confirmed accurate""",
-            """STATUS: uncertain
+                """STATUS: uncertain
 CONFIDENCE: 0.5
 REASON: Could not fully verify""",
-            """STATUS: contradicted
+                """STATUS: contradicted
 CONFIDENCE: 0.3
 REASON: Conflicts detected
 CONTRADICTION: Source says otherwise""",
-            """STATUS: verified
+                """STATUS: verified
 CONFIDENCE: 0.85
 REASON: Matches sources""",
-            """STATUS: uncertain
+                """STATUS: uncertain
 CONFIDENCE: 0.6
 REASON: Partially verified""",
-        ] * 3)  # Repeat for all memories
+            ]
+            * 3
+        )  # Repeat for all memories
 
         retriever = VerifiedRetriever(
             retrieval_engine=engine,
@@ -305,7 +311,11 @@ REASON: Partially verified""",
         )
 
         # Should have mixed results
-        assert len(results.verified) > 0 or len(results.uncertain) > 0 or len(results.contradicted) > 0
+        assert (
+            len(results.verified) > 0
+            or len(results.uncertain) > 0
+            or len(results.contradicted) > 0
+        )
 
     def test_high_confidence_filter(self, populated_storage):
         """Should filter to high confidence only."""
@@ -518,6 +528,7 @@ class TestVerificationPerformance:
         )
 
         import time
+
         start = time.time()
         results = retriever.retrieve_verified(
             query="test",

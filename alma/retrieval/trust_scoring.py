@@ -114,13 +114,15 @@ class AgentTrustProfile:
     trust_half_life_days: int = 30
 
     # Per-behavior trust scores
-    behavior_trust: Dict[str, float] = field(default_factory=lambda: {
-        "verification_before_claim": 1.0,
-        "loud_failure": 1.0,
-        "honest_uncertainty": 1.0,
-        "paper_trail": 1.0,
-        "diligent_execution": 1.0,
-    })
+    behavior_trust: Dict[str, float] = field(
+        default_factory=lambda: {
+            "verification_before_claim": 1.0,
+            "loud_failure": 1.0,
+            "honest_uncertainty": 1.0,
+            "paper_trail": 1.0,
+            "diligent_execution": 1.0,
+        }
+    )
 
     def calculate_trust(self) -> float:
         """Calculate current trust with decay."""
@@ -176,7 +178,9 @@ class AgentTrustProfile:
             "total_actions": self.total_actions,
             "total_violations": self.total_violations,
             "consecutive_clean_sessions": self.consecutive_clean_sessions,
-            "last_session": self.last_session.isoformat() if self.last_session else None,
+            "last_session": self.last_session.isoformat()
+            if self.last_session
+            else None,
             "trust_half_life_days": self.trust_half_life_days,
             "behavior_trust": self.behavior_trust,
         }
@@ -263,7 +267,9 @@ class TrustAwareScorer(MemoryScorer):
             success_rate=tw.success_rate,
             confidence=tw.confidence,
         )
-        super().__init__(weights=base_weights, recency_half_life_days=recency_half_life_days)
+        super().__init__(
+            weights=base_weights, recency_half_life_days=recency_half_life_days
+        )
 
         self.trust_weights = tw
         self.trust_profiles = trust_profiles or {}

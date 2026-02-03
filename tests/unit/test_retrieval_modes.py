@@ -42,7 +42,12 @@ class TestModeConfig:
         config = ModeConfig(
             top_k=5,
             min_confidence=0.5,
-            weights={"similarity": 0.4, "recency": 0.3, "success_rate": 0.2, "confidence": 0.1},
+            weights={
+                "similarity": 0.4,
+                "recency": 0.3,
+                "success_rate": 0.2,
+                "confidence": 0.1,
+            },
             include_anti_patterns=True,
             diversity_factor=0.5,
         )
@@ -55,7 +60,12 @@ class TestModeConfig:
         config = ModeConfig(
             top_k=5,
             min_confidence=0.5,
-            weights={"similarity": 0.8, "recency": 0.8, "success_rate": 0.8, "confidence": 0.8},
+            weights={
+                "similarity": 0.8,
+                "recency": 0.8,
+                "success_rate": 0.8,
+                "confidence": 0.8,
+            },
             include_anti_patterns=True,
             diversity_factor=0.5,
         )
@@ -93,7 +103,9 @@ class TestModeConfigs:
         required = {"similarity", "recency", "success_rate", "confidence"}
         for mode, config in MODE_CONFIGS.items():
             if config.weights:
-                assert required <= set(config.weights.keys()), f"{mode.value} missing weight keys"
+                assert required <= set(config.weights.keys()), (
+                    f"{mode.value} missing weight keys"
+                )
 
     def test_broad_mode_config(self):
         """BROAD mode should have high diversity and low confidence threshold."""
@@ -135,43 +147,48 @@ class TestModeConfigs:
 class TestModeInference:
     """Tests for infer_mode_from_query function."""
 
-    @pytest.mark.parametrize("query,expected", [
-        # DIAGNOSTIC queries
-        ("Why is the login failing?", RetrievalMode.DIAGNOSTIC),
-        ("Debug the authentication error", RetrievalMode.DIAGNOSTIC),
-        ("Fix the broken API endpoint", RetrievalMode.DIAGNOSTIC),
-        ("The system crashed, what went wrong?", RetrievalMode.DIAGNOSTIC),
-        ("There's a bug in the payment flow", RetrievalMode.DIAGNOSTIC),
-        ("This feature is not working", RetrievalMode.DIAGNOSTIC),
-        ("Error handling in the checkout", RetrievalMode.DIAGNOSTIC),
-        # BROAD queries
-        ("What are our options for authentication?", RetrievalMode.BROAD),
-        ("How should we design the API?", RetrievalMode.BROAD),
-        ("Ways to implement caching", RetrievalMode.BROAD),
-        ("Let's brainstorm solutions", RetrievalMode.BROAD),
-        ("Explore different architectures", RetrievalMode.BROAD),
-        ("Plan the database migration", RetrievalMode.BROAD),
-        # RECALL queries
-        ("What did we decide last week?", RetrievalMode.RECALL),
-        ("Remember when we updated the config?", RetrievalMode.RECALL),
-        ("What was the previous approach?", RetrievalMode.RECALL),
-        ("When did we last update the API?", RetrievalMode.RECALL),
-        ("Previously we tried...", RetrievalMode.RECALL),
-        # LEARNING queries
-        ("Find similar patterns in our tests", RetrievalMode.LEARNING),
-        ("What common themes have we seen?", RetrievalMode.LEARNING),
-        ("Consolidate recurring themes", RetrievalMode.LEARNING),
-        ("Look for recurring patterns", RetrievalMode.LEARNING),
-        # PRECISE queries (default)
-        ("Implement the login form", RetrievalMode.PRECISE),
-        ("Add validation to the email field", RetrievalMode.PRECISE),
-        ("Create a new API endpoint", RetrievalMode.PRECISE),
-        ("Write the unit tests", RetrievalMode.PRECISE),
-    ])
+    @pytest.mark.parametrize(
+        "query,expected",
+        [
+            # DIAGNOSTIC queries
+            ("Why is the login failing?", RetrievalMode.DIAGNOSTIC),
+            ("Debug the authentication error", RetrievalMode.DIAGNOSTIC),
+            ("Fix the broken API endpoint", RetrievalMode.DIAGNOSTIC),
+            ("The system crashed, what went wrong?", RetrievalMode.DIAGNOSTIC),
+            ("There's a bug in the payment flow", RetrievalMode.DIAGNOSTIC),
+            ("This feature is not working", RetrievalMode.DIAGNOSTIC),
+            ("Error handling in the checkout", RetrievalMode.DIAGNOSTIC),
+            # BROAD queries
+            ("What are our options for authentication?", RetrievalMode.BROAD),
+            ("How should we design the API?", RetrievalMode.BROAD),
+            ("Ways to implement caching", RetrievalMode.BROAD),
+            ("Let's brainstorm solutions", RetrievalMode.BROAD),
+            ("Explore different architectures", RetrievalMode.BROAD),
+            ("Plan the database migration", RetrievalMode.BROAD),
+            # RECALL queries
+            ("What did we decide last week?", RetrievalMode.RECALL),
+            ("Remember when we updated the config?", RetrievalMode.RECALL),
+            ("What was the previous approach?", RetrievalMode.RECALL),
+            ("When did we last update the API?", RetrievalMode.RECALL),
+            ("Previously we tried...", RetrievalMode.RECALL),
+            # LEARNING queries
+            ("Find similar patterns in our tests", RetrievalMode.LEARNING),
+            ("What common themes have we seen?", RetrievalMode.LEARNING),
+            ("Consolidate recurring themes", RetrievalMode.LEARNING),
+            ("Look for recurring patterns", RetrievalMode.LEARNING),
+            # PRECISE queries (default)
+            ("Implement the login form", RetrievalMode.PRECISE),
+            ("Add validation to the email field", RetrievalMode.PRECISE),
+            ("Create a new API endpoint", RetrievalMode.PRECISE),
+            ("Write the unit tests", RetrievalMode.PRECISE),
+        ],
+    )
     def test_mode_inference(self, query, expected):
         """Test mode inference for various queries."""
         result = infer_mode_from_query(query)
-        assert result == expected, f"Expected {expected.value} for '{query}', got {result.value}"
+        assert result == expected, (
+            f"Expected {expected.value} for '{query}', got {result.value}"
+        )
 
     def test_empty_query_returns_precise(self):
         """Empty query should default to PRECISE."""
@@ -201,13 +218,21 @@ class TestGetModeReason:
     def test_broad_reason_includes_terms(self):
         """Broad reason should mention matched terms."""
         reason = get_mode_reason("How should we design this?", RetrievalMode.BROAD)
-        assert "plan" in reason.lower() or "explor" in reason.lower() or "how should" in reason.lower()
+        assert (
+            "plan" in reason.lower()
+            or "explor" in reason.lower()
+            or "how should" in reason.lower()
+        )
 
     def test_precise_default_reason(self):
         """Precise mode should have a default reason."""
         reason = get_mode_reason("Implement the feature", RetrievalMode.PRECISE)
         assert len(reason) > 0
-        assert "default" in reason.lower() or "implementation" in reason.lower() or "execution" in reason.lower()
+        assert (
+            "default" in reason.lower()
+            or "implementation" in reason.lower()
+            or "execution" in reason.lower()
+        )
 
 
 class TestGetModeConfig:
@@ -268,7 +293,12 @@ class TestValidateModeConfig:
         config = ModeConfig(
             top_k=5,
             min_confidence=0.5,
-            weights={"similarity": 0.4, "recency": 0.3, "success_rate": 0.2, "confidence": 0.1},
+            weights={
+                "similarity": 0.4,
+                "recency": 0.3,
+                "success_rate": 0.2,
+                "confidence": 0.1,
+            },
             include_anti_patterns=True,
             diversity_factor=0.5,
         )
@@ -308,10 +338,20 @@ class TestValidateModeConfig:
         config = ModeConfig(
             top_k=5,
             min_confidence=0.5,
-            weights={"similarity": 0.5, "recency": 0.5, "success_rate": 0.5, "confidence": 0.5},
+            weights={
+                "similarity": 0.5,
+                "recency": 0.5,
+                "success_rate": 0.5,
+                "confidence": 0.5,
+            },
         )
         # Note: __post_init__ normalizes, so we need to bypass
-        config.weights = {"similarity": 0.5, "recency": 0.5, "success_rate": 0.5, "confidence": 0.5}
+        config.weights = {
+            "similarity": 0.5,
+            "recency": 0.5,
+            "success_rate": 0.5,
+            "confidence": 0.5,
+        }
         errors = validate_mode_config(config)
         assert any("weights" in e and "sum" in e for e in errors)
 

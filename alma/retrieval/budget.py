@@ -352,28 +352,42 @@ class RetrievalBudget:
 
         # MUST_SEE first (preferences, anti-patterns, heuristics)
         for pref in memory_slice.preferences[: self.config.max_preferences]:
-            budgeted = self.include(pref, "preference", priorities.get("preference", PriorityTier.MUST_SEE))
+            budgeted = self.include(
+                pref, "preference", priorities.get("preference", PriorityTier.MUST_SEE)
+            )
             if budgeted.included:
                 included_preferences.append(pref)
 
         for ap in memory_slice.anti_patterns[: self.config.max_anti_patterns]:
-            budgeted = self.include(ap, "anti_pattern", priorities.get("anti_pattern", PriorityTier.MUST_SEE))
+            budgeted = self.include(
+                ap,
+                "anti_pattern",
+                priorities.get("anti_pattern", PriorityTier.MUST_SEE),
+            )
             if budgeted.included:
                 included_anti_patterns.append(ap)
 
         for h in memory_slice.heuristics[: self.config.max_heuristics]:
-            budgeted = self.include(h, "heuristic", priorities.get("heuristic", PriorityTier.MUST_SEE))
+            budgeted = self.include(
+                h, "heuristic", priorities.get("heuristic", PriorityTier.MUST_SEE)
+            )
             if budgeted.included:
                 included_heuristics.append(h)
 
         # SHOULD_SEE next (outcomes, knowledge)
         for o in memory_slice.outcomes[: self.config.max_outcomes]:
-            budgeted = self.include(o, "outcome", priorities.get("outcome", PriorityTier.SHOULD_SEE))
+            budgeted = self.include(
+                o, "outcome", priorities.get("outcome", PriorityTier.SHOULD_SEE)
+            )
             if budgeted.included:
                 included_outcomes.append(o)
 
         for k in memory_slice.domain_knowledge[: self.config.max_knowledge]:
-            budgeted = self.include(k, "domain_knowledge", priorities.get("domain_knowledge", PriorityTier.SHOULD_SEE))
+            budgeted = self.include(
+                k,
+                "domain_knowledge",
+                priorities.get("domain_knowledge", PriorityTier.SHOULD_SEE),
+            )
             if budgeted.included:
                 included_knowledge.append(k)
 

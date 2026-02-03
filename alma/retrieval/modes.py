@@ -136,27 +136,77 @@ MODE_CONFIGS: Dict[RetrievalMode, ModeConfig] = {
 
 
 # Keywords for mode inference
-_DIAGNOSTIC_TERMS = frozenset([
-    "error", "bug", "fail", "failed", "failing", "broken", "issue",
-    "problem", "debug", "fix", "wrong", "crash", "exception", "traceback",
-    "not working", "doesn't work", "won't work", "can't"
-])
+_DIAGNOSTIC_TERMS = frozenset(
+    [
+        "error",
+        "bug",
+        "fail",
+        "failed",
+        "failing",
+        "broken",
+        "issue",
+        "problem",
+        "debug",
+        "fix",
+        "wrong",
+        "crash",
+        "exception",
+        "traceback",
+        "not working",
+        "doesn't work",
+        "won't work",
+        "can't",
+    ]
+)
 
-_BROAD_TERMS = frozenset([
-    "how should", "what approach", "options for", "ways to", "plan",
-    "design", "architect", "strategy", "alternative", "consider",
-    "brainstorm", "explore", "ideas for", "possibilities"
-])
+_BROAD_TERMS = frozenset(
+    [
+        "how should",
+        "what approach",
+        "options for",
+        "ways to",
+        "plan",
+        "design",
+        "architect",
+        "strategy",
+        "alternative",
+        "consider",
+        "brainstorm",
+        "explore",
+        "ideas for",
+        "possibilities",
+    ]
+)
 
-_RECALL_TERMS = frozenset([
-    "what was", "when did", "remember when", "last time", "previously",
-    "before", "earlier", "what did we", "history of", "past"
-])
+_RECALL_TERMS = frozenset(
+    [
+        "what was",
+        "when did",
+        "remember when",
+        "last time",
+        "previously",
+        "before",
+        "earlier",
+        "what did we",
+        "history of",
+        "past",
+    ]
+)
 
-_LEARNING_TERMS = frozenset([
-    "pattern", "similar", "consolidate", "common", "recurring",
-    "repeated", "frequent", "trend", "consistent", "like before"
-])
+_LEARNING_TERMS = frozenset(
+    [
+        "pattern",
+        "similar",
+        "consolidate",
+        "common",
+        "recurring",
+        "repeated",
+        "frequent",
+        "trend",
+        "consistent",
+        "like before",
+    ]
+)
 
 
 def infer_mode_from_query(query: str) -> RetrievalMode:
@@ -229,7 +279,9 @@ def get_mode_reason(query: str, mode: RetrievalMode) -> str:
     if mode == RetrievalMode.BROAD:
         matched = [t for t in _BROAD_TERMS if t in query_lower]
         if matched:
-            return f"Query contains planning/exploration terms: {', '.join(matched[:3])}"
+            return (
+                f"Query contains planning/exploration terms: {', '.join(matched[:3])}"
+            )
         return "Query appears to be exploratory or planning-related"
 
     if mode == RetrievalMode.RECALL:
@@ -247,10 +299,7 @@ def get_mode_reason(query: str, mode: RetrievalMode) -> str:
     return "Default mode for implementation/execution queries"
 
 
-def create_custom_mode(
-    base_mode: RetrievalMode,
-    **overrides
-) -> ModeConfig:
+def create_custom_mode(base_mode: RetrievalMode, **overrides) -> ModeConfig:
     """
     Create a custom mode configuration based on an existing mode.
 

@@ -147,7 +147,9 @@ class SummaryExtractor:
                 f"When {h.condition}, {h.strategy}",
                 self.max_summary_length,
             )
-            relevance = f"Success rate: {h.success_rate:.0%}, Confidence: {h.confidence:.0%}"
+            relevance = (
+                f"Success rate: {h.success_rate:.0%}, Confidence: {h.confidence:.0%}"
+            )
         else:  # KEY_DETAILS or FULL
             summary = f"When {h.condition}, {h.strategy}"
             relevance = f"Used {h.occurrence_count}x, {h.success_rate:.0%} success"
@@ -410,8 +412,7 @@ class ProgressiveRetrieval:
             for h in raw_slice.heuristics
         ]
         outcome_summaries = [
-            self.extractor.extract_outcome_summary(o, level)
-            for o in raw_slice.outcomes
+            self.extractor.extract_outcome_summary(o, level) for o in raw_slice.outcomes
         ]
         knowledge_summaries = [
             self.extractor.extract_knowledge_summary(k, level)

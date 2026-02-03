@@ -377,7 +377,7 @@ class MemoryCompressor:
         prompt = f"""Analyze these {len(experiences)} similar experiences and extract a general rule.
 
 EXPERIENCES:
-{chr(10).join(f'{i+1}. {e}' for i, e in enumerate(experiences[:10]))}
+{chr(10).join(f"{i + 1}. {e}" for i, e in enumerate(experiences[:10]))}
 
 If a clear, actionable pattern exists, state it as:
 "When [specific situation], then [specific action] because [brief reason]."
@@ -445,7 +445,7 @@ NEW KNOWLEDGE:
 {new_knowledge}
 
 EXISTING SIMILAR KNOWLEDGE:
-{chr(10).join(f'- {k}' for k in similar[:5])}
+{chr(10).join(f"- {k}" for k in similar[:5])}
 
 Decide:
 1. If new knowledge is completely redundant (says nothing new): respond "DUPLICATE"
@@ -592,7 +592,9 @@ PATTERNS:
         if level == CompressionLevel.LIGHT:
             return "COMPRESSION: Light - Remove redundancy but preserve detail."
         elif level == CompressionLevel.MEDIUM:
-            return "COMPRESSION: Medium - Extract key points only. Target 3x compression."
+            return (
+                "COMPRESSION: Medium - Extract key points only. Target 3x compression."
+            )
         elif level == CompressionLevel.AGGRESSIVE:
             return "COMPRESSION: Aggressive - Maximum compression. Only absolute essentials. Target 5x+ compression."
         return ""
@@ -622,7 +624,9 @@ PATTERNS:
             if upper_line.startswith("SUMMARY:"):
                 summary = line.split(":", 1)[1].strip() if ":" in line else ""
                 current_section = "summary"
-            elif upper_line.startswith("KEY_FACTS:") or upper_line.startswith("KEY FACTS:"):
+            elif upper_line.startswith("KEY_FACTS:") or upper_line.startswith(
+                "KEY FACTS:"
+            ):
                 current_section = "facts"
             elif upper_line.startswith("CONSTRAINTS:"):
                 current_section = "constraints"
@@ -633,11 +637,20 @@ PATTERNS:
                 item = line.lstrip("-•").strip()
                 if item.lower() == "none" or not item:
                     continue
-                if current_section == "facts" and len(key_facts) < self.config.max_key_facts:
+                if (
+                    current_section == "facts"
+                    and len(key_facts) < self.config.max_key_facts
+                ):
                     key_facts.append(item)
-                elif current_section == "constraints" and len(constraints) < self.config.max_constraints:
+                elif (
+                    current_section == "constraints"
+                    and len(constraints) < self.config.max_constraints
+                ):
                     constraints.append(item)
-                elif current_section == "patterns" and len(patterns) < self.config.max_patterns:
+                elif (
+                    current_section == "patterns"
+                    and len(patterns) < self.config.max_patterns
+                ):
                     patterns.append(item)
             elif current_section == "summary" and not summary:
                 # Continuation of summary
@@ -645,7 +658,11 @@ PATTERNS:
 
         # Fallback if no summary extracted
         if not summary:
-            summary = original_content[:500] + "..." if len(original_content) > 500 else original_content
+            summary = (
+                original_content[:500] + "..."
+                if len(original_content) > 500
+                else original_content
+            )
 
         compressed_length = len(summary)
         original_length = len(original_content)
@@ -653,7 +670,9 @@ PATTERNS:
         return CompressedMemory(
             original_length=original_length,
             compressed_length=compressed_length,
-            compression_ratio=original_length / compressed_length if compressed_length > 0 else 1.0,
+            compression_ratio=original_length / compressed_length
+            if compressed_length > 0
+            else 1.0,
             key_facts=key_facts,
             constraints=constraints,
             patterns=patterns,
@@ -711,7 +730,9 @@ PATTERNS:
         return CompressedMemory(
             original_length=original_length,
             compressed_length=compressed_length,
-            compression_ratio=original_length / compressed_length if compressed_length > 0 else 1.0,
+            compression_ratio=original_length / compressed_length
+            if compressed_length > 0
+            else 1.0,
             key_facts=key_facts[: self.config.max_key_facts],
             constraints=constraints[: self.config.max_constraints],
             patterns=patterns,
@@ -722,7 +743,7 @@ PATTERNS:
     def _split_sentences(self, text: str) -> List[str]:
         """Split text into sentences."""
         # Simple sentence splitting
-        sentences = re.split(r'(?<=[.!?])\s+', text)
+        sentences = re.split(r"(?<=[.!?])\s+", text)
         return [s.strip() for s in sentences if s.strip()]
 
     def _light_compression(self, sentences: List[str]) -> str:
@@ -748,11 +769,22 @@ PATTERNS:
 
         # Indicators of important sentences
         importance_indicators = [
-            " is ", " are ", " was ", " were ",
-            " should ", " must ", " need ",
-            " because ", " therefore ", " however ",
-            " key ", " important ", " essential ",
-            " result ", " conclusion ", " found ",
+            " is ",
+            " are ",
+            " was ",
+            " were ",
+            " should ",
+            " must ",
+            " need ",
+            " because ",
+            " therefore ",
+            " however ",
+            " key ",
+            " important ",
+            " essential ",
+            " result ",
+            " conclusion ",
+            " found ",
         ]
 
         # Score sentences by importance
@@ -784,7 +816,9 @@ PATTERNS:
 
         if len(sentences) == 1:
             # Single sentence - truncate if needed
-            return sentences[0][:300] + "..." if len(sentences[0]) > 300 else sentences[0]
+            return (
+                sentences[0][:300] + "..." if len(sentences[0]) > 300 else sentences[0]
+            )
 
         # First sentence (context) + most important + last (conclusion)
         first = sentences[0]
@@ -794,7 +828,14 @@ PATTERNS:
         middle_sentences = sentences[1:-1] if len(sentences) > 2 else []
         best_middle = ""
         if middle_sentences:
-            importance_words = ["must", "should", "key", "important", "because", "therefore"]
+            importance_words = [
+                "must",
+                "should",
+                "key",
+                "important",
+                "because",
+                "therefore",
+            ]
             for sentence in middle_sentences:
                 if any(w in sentence.lower() for w in importance_words):
                     best_middle = sentence
@@ -821,14 +862,22 @@ PATTERNS:
                 if clean and len(clean) > 10:
                     facts.append(clean)
 
-        return facts[:self.config.max_key_facts]
+        return facts[: self.config.max_key_facts]
 
     def _extract_constraints(self, sentences: List[str]) -> List[str]:
         """Extract sentences that appear to describe constraints."""
         constraint_indicators = [
-            " must ", " cannot ", " should not ", " shouldn't ",
-            " limit ", " require ", " only ", " never ",
-            " avoid ", " prevent ", " restrict ",
+            " must ",
+            " cannot ",
+            " should not ",
+            " shouldn't ",
+            " limit ",
+            " require ",
+            " only ",
+            " never ",
+            " avoid ",
+            " prevent ",
+            " restrict ",
         ]
         constraints = []
 
@@ -839,14 +888,14 @@ PATTERNS:
                 if clean and len(clean) > 10:
                     constraints.append(clean)
 
-        return constraints[:self.config.max_constraints]
+        return constraints[: self.config.max_constraints]
 
     def _normalize_sentence(self, sentence: str) -> str:
         """Normalize sentence for deduplication."""
         # Lowercase, remove extra whitespace, remove punctuation
         normalized = sentence.lower()
-        normalized = re.sub(r'[^\w\s]', '', normalized)
-        normalized = ' '.join(normalized.split())
+        normalized = re.sub(r"[^\w\s]", "", normalized)
+        normalized = " ".join(normalized.split())
         return normalized
 
     def _rule_based_heuristic(self, experiences: List[str]) -> Optional[str]:

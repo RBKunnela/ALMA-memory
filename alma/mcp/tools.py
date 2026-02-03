@@ -2116,9 +2116,7 @@ def alma_retrieve_verified(
                 memory_dict = memory.to_dict()
             elif hasattr(memory, "__dict__"):
                 memory_dict = {
-                    k: v
-                    for k, v in memory.__dict__.items()
-                    if not k.startswith("_")
+                    k: v for k, v in memory.__dict__.items() if not k.startswith("_")
                 }
             else:
                 memory_dict = {"content": str(memory)}
@@ -2608,8 +2606,7 @@ def alma_retrieve_with_trust(
                 for ap in memories.anti_patterns
             ]
             ap_similarities = [
-                scorer._cosine_similarity(query_embedding, e)
-                for e in ap_embeddings
+                scorer._cosine_similarity(query_embedding, e) for e in ap_embeddings
             ]
 
             trust_scored_ap = scorer.score_anti_patterns_with_trust(
@@ -2634,8 +2631,10 @@ def alma_retrieve_with_trust(
 
         # Trust-based retrieval summary
         trust_level = (
-            "HIGH" if requesting_agent_trust >= 0.7
-            else "MODERATE" if requesting_agent_trust >= 0.5
+            "HIGH"
+            if requesting_agent_trust >= 0.7
+            else "MODERATE"
+            if requesting_agent_trust >= 0.5
             else "LOW"
         )
 
@@ -2751,7 +2750,11 @@ def alma_retrieve_with_budget(
                     for tier, count in report.included_by_priority.items()
                 },
                 "excluded_items": [
-                    {"type": item.memory_type, "id": item.item.id, "priority": item.priority.value}
+                    {
+                        "type": item.memory_type,
+                        "id": item.item.id,
+                        "priority": item.priority.value,
+                    }
                     for item in report.excluded_items[:5]  # Show first 5 excluded
                 ],
             },
@@ -2842,7 +2845,11 @@ def alma_retrieve_progressive(
                 "one_liner": summary.one_liner,
                 "relevance_score": round(summary.relevance_score, 3),
             }
-            if level in [DisclosureLevel.SUMMARY, DisclosureLevel.KEY_DETAILS, DisclosureLevel.FULL]:
+            if level in [
+                DisclosureLevel.SUMMARY,
+                DisclosureLevel.KEY_DETAILS,
+                DisclosureLevel.FULL,
+            ]:
                 summary_dict["summary"] = summary.summary
             if level in [DisclosureLevel.KEY_DETAILS, DisclosureLevel.FULL]:
                 summary_dict["key_details"] = summary.key_details
@@ -2857,7 +2864,8 @@ def alma_retrieve_progressive(
             "can_fetch_more": progressive_slice.total_available > len(summaries),
             "fetch_instructions": (
                 "Use alma_get_memory_full to retrieve complete content for any memory_id"
-                if level != "full" else None
+                if level != "full"
+                else None
             ),
         }
 
@@ -2890,7 +2898,13 @@ def alma_get_memory_full(
     if not memory_type or not memory_type.strip():
         return {"success": False, "error": "memory_type cannot be empty"}
 
-    valid_types = ["heuristic", "outcome", "domain_knowledge", "anti_pattern", "preference"]
+    valid_types = [
+        "heuristic",
+        "outcome",
+        "domain_knowledge",
+        "anti_pattern",
+        "preference",
+    ]
     if memory_type not in valid_types:
         return {
             "success": False,
@@ -2922,7 +2936,9 @@ def alma_get_memory_full(
                 "confidence": memory.confidence,
                 "occurrence_count": memory.occurrence_count,
                 "success_rate": getattr(memory, "success_rate", None),
-                "last_validated": memory.last_validated.isoformat() if memory.last_validated else None,
+                "last_validated": memory.last_validated.isoformat()
+                if memory.last_validated
+                else None,
             }
         elif memory_type == "outcome":
             content = {
@@ -3002,7 +3018,10 @@ def alma_store_trust_pattern(
     if not agent_id or not agent_id.strip():
         return {"success": False, "error": "agent_id cannot be empty"}
     if not pattern_type or pattern_type not in ["violation", "verification"]:
-        return {"success": False, "error": "pattern_type must be 'violation' or 'verification'"}
+        return {
+            "success": False,
+            "error": "pattern_type must be 'violation' or 'verification'",
+        }
     if not task_type or not task_type.strip():
         return {"success": False, "error": "task_type cannot be empty"}
     if not description or not description.strip():
@@ -3123,8 +3142,14 @@ async def async_alma_retrieve_with_trust(
     return await loop.run_in_executor(
         None,
         lambda: alma_retrieve_with_trust(
-            alma, query, agent, requesting_agent_id,
-            requesting_agent_trust, trust_behaviors, user_id, top_k
+            alma,
+            query,
+            agent,
+            requesting_agent_id,
+            requesting_agent_trust,
+            trust_behaviors,
+            user_id,
+            top_k,
         ),
     )
 
@@ -3146,8 +3171,14 @@ async def async_alma_retrieve_with_budget(
     return await loop.run_in_executor(
         None,
         lambda: alma_retrieve_with_budget(
-            alma, query, agent, max_tokens,
-            must_see_types, should_see_types, user_id, top_k
+            alma,
+            query,
+            agent,
+            max_tokens,
+            must_see_types,
+            should_see_types,
+            user_id,
+            top_k,
         ),
     )
 

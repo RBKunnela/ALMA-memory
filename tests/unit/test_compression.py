@@ -654,8 +654,7 @@ class TestDeduplicateKnowledge:
         """Should merge overlapping knowledge with LLM."""
         llm = MagicMock()
         llm.complete.return_value = (
-            "The API uses REST conventions with JSON responses and "
-            "supports pagination."
+            "The API uses REST conventions with JSON responses and supports pagination."
         )
 
         compressor = MemoryCompressor(llm_client=llm)
@@ -710,9 +709,9 @@ class TestCompressionRatios:
         compressor = MemoryCompressor()
         # Create content with some redundancy
         content = (
-            "This is a repeated sentence. " * 10 +
-            "This is unique content. " +
-            "More unique content here."
+            "This is a repeated sentence. " * 10
+            + "This is unique content. "
+            + "More unique content here."
         )
 
         result = compressor.compress(content, CompressionLevel.LIGHT)
@@ -748,11 +747,13 @@ class TestCompressionRatios:
         """Aggressive compression should achieve ~5x ratio."""
         compressor = MemoryCompressor()
         # Create very verbose content
-        content = " ".join([
-            f"Sentence number {i} with some filler content and details. "
-            f"This adds more words to the sentence {i}."
-            for i in range(20)
-        ])
+        content = " ".join(
+            [
+                f"Sentence number {i} with some filler content and details. "
+                f"This adds more words to the sentence {i}."
+                for i in range(20)
+            ]
+        )
 
         result = compressor.compress(content, CompressionLevel.AGGRESSIVE)
 
