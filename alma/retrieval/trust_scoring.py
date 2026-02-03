@@ -23,7 +23,6 @@ from typing import Any, Dict, List, Optional
 from alma.retrieval.scoring import MemoryScorer, ScoredItem, ScoringWeights
 from alma.types import (
     AntiPattern,
-    DomainKnowledge,
     Heuristic,
     MemorySlice,
     Outcome,
