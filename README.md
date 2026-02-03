@@ -138,6 +138,19 @@ The major theme of v0.7.0 is **smarter memory management** - preventing memory b
   - Intelligent truncation preserving most relevant content
   - Budget allocation across memory types
 
+- **6 New MCP Tools** - Enhanced Claude Code integration
+  - `alma_reinforce` - Strengthen a memory to prevent forgetting
+  - `alma_get_weak_memories` - List memories at risk of being forgotten
+  - `alma_smart_forget` - Intelligent forgetting with archive
+  - `alma_retrieve_verified` - Two-stage verified retrieval
+  - `alma_compress_and_learn` - Compress and store content
+  - `alma_extract_heuristic` - Extract patterns from experiences
+
+- **Archive System** - Soft-delete with recovery
+  - Archived memories can be recovered if needed
+  - Compliance-friendly deletion
+  - Automatic archival on smart forget
+
 ### Previous Releases
 
 <details>
@@ -556,7 +569,7 @@ python -m alma.mcp --config .alma/config.yaml
 }
 ```
 
-**Available MCP Tools (16 total):**
+**Available MCP Tools (22 total):**
 
 | Core Tools | Description |
 |------------|-------------|
@@ -579,6 +592,15 @@ python -m alma.mcp --config .alma/config.yaml
 | `alma_get_artifacts` | Get workflow artifacts |
 | `alma_cleanup_checkpoints` | Clean old checkpoints |
 | `alma_retrieve_scoped` | Scoped memory retrieval |
+
+| Memory Wall Tools (v0.7.0) | Description |
+|----------------------------|-------------|
+| `alma_reinforce` | Strengthen a memory to prevent forgetting |
+| `alma_get_weak_memories` | List memories at risk of decay |
+| `alma_smart_forget` | Intelligent forgetting with archive |
+| `alma_retrieve_verified` | Two-stage verified retrieval |
+| `alma_compress_and_learn` | Compress and store content |
+| `alma_extract_heuristic` | Extract patterns from experiences |
 
 ---
 
@@ -710,7 +732,7 @@ print(f"Recommendation: {signal.recommendation}")
 
 ```
 +-------------------------------------------------------------------------+
-|                          ALMA v0.6.0                                    |
+|                          ALMA v0.7.0                                    |
 +-------------------------------------------------------------------------+
 |  HARNESS LAYER                                                          |
 |  +-----------+  +-----------+  +-----------+  +----------------+        |
@@ -881,6 +903,15 @@ chroma:
 | Scoped Retrieval | Filter by workflow/agent/project | Done |
 | MCP Workflow Tools | 8 additional MCP tools | Done |
 | TypeScript SDK v0.6.0 | Full workflow API support | Done |
+| Memory Decay | Time-based confidence decay | Done |
+| Memory Compression | LLM + rule-based compression | Done |
+| Verified Retrieval | Two-stage verification pipeline | Done |
+| Retrieval Modes | 7 cognitive task modes | Done |
+| Trust-Integrated Scoring | Agent trust weighting | Done |
+| Token Budget | Context window management | Done |
+| Progressive Disclosure | Summary → highlights → full | Done |
+| MCP Memory Wall Tools | 6 new MCP tools | Done |
+| Archive System | Soft-delete with recovery | Done |
 
 ---
 
@@ -945,6 +976,17 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Roadmap
 
+**Completed (v0.7.0):**
+- Memory decay & intelligent forgetting
+- Memory compression pipeline (LLM + rule-based)
+- Two-stage verified retrieval
+- Mode-aware retrieval (7 modes)
+- Trust-integrated scoring
+- Token budget management
+- Progressive disclosure
+- 6 new MCP tools for Memory Wall
+- Archive system with recovery
+
 **Completed (v0.6.0):**
 - Workflow context layer (checkpoints, state merging, artifacts)
 - Session persistence
@@ -961,11 +1003,11 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 - Graph database abstraction
 
 **Next:**
-- Memory compression / summarization
 - Temporal reasoning (time-aware retrieval)
 - Proactive memory suggestions
 - Visual memory explorer dashboard
 - Additional graph backends (Neptune, TigerGraph)
+- Redis cache backend
 
 ---
 
