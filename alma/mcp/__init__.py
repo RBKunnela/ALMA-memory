@@ -55,7 +55,10 @@ from alma.mcp.tools import (
     alma_merge_states,
     alma_resume,
     alma_retrieve,
+    # Mode-aware tools (v0.7.0)
+    alma_retrieve_for_mode,
     alma_retrieve_scoped,
+    alma_retrieve_smart,
     alma_stats,
     alma_workflow_learn,
     # Async tools
@@ -69,7 +72,10 @@ from alma.mcp.tools import (
     async_alma_link_artifact,
     async_alma_resume,
     async_alma_retrieve,
+    # Async mode-aware tools (v0.7.0)
+    async_alma_retrieve_for_mode,
     async_alma_retrieve_scoped,
+    async_alma_retrieve_smart,
     async_alma_stats,
     async_alma_workflow_learn,
 )
@@ -94,6 +100,9 @@ __all__ = [
     "alma_get_artifacts",
     "alma_cleanup_checkpoints",
     "alma_retrieve_scoped",
+    # Mode-aware tools (v0.7.0)
+    "alma_retrieve_for_mode",
+    "alma_retrieve_smart",
     # Async tools
     "async_alma_retrieve",
     "async_alma_learn",
@@ -108,4 +117,7 @@ __all__ = [
     "async_alma_workflow_learn",
     "async_alma_link_artifact",
     "async_alma_retrieve_scoped",
+    # Async mode-aware tools (v0.7.0)
+    "async_alma_retrieve_for_mode",
+    "async_alma_retrieve_smart",
 ]

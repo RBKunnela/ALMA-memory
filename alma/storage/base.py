@@ -861,6 +861,211 @@ class StorageBackend(ABC):
             f"{self.__class__.__name__} does not support session handoffs."
         )
 
+    # ==================== MEMORY STRENGTH OPERATIONS (v0.7.0+) ====================
+
+    def save_memory_strength(self, strength: Any) -> str:
+        """
+        Save or update a memory strength record.
+
+        Args:
+            strength: MemoryStrength instance to save
+
+        Returns:
+            The memory ID
+
+        Note: Default implementation raises NotImplementedError.
+              Backends should override for decay-based forgetting support.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support memory strength tracking. "
+            "Use SQLiteStorage for decay-based forgetting features."
+        )
+
+    def get_memory_strength(self, memory_id: str) -> Optional[Any]:
+        """
+        Get a memory strength record by memory ID.
+
+        Args:
+            memory_id: The memory ID to look up
+
+        Returns:
+            MemoryStrength instance, or None if not found
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support memory strength tracking."
+        )
+
+    def get_all_memory_strengths(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+    ) -> List[Any]:
+        """
+        Get all memory strength records for a project/agent.
+
+        Args:
+            project_id: Project to query
+            agent: Optional agent filter
+
+        Returns:
+            List of MemoryStrength instances
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support memory strength tracking."
+        )
+
+    def delete_memory_strength(self, memory_id: str) -> bool:
+        """
+        Delete a memory strength record.
+
+        Args:
+            memory_id: The memory ID
+
+        Returns:
+            True if deleted, False if not found
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support memory strength tracking."
+        )
+
+    # ==================== ARCHIVE OPERATIONS (v0.7.0+) ====================
+
+    def archive_memory(
+        self,
+        memory_id: str,
+        memory_type: str,
+        reason: str,
+        final_strength: float,
+    ) -> Any:
+        """
+        Archive a memory before deletion.
+
+        Captures full memory data including content, embedding, and metadata
+        for potential future recovery or compliance auditing.
+
+        Args:
+            memory_id: ID of the memory to archive
+            memory_type: Type of memory (heuristic, outcome, etc.)
+            reason: Why being archived (decay, manual, consolidation, etc.)
+            final_strength: Memory strength at time of archival
+
+        Returns:
+            ArchivedMemory instance
+
+        Note: Default implementation raises NotImplementedError.
+              Backends should override for archive support.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support memory archiving. "
+            "Use SQLiteStorage for archive features."
+        )
+
+    def get_archive(self, archive_id: str) -> Optional[Any]:
+        """
+        Get an archived memory by its archive ID.
+
+        Args:
+            archive_id: The archive ID
+
+        Returns:
+            ArchivedMemory instance, or None if not found
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support memory archiving."
+        )
+
+    def list_archives(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+        reason: Optional[str] = None,
+        memory_type: Optional[str] = None,
+        older_than: Optional[datetime] = None,
+        younger_than: Optional[datetime] = None,
+        include_restored: bool = False,
+        limit: int = 100,
+    ) -> List[Any]:
+        """
+        List archived memories with filtering.
+
+        Args:
+            project_id: Project to query
+            agent: Optional agent filter
+            reason: Optional archive reason filter
+            memory_type: Optional memory type filter
+            older_than: Optional filter for archives older than this time
+            younger_than: Optional filter for archives younger than this time
+            include_restored: Whether to include archives that have been restored
+            limit: Maximum number of archives to return
+
+        Returns:
+            List of ArchivedMemory instances
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support memory archiving."
+        )
+
+    def restore_from_archive(self, archive_id: str) -> str:
+        """
+        Restore an archived memory, creating a new memory from archive data.
+
+        The original archive is marked as restored but retained for audit purposes.
+
+        Args:
+            archive_id: The archive ID to restore
+
+        Returns:
+            New memory ID of the restored memory
+
+        Raises:
+            ValueError: If archive not found or already restored
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support memory archiving."
+        )
+
+    def purge_archives(
+        self,
+        older_than: datetime,
+        project_id: Optional[str] = None,
+        reason: Optional[str] = None,
+    ) -> int:
+        """
+        Permanently delete archived memories.
+
+        This is a destructive operation - archives cannot be recovered after purging.
+
+        Args:
+            older_than: Delete archives older than this datetime
+            project_id: Optional project filter
+            reason: Optional reason filter
+
+        Returns:
+            Number of archives permanently deleted
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support memory archiving."
+        )
+
+    def get_archive_stats(
+        self,
+        project_id: str,
+        agent: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get statistics about archived memories.
+
+        Args:
+            project_id: Project to query
+            agent: Optional agent filter
+
+        Returns:
+            Dict with archive statistics (counts, by reason, by type, etc.)
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support memory archiving."
+        )
+
     # ==================== UTILITY ====================
 
     @classmethod
