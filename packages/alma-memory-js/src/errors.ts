@@ -30,7 +30,7 @@ export class ALMAError extends Error {
   constructor(
     message: string,
     code: string = 'ALMA_ERROR',
-    options?: { statusCode?: number; cause?: Error }
+    options?: { statusCode?: number; cause?: Error },
   ) {
     super(message);
     this.name = 'ALMAError';
@@ -84,7 +84,7 @@ export class ConnectionError extends ALMAError {
 
   constructor(
     message: string,
-    options?: { url?: string; cause?: Error }
+    options?: { url?: string; cause?: Error },
   ) {
     super(message, 'CONNECTION_ERROR', { cause: options?.cause });
     this.name = 'ConnectionError';
@@ -126,7 +126,7 @@ export class ValidationError extends ALMAError {
 
   constructor(
     message: string,
-    options?: { field?: string; value?: unknown }
+    options?: { field?: string; value?: unknown },
   ) {
     super(message, 'VALIDATION_ERROR', { statusCode: 400 });
     this.name = 'ValidationError';
@@ -169,7 +169,7 @@ export class NotFoundError extends ALMAError {
 
   constructor(
     message: string,
-    options?: { resourceType?: string; resourceId?: string }
+    options?: { resourceType?: string; resourceId?: string },
   ) {
     super(message, 'NOT_FOUND', { statusCode: 404 });
     this.name = 'NotFoundError';
@@ -215,7 +215,7 @@ export class ScopeViolationError extends ALMAError {
 
   constructor(
     message: string,
-    options?: { agent?: string; domain?: string }
+    options?: { agent?: string; domain?: string },
   ) {
     super(message, 'SCOPE_VIOLATION', { statusCode: 403 });
     this.name = 'ScopeViolationError';
@@ -286,7 +286,7 @@ export class ServerError extends ALMAError {
 
   constructor(
     message: string,
-    options?: { serverMessage?: string; rpcCode?: number; statusCode?: number }
+    options?: { serverMessage?: string; rpcCode?: number; statusCode?: number },
   ) {
     super(message, 'SERVER_ERROR', { statusCode: options?.statusCode ?? 500 });
     this.name = 'ServerError';

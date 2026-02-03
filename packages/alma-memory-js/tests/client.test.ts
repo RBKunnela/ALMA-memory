@@ -203,19 +203,19 @@ describe('ALMA Client', () => {
         expect.objectContaining({
           method: 'POST',
           body: expect.stringContaining('"user_id":"user-123"'),
-        })
+        }),
       );
     });
 
     it('should throw ValidationError if query is empty', async () => {
       await expect(
-        alma.retrieve({ query: '', agent: 'test' })
+        alma.retrieve({ query: '', agent: 'test' }),
       ).rejects.toThrow(ValidationError);
     });
 
     it('should throw ValidationError if agent is empty', async () => {
       await expect(
-        alma.retrieve({ query: 'test', agent: '' })
+        alma.retrieve({ query: 'test', agent: '' }),
       ).rejects.toThrow(ValidationError);
     });
   });
@@ -243,7 +243,7 @@ describe('ALMA Client', () => {
 
     it('should record failure with error message', async () => {
       setupMockResponse(
-        createMCPResponse({ success: true, learned: true })
+        createMCPResponse({ success: true, learned: true }),
       );
 
       await alma.learn({
@@ -259,7 +259,7 @@ describe('ALMA Client', () => {
         'http://localhost:8765',
         expect.objectContaining({
           body: expect.stringContaining('"error_message":"Tests failed"'),
-        })
+        }),
       );
     });
 
@@ -289,7 +289,7 @@ describe('ALMA Client', () => {
           task: 'task',
           outcome: 'maybe' as 'success',
           strategyUsed: 'strategy',
-        })
+        }),
       ).rejects.toThrow(ValidationError);
     });
 
@@ -300,7 +300,7 @@ describe('ALMA Client', () => {
           task: 'task',
           outcome: 'success',
           strategyUsed: 'strategy',
-        })
+        }),
       ).rejects.toThrow(ValidationError);
     });
   });
@@ -343,7 +343,7 @@ describe('ALMA Client', () => {
         'http://localhost:8765',
         expect.objectContaining({
           body: expect.stringContaining('"source":"explicit_instruction"'),
-        })
+        }),
       );
     });
 
@@ -353,7 +353,7 @@ describe('ALMA Client', () => {
           userId: '',
           category: 'test',
           preference: 'pref',
-        })
+        }),
       ).rejects.toThrow(ValidationError);
     });
   });
@@ -397,7 +397,7 @@ describe('ALMA Client', () => {
         'http://localhost:8765',
         expect.objectContaining({
           body: expect.stringContaining('"source":"user_stated"'),
-        })
+        }),
       );
     });
 
@@ -476,7 +476,7 @@ describe('ALMA Client', () => {
 
     it('should get stats for specific agent', async () => {
       setupMockResponse(
-        createMCPResponse({ success: true, stats: { total_count: 10 } })
+        createMCPResponse({ success: true, stats: { total_count: 10 } }),
       );
 
       await alma.stats('dev-agent');
@@ -485,7 +485,7 @@ describe('ALMA Client', () => {
         'http://localhost:8765',
         expect.objectContaining({
           body: expect.stringContaining('"agent":"dev-agent"'),
-        })
+        }),
       );
     });
   });
@@ -583,7 +583,7 @@ describe('ALMA Client', () => {
       });
 
       await expect(
-        client.retrieve({ query: '', agent: 'test' })
+        client.retrieve({ query: '', agent: 'test' }),
       ).rejects.toThrow(ValidationError);
 
       expect(mockFetch).not.toHaveBeenCalled();
