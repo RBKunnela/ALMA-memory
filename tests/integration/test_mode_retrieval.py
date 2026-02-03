@@ -187,8 +187,12 @@ def mock_storage_with_varied_data():
     # Multi-agent methods (return same data for simplicity)
     storage.get_heuristics_for_agents.return_value = storage.get_heuristics.return_value
     storage.get_outcomes_for_agents.return_value = storage.get_outcomes.return_value
-    storage.get_domain_knowledge_for_agents.return_value = storage.get_domain_knowledge.return_value
-    storage.get_anti_patterns_for_agents.return_value = storage.get_anti_patterns.return_value
+    storage.get_domain_knowledge_for_agents.return_value = (
+        storage.get_domain_knowledge.return_value
+    )
+    storage.get_anti_patterns_for_agents.return_value = (
+        storage.get_anti_patterns.return_value
+    )
 
     return storage
 
@@ -234,7 +238,11 @@ class TestRetrieveWithMode:
         )
 
         assert mode == RetrievalMode.DIAGNOSTIC
-        assert "diagnostic" in reason.lower() or "error" in reason.lower() or "fail" in reason.lower()
+        assert (
+            "diagnostic" in reason.lower()
+            or "error" in reason.lower()
+            or "fail" in reason.lower()
+        )
 
     def test_broad_mode_returns_more_results(self, engine):
         """BROAD mode should return more results than PRECISE."""
@@ -268,7 +276,10 @@ class TestRetrieveWithMode:
 
         assert mode == RetrievalMode.DIAGNOSTIC
         # Anti-patterns should be included
-        assert len(result.anti_patterns) > 0 or get_mode_config(RetrievalMode.DIAGNOSTIC).include_anti_patterns
+        assert (
+            len(result.anti_patterns) > 0
+            or get_mode_config(RetrievalMode.DIAGNOSTIC).include_anti_patterns
+        )
 
     def test_broad_mode_excludes_anti_patterns(self, engine):
         """BROAD mode should exclude anti-patterns for clean exploration."""

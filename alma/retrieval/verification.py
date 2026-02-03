@@ -70,7 +70,10 @@ class Verification:
 
     def is_usable(self) -> bool:
         """Check if memory is safe to use."""
-        return self.status in (VerificationStatus.VERIFIED, VerificationStatus.UNCERTAIN)
+        return self.status in (
+            VerificationStatus.VERIFIED,
+            VerificationStatus.UNCERTAIN,
+        )
 
     def needs_review(self) -> bool:
         """Check if memory needs human review."""
@@ -575,7 +578,7 @@ Memory to verify:
 {content}
 
 Authoritative sources:
-{chr(10).join(f'- {s}' for s in limited_sources)}
+{chr(10).join(f"- {s}" for s in limited_sources)}
 
 Respond in this exact format (no other text):
 STATUS: verified|contradicted|uncertain
@@ -625,11 +628,9 @@ CONTRADICTION: (only if STATUS is contradicted) What specifically contradicts it
         content = self._get_memory_content(memory)
 
         # Get other memories for comparison
-        others = [
-            m
-            for m in all_candidates
-            if self._get_memory_id(m) != memory_id
-        ][: self.config.max_memories_for_cross_verify]
+        others = [m for m in all_candidates if self._get_memory_id(m) != memory_id][
+            : self.config.max_memories_for_cross_verify
+        ]
 
         if not others:
             return Verification(
@@ -648,7 +649,7 @@ Memory to verify:
 {content}
 
 Related memories:
-{chr(10).join(f'- {c}' for c in other_contents)}
+{chr(10).join(f"- {c}" for c in other_contents)}
 
 Respond in this exact format (no other text):
 STATUS: verified|contradicted|uncertain

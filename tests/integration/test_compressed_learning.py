@@ -23,7 +23,9 @@ class MockLLMClient:
     """Mock LLM client for testing."""
 
     def __init__(self, default_response: Optional[str] = None):
-        self.default_response = default_response or """SUMMARY: Task completed successfully with good results.
+        self.default_response = (
+            default_response
+            or """SUMMARY: Task completed successfully with good results.
 KEY_FACTS:
 - Implementation was straightforward
 - Performance meets requirements
@@ -31,6 +33,7 @@ CONSTRAINTS:
 - Must maintain backwards compatibility
 PATTERNS:
 - Test before deploying"""
+        )
         self.call_count = 0
         self.last_prompt = None
 
@@ -67,7 +70,9 @@ class TestCompressionWithStorage:
         )
 
         # Compress
-        compressed = compressor.compress_outcome(verbose_outcome, CompressionLevel.MEDIUM)
+        compressed = compressor.compress_outcome(
+            verbose_outcome, CompressionLevel.MEDIUM
+        )
 
         # Store as outcome with compression metadata
         now = datetime.now(timezone.utc)
@@ -278,11 +283,17 @@ class TestCompressionLevelsIntegration:
         assert aggressive.compressed is not None
 
         assert light.compressed.compressed_length >= medium.compressed.compressed_length
-        assert medium.compressed.compressed_length >= aggressive.compressed.compressed_length
+        assert (
+            medium.compressed.compressed_length
+            >= aggressive.compressed.compressed_length
+        )
 
         # Compression ratios should increase
         assert light.compressed.compression_ratio <= medium.compressed.compression_ratio
-        assert medium.compressed.compression_ratio <= aggressive.compressed.compression_ratio
+        assert (
+            medium.compressed.compression_ratio
+            <= aggressive.compressed.compression_ratio
+        )
 
 
 class TestCompressionWithRealContent:
@@ -341,17 +352,17 @@ class TestCompressionWithRealContent:
         assert compressed is not None
         # Should identify constraints/requirements
         all_content = (
-            compressed.summary +
-            " ".join(compressed.constraints) +
-            " ".join(compressed.key_facts)
+            compressed.summary
+            + " ".join(compressed.constraints)
+            + " ".join(compressed.key_facts)
         ).lower()
 
         # Key incident details should be preserved somewhere
         has_key_info = (
-            "database" in all_content or
-            "connection" in all_content or
-            "outage" in all_content or
-            "503" in all_content
+            "database" in all_content
+            or "connection" in all_content
+            or "outage" in all_content
+            or "503" in all_content
         )
         assert has_key_info
 
@@ -404,11 +415,13 @@ class TestCompressionPerformance:
         compressor = MemoryCompressor()
 
         # Generate substantial content
-        content = " ".join([
-            f"Sentence {i} with various content about topic {i % 10}. "
-            f"Details include aspect {i % 5} and consideration {i % 3}."
-            for i in range(100)
-        ])
+        content = " ".join(
+            [
+                f"Sentence {i} with various content about topic {i % 10}. "
+                f"Details include aspect {i % 5} and consideration {i % 3}."
+                for i in range(100)
+            ]
+        )
 
         start = time.time()
         result = compressor.compress(content, CompressionLevel.MEDIUM)
@@ -425,8 +438,7 @@ class TestCompressionPerformance:
 
         # Create multiple items to compress
         items = [
-            f"Content item {i} with details about task {i}. " * 10
-            for i in range(10)
+            f"Content item {i} with details about task {i}. " * 10 for i in range(10)
         ]
 
         start = time.time()

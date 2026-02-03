@@ -856,27 +856,21 @@ class TestAlmaRetrieveVerified:
 
     def test_retrieve_verified_empty_query(self, mock_alma):
         """Test error for empty query."""
-        result = alma_retrieve_verified(
-            alma=mock_alma, query="", agent="helena"
-        )
+        result = alma_retrieve_verified(alma=mock_alma, query="", agent="helena")
 
         assert result["success"] is False
         assert "query cannot be empty" in result["error"]
 
     def test_retrieve_verified_empty_agent(self, mock_alma):
         """Test error for empty agent."""
-        result = alma_retrieve_verified(
-            alma=mock_alma, query="test", agent=""
-        )
+        result = alma_retrieve_verified(alma=mock_alma, query="test", agent="")
 
         assert result["success"] is False
         assert "agent cannot be empty" in result["error"]
 
     def test_retrieve_verified_whitespace_query(self, mock_alma):
         """Test error for whitespace-only query."""
-        result = alma_retrieve_verified(
-            alma=mock_alma, query="   ", agent="helena"
-        )
+        result = alma_retrieve_verified(alma=mock_alma, query="   ", agent="helena")
 
         assert result["success"] is False
         assert "query cannot be empty" in result["error"]
@@ -896,9 +890,7 @@ class TestAlmaCompressAndLearn:
 
     def test_compress_and_learn_empty_content(self, mock_alma):
         """Test error for empty content."""
-        result = alma_compress_and_learn(
-            alma=mock_alma, content="", agent="helena"
-        )
+        result = alma_compress_and_learn(alma=mock_alma, content="", agent="helena")
 
         assert result["success"] is False
         assert "content cannot be empty" in result["error"]

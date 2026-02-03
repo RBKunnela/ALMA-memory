@@ -201,7 +201,11 @@ class TestVerifiedMemory:
         confidence: float = 0.8
 
         def to_dict(self):
-            return {"id": self.id, "content": self.content, "confidence": self.confidence}
+            return {
+                "id": self.id,
+                "content": self.content,
+                "confidence": self.confidence,
+            }
 
     def test_create_verified_memory(self):
         """Should create verified memory wrapper."""
@@ -402,9 +406,7 @@ class TestVerifiedResults:
             verified=[self._create_vm("v1", VerificationStatus.VERIFIED, 0.9)],
             uncertain=[self._create_vm("u1", VerificationStatus.UNCERTAIN, 0.6)],
             contradicted=[self._create_vm("c1", VerificationStatus.CONTRADICTED, 0.3)],
-            unverifiable=[
-                self._create_vm("x1", VerificationStatus.UNVERIFIABLE, 0.5)
-            ],
+            unverifiable=[self._create_vm("x1", VerificationStatus.UNVERIFIABLE, 0.5)],
         )
 
         assert results.total_count == 4
@@ -652,7 +654,9 @@ REASON: Matches source documentation"""
         )
 
         assert len(results.verified) == 1
-        assert results.verified[0].verification.method == VerificationMethod.GROUND_TRUTH
+        assert (
+            results.verified[0].verification.method == VerificationMethod.GROUND_TRUTH
+        )
 
     def test_cross_verification_with_llm(self):
         """Should use cross verification when enabled."""
@@ -683,7 +687,9 @@ REASON: Consistent with related memories"""
         )
 
         assert len(results.verified) == 2
-        assert results.verified[0].verification.method == VerificationMethod.CROSS_VERIFY
+        assert (
+            results.verified[0].verification.method == VerificationMethod.CROSS_VERIFY
+        )
 
     def test_handles_contradicted_response(self):
         """Should handle contradicted verification response."""
