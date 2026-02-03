@@ -84,6 +84,21 @@ ALMA isn't just another memory framework. Here's what sets it apart from alterna
 
 **Bottom line:** ALMA is purpose-built for AI agents that need to learn, remember, and improve - not just store and retrieve.
 
+### Quick Comparison: ALMA vs Mem0 vs Graphiti
+
+| Feature | ALMA | Mem0 | Graphiti |
+|---------|------|------|----------|
+| Memory Scoping | ✅ `can_learn`/`cannot_learn` | ❌ | ❌ |
+| Anti-Pattern Learning | ✅ `why_bad` + `better_alternative` | ❌ | ❌ |
+| Multi-Agent Inheritance | ✅ `inherit_from`/`share_with` | ❌ | ❌ |
+| Multi-Factor Scoring | ✅ 4 factors (similarity + recency + success + confidence) | ❌ similarity only | ❌ similarity only |
+| MCP Integration | ✅ 16 tools | ❌ | ❌ |
+| Workflow Checkpoints | ✅ | ❌ | ❌ |
+| TypeScript SDK | ✅ | ❌ | ❌ |
+| Graph + Vector Hybrid | ✅ | Limited | ✅ |
+
+**The key insight:** Most solutions treat memory as "store embeddings, retrieve similar." ALMA treats it as "teach agents to improve within safe boundaries."
+
 ---
 
 ## What's New in v0.6.0
