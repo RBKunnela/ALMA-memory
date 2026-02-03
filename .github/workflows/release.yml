@@ -133,7 +133,7 @@ jobs:
   publish-pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    needs: build
+    needs: [validate, build]
     environment:
       name: pypi
       url: https://pypi.org/p/alma-memory
@@ -147,9 +147,31 @@ jobs:
           name: release-distributions
           path: dist/
 
+      - name: Check if version already exists on PyPI
+        id: check_pypi
+        run: |
+          VERSION=${{ needs.validate.outputs.version }}
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/alma-memory/${VERSION}/json")
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "Version ${VERSION} already exists on PyPI"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version ${VERSION} not found on PyPI, will publish"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Publish to PyPI
+        if: steps.check_pypi.outputs.exists == 'false'
         uses: pypa/gh-action-pypi-publish@release/v1
         # No credentials needed - uses OIDC trusted publishing
+
+      - name: Skip publish (version exists)
+        if: steps.check_pypi.outputs.exists == 'true'
+        run: |
+          echo "::notice::Version ${{ needs.validate.outputs.version }} already published to PyPI - skipping upload"
+          echo "## PyPI Publish Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "Version **${{ needs.validate.outputs.version }}** already exists on PyPI." >> $GITHUB_STEP_SUMMARY
+          echo "[View on PyPI](https://pypi.org/project/alma-memory/${{ needs.validate.outputs.version }}/)" >> $GITHUB_STEP_SUMMARY
 
   # ===========================================================================
   # Create GitHub Release
