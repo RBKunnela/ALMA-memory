@@ -1,7 +1,7 @@
 # ALMA - Agent Learning Memory Architecture
 
 [![PyPI version](https://badge.fury.io/py/alma-memory.svg)](https://pypi.org/project/alma-memory/)
-[![npm version](https://img.shields.io/badge/npm-v0.7.0-cb3837?logo=npm)](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)
+[![npm version](https://img.shields.io/npm/v/@rbkunnela/alma-memory?logo=npm&color=cb3837)](https://www.npmjs.com/package/@rbkunnela/alma-memory)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml)
@@ -20,7 +20,7 @@
 
 ---
 
-**[📖 Documentation](https://alma-memory.pages.dev)** · **[🔧 Technical Reference](docs/TECHNICAL.md)** · **[📦 PyPI](https://pypi.org/project/alma-memory/)** · **[📦 npm](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)** · **[☕ Support](https://buymeacoffee.com/aiagentsprp)**
+**[📖 Documentation](https://alma-memory.pages.dev)** · **[🔧 Technical Reference](docs/TECHNICAL.md)** · **[📦 PyPI](https://pypi.org/project/alma-memory/)** · **[📦 npm](https://www.npmjs.com/package/@rbkunnela/alma-memory)** · **[☕ Support](https://buymeacoffee.com/aiagentsprp)**
 
 ---
 
@@ -234,12 +234,8 @@ pip install alma-memory[azure]     # Azure Cosmos DB + Azure OpenAI
 pip install alma-memory[all]
 ```
 
-**TypeScript/JavaScript (via GitHub Packages):**
+**TypeScript/JavaScript:**
 ```bash
-# Configure npm for the scope (one-time)
-echo "@rbkunnela:registry=https://npm.pkg.github.com" >> ~/.npmrc
-
-# Install
 npm install @rbkunnela/alma-memory
 # or
 yarn add @rbkunnela/alma-memory
@@ -1032,7 +1028,7 @@ If ALMA helps your AI agents get smarter:
 
 - **Documentation:** [alma-memory.pages.dev](https://alma-memory.pages.dev)
 - **PyPI:** [pypi.org/project/alma-memory](https://pypi.org/project/alma-memory/)
-- **npm:** [@rbkunnela/alma-memory](https://github.com/RBKunnela/ALMA-memory/pkgs/npm/alma-memory)
+- **npm:** [@rbkunnela/alma-memory](https://www.npmjs.com/package/@rbkunnela/alma-memory)
 - **Issues:** [GitHub Issues](https://github.com/RBKunnela/ALMA-memory/issues)
 
 ---
