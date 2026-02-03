@@ -54,10 +54,12 @@ from alma.retrieval.scoring import (
 )
 from alma.retrieval.trust_scoring import (
     AgentTrustContext,
+    AgentTrustProfile,
     TrustAwareScorer,
+    TrustLevel,
     TrustPatternStore,
     TrustScoredItem,
-    TrustScoringWeights,
+    TrustWeights,
 )
 from alma.retrieval.verification import (
     Verification,
@@ -88,8 +90,10 @@ __all__ = [
     "compute_composite_score",
     # Trust-Integrated Scoring (v0.8.0+)
     "TrustAwareScorer",
-    "TrustScoringWeights",
+    "TrustWeights",
     "TrustScoredItem",
+    "TrustLevel",
+    "AgentTrustProfile",
     "AgentTrustContext",
     "TrustPatternStore",
     # Token Budget (v0.8.0+)

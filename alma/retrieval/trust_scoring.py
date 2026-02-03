@@ -210,6 +210,34 @@ class TrustScoredItem(ScoredItem):
     trust_level: str = "MODERATE"
 
 
+@dataclass
+class AgentTrustContext:
+    """
+    Lightweight trust context for passing to scoring functions.
+
+    Distinct from AgentTrustProfile - this is a simplified view
+    used during retrieval operations.
+    """
+
+    agent_id: str
+    trust_score: float = TrustLevel.MODERATE
+    trust_behaviors: Dict[str, float] = field(default_factory=dict)
+
+    @classmethod
+    def from_profile(cls, profile: AgentTrustProfile) -> "AgentTrustContext":
+        """Create context from full profile."""
+        return cls(
+            agent_id=profile.agent_id,
+            trust_score=profile.current_trust,
+            trust_behaviors=dict(profile.behavior_trust),
+        )
+
+    @property
+    def trust_level(self) -> str:
+        """Get human-readable trust level."""
+        return TrustLevel.label(self.trust_score)
+
+
 class TrustAwareScorer(MemoryScorer):
     """
     Memory scorer that incorporates trust patterns.
