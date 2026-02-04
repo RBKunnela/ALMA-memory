@@ -1,0 +1,12 @@
+# Force LF line endings for all text files
+* text=auto eol=lf
+
+# Python files
+*.py text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Keep Windows batch files with CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
