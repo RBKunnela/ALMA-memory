@@ -17,6 +17,12 @@ on:
   push:
     tags:
       - 'v*'  # Triggers on version tags: v0.4.0, v1.0.0, etc.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v0.7.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write  # Required for creating GitHub releases
@@ -42,7 +48,12 @@ jobs:
       - name: Get version from tag
         id: get_version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.tag }}"
+            VERSION=${VERSION#v}  # Remove 'v' prefix if present
+          else
+            VERSION=${GITHUB_REF#refs/tags/v}
+          fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Release version: $VERSION"
 
