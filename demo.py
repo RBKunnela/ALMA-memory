@@ -14,9 +14,9 @@ from datetime import datetime
 
 def print_header(text: str):
     """Print a section header."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  {text}")
-    print('='*60 + "\n")
+    print("=" * 60 + "\n")
 
 
 def print_memory(label: str, items: list, formatter):
@@ -86,66 +86,108 @@ def run_demo():
             self.anti_patterns: List[AntiPattern] = []
             self.outcomes: List[Outcome] = []
             self.agents = {
-                "helena": {"domain": "frontend_testing", "can_learn": ["ui_testing", "form_validation"]},
-                "victor": {"domain": "backend_testing", "can_learn": ["api_testing", "database"]},
+                "helena": {
+                    "domain": "frontend_testing",
+                    "can_learn": ["ui_testing", "form_validation"],
+                },
+                "victor": {
+                    "domain": "backend_testing",
+                    "can_learn": ["api_testing", "database"],
+                },
             }
 
-        def learn(self, agent: str, task: str, outcome: str, strategy: str, error: str = None):
+        def learn(
+            self, agent: str, task: str, outcome: str, strategy: str, error: str = None
+        ):
             """Learn from a task outcome."""
             success = outcome == "success"
 
             # Store outcome
-            outcome_id = hashlib.md5(f"{task}{strategy}{datetime.now()}".encode()).hexdigest()[:8]
-            self.outcomes.append(Outcome(
-                id=outcome_id,
-                agent=agent,
-                task=task,
-                success=success,
-                strategy_used=strategy,
-            ))
+            outcome_id = hashlib.md5(
+                f"{task}{strategy}{datetime.now()}".encode()
+            ).hexdigest()[:8]
+            self.outcomes.append(
+                Outcome(
+                    id=outcome_id,
+                    agent=agent,
+                    task=task,
+                    success=success,
+                    strategy_used=strategy,
+                )
+            )
 
             # Check if we should create a heuristic (pattern seen 2+ times)
             similar_successes = [
-                o for o in self.outcomes
-                if o.agent == agent and o.success and strategy.lower() in o.strategy_used.lower()
+                o
+                for o in self.outcomes
+                if o.agent == agent
+                and o.success
+                and strategy.lower() in o.strategy_used.lower()
             ]
 
             if success and len(similar_successes) >= 2:
                 # Create or update heuristic
-                existing = next((h for h in self.heuristics if strategy.lower() in h.strategy.lower()), None)
+                existing = next(
+                    (
+                        h
+                        for h in self.heuristics
+                        if strategy.lower() in h.strategy.lower()
+                    ),
+                    None,
+                )
                 if existing:
                     existing.occurrence_count += 1
                     existing.success_count += 1
-                    existing.confidence = existing.success_count / existing.occurrence_count
+                    existing.confidence = (
+                        existing.success_count / existing.occurrence_count
+                    )
                 else:
-                    heuristic_id = hashlib.md5(f"{agent}{strategy}".encode()).hexdigest()[:8]
-                    self.heuristics.append(Heuristic(
-                        id=heuristic_id,
-                        agent=agent,
-                        condition=f"When testing similar to: {task[:50]}",
-                        strategy=strategy,
-                        confidence=0.7,
-                        occurrence_count=len(similar_successes),
-                        success_count=len(similar_successes),
-                    ))
+                    heuristic_id = hashlib.md5(
+                        f"{agent}{strategy}".encode()
+                    ).hexdigest()[:8]
+                    self.heuristics.append(
+                        Heuristic(
+                            id=heuristic_id,
+                            agent=agent,
+                            condition=f"When testing similar to: {task[:50]}",
+                            strategy=strategy,
+                            confidence=0.7,
+                            occurrence_count=len(similar_successes),
+                            success_count=len(similar_successes),
+                        )
+                    )
                     return f"NEW HEURISTIC: '{strategy}' (worked {len(similar_successes)} times)"
 
             # Check if we should create anti-pattern
             if not success and error:
                 similar_failures = [
-                    o for o in self.outcomes
-                    if o.agent == agent and not o.success and strategy.lower() in o.strategy_used.lower()
+                    o
+                    for o in self.outcomes
+                    if o.agent == agent
+                    and not o.success
+                    and strategy.lower() in o.strategy_used.lower()
                 ]
                 if len(similar_failures) >= 2:
-                    existing_ap = next((ap for ap in self.anti_patterns if strategy.lower() in ap.pattern.lower()), None)
+                    existing_ap = next(
+                        (
+                            ap
+                            for ap in self.anti_patterns
+                            if strategy.lower() in ap.pattern.lower()
+                        ),
+                        None,
+                    )
                     if not existing_ap:
-                        ap_id = hashlib.md5(f"{agent}{strategy}fail".encode()).hexdigest()[:8]
-                        self.anti_patterns.append(AntiPattern(
-                            id=ap_id,
-                            agent=agent,
-                            pattern=strategy,
-                            why_bad=error,
-                        ))
+                        ap_id = hashlib.md5(
+                            f"{agent}{strategy}fail".encode()
+                        ).hexdigest()[:8]
+                        self.anti_patterns.append(
+                            AntiPattern(
+                                id=ap_id,
+                                agent=agent,
+                                pattern=strategy,
+                                why_bad=error,
+                            )
+                        )
                         return f"NEW ANTI-PATTERN: Avoid '{strategy}' - {error}"
 
             return None
@@ -156,22 +198,20 @@ def run_demo():
             task_lower = task.lower()
 
             relevant_heuristics = [
-                h for h in self.heuristics
-                if h.agent == agent and any(
+                h
+                for h in self.heuristics
+                if h.agent == agent
+                and any(
                     word in h.strategy.lower() or word in h.condition.lower()
                     for word in task_lower.split()
                 )
             ]
 
             relevant_anti_patterns = [
-                ap for ap in self.anti_patterns
-                if ap.agent == agent
+                ap for ap in self.anti_patterns if ap.agent == agent
             ]
 
-            recent_outcomes = [
-                o for o in self.outcomes
-                if o.agent == agent
-            ][-5:]
+            recent_outcomes = [o for o in self.outcomes if o.agent == agent][-5:]
 
             return {
                 "heuristics": relevant_heuristics,
@@ -255,12 +295,16 @@ def run_demo():
     print_header("Step 3: What Helena Learned")
 
     stats = alma.get_stats()
-    print(f"Total memories: {stats['heuristics']} heuristics, {stats['anti_patterns']} anti-patterns\n")
+    print(
+        f"Total memories: {stats['heuristics']} heuristics, {stats['anti_patterns']} anti-patterns\n"
+    )
 
     print("HEURISTICS (what works):")
     for h in alma.heuristics:
         print(f"  ✓ {h.strategy}")
-        print(f"    Confidence: {h.confidence:.0%} ({h.success_count}/{h.occurrence_count} successes)")
+        print(
+            f"    Confidence: {h.confidence:.0%} ({h.success_count}/{h.occurrence_count} successes)"
+        )
         print()
 
     print("ANTI-PATTERNS (what to avoid):")
