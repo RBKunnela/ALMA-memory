@@ -92,7 +92,7 @@ ALMA isn't just another memory framework. Here's what sets it apart from alterna
 | Anti-Pattern Learning | ✅ `why_bad` + `better_alternative` | ❌ | ❌ |
 | Multi-Agent Inheritance | ✅ `inherit_from`/`share_with` | ❌ | ❌ |
 | Multi-Factor Scoring | ✅ 4 factors (similarity + recency + success + confidence) | ❌ similarity only | ❌ similarity only |
-| MCP Integration | ✅ 16 tools | ❌ | ❌ |
+| MCP Integration | ✅ 22 tools | ❌ | ❌ |
 | Workflow Checkpoints | ✅ | ❌ | ❌ |
 | TypeScript SDK | ✅ | ❌ | ❌ |
 | Graph + Vector Hybrid | ✅ | Limited | ✅ |
@@ -388,6 +388,20 @@ for mem in memories.heuristics:
 | **Chroma** | Lightweight local | Yes | Yes |
 | **Azure Cosmos DB** | Enterprise, Azure-native | Yes (DiskANN) | Yes |
 | **File-based** | Testing | No | No |
+
+### Deployment Platforms
+
+ALMA is a library — you bring your own infrastructure. Here's where users typically deploy their ALMA-powered agents:
+
+| Platform | Storage Backend | Hosting Option | Best For |
+|----------|----------------|----------------|----------|
+| **Azure** | Azure Cosmos DB (native backend) | Azure App Service, Azure Functions, AKS | Enterprise, compliance-heavy workloads |
+| **AWS** | PostgreSQL (RDS + pgvector), Pinecone, Qdrant Cloud | EC2, Lambda, ECS | Scalable production deployments |
+| **Google Cloud / Firebase** | PostgreSQL (Cloud SQL + pgvector), Pinecone | Cloud Run, Cloud Functions, Firebase Functions | Serverless agents, Firebase-integrated apps |
+| **Cloudflare** | Qdrant Cloud, Pinecone (external) | Cloudflare Workers, Pages | Edge-deployed agents, low-latency retrieval |
+| **Self-hosted** | SQLite+FAISS, PostgreSQL+pgvector | Docker, bare metal | Full control, offline/air-gapped |
+
+**Key point:** ALMA does not provide or require any specific hosted database. You configure your own database connection in `.alma/config.yaml` and ALMA connects to it. See [Configuration](#configuration) for backend-specific setup.
 
 ---
 

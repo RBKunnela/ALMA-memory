@@ -101,8 +101,8 @@ docs/api/
 docs/ROADMAP_TO_FUNDING.md
 docs/VIDEO_TALKING_POINTS.md
 docs/GOOD_FIRST_ISSUES.md
+docs/meetings/
 PRPs/
-supabase/
 
 # Development & Testing
 # tests/ - REMOVED: tests should be public for open source
