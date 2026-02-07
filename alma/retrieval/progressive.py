@@ -13,7 +13,7 @@ Features:
 
 import logging
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import IntEnum
 from typing import Any, Dict, List, Optional
 
 from alma.types import (
@@ -27,7 +27,7 @@ from alma.types import (
 logger = logging.getLogger(__name__)
 
 
-class DisclosureLevel(Enum):
+class DisclosureLevel(IntEnum):
     """Levels of detail for progressive disclosure."""
 
     REFERENCE = 1  # Just ID and type - agent knows it exists
@@ -313,20 +313,20 @@ class SummaryExtractor:
                 f"[{p.category}] {p.preference}",
                 self.max_summary_length,
             )
-            relevance = f"Priority: {p.priority}"
+            relevance = f"Confidence: {p.confidence:.0%}"
         else:
             summary = (
                 f"Category: {p.category}\n"
                 f"Preference: {p.preference}\n"
-                f"Context: {p.context or 'General'}"
+                f"Source: {p.source or 'General'}"
             )
-            relevance = f"User preference, priority {p.priority}"
+            relevance = f"User preference, confidence {p.confidence:.0%}"
 
         key_fields = {}
         if level >= DisclosureLevel.KEY_DETAILS:
             key_fields = {
                 "category": p.category,
-                "priority": p.priority,
+                "confidence": p.confidence,
             }
 
         return MemorySummary(
