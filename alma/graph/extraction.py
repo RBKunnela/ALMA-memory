@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 from alma.graph.store import Entity, Relationship
+from alma.utils.sanitize import sanitize_for_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +102,7 @@ Only extract entities and relationships that are explicitly mentioned or strongl
         import re
         import uuid
 
-        prompt = self.EXTRACTION_PROMPT.format(text=text)
+        prompt = self.EXTRACTION_PROMPT.format(text=sanitize_for_prompt(text))
 
         client = self._get_client()
 

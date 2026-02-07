@@ -750,7 +750,7 @@ REASON: Brief explanation (one sentence)"""
                     if match:
                         result["confidence"] = float(match.group())
                 except (ValueError, IndexError):
-                    pass
+                    logger.debug("Could not parse confidence value: %s", conf_str)
             elif line.upper().startswith("REASON:"):
                 result["reason"] = line.split(":", 1)[1].strip()
             elif line.upper().startswith("CONTRADICTION:"):

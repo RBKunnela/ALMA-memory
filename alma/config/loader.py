@@ -45,6 +45,10 @@ class ConfigLoader:
         with open(path, "r") as f:
             raw_config = yaml.safe_load(f)
 
+        if raw_config is None:
+            logger.warning(f"Config file {config_path} is empty, using defaults")
+            return cls._get_defaults()
+
         # Get the 'alma' section or use whole file
         config = raw_config.get("alma", raw_config)
 

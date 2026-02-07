@@ -1000,7 +1000,7 @@ class AzureCosmosStorage(StorageBackend):
                 container.delete_item(item=item["id"], partition_key=project_id)
                 deleted += 1
             except exceptions.CosmosResourceNotFoundError:
-                pass
+                logger.debug("Outcome %s already deleted, skipping", item["id"])
 
         logger.info(f"Deleted {deleted} old outcomes")
         return deleted
@@ -1043,7 +1043,7 @@ class AzureCosmosStorage(StorageBackend):
                 container.delete_item(item=item["id"], partition_key=project_id)
                 deleted += 1
             except exceptions.CosmosResourceNotFoundError:
-                pass
+                logger.debug("Heuristic %s already deleted, skipping", item["id"])
 
         logger.info(f"Deleted {deleted} low-confidence heuristics")
         return deleted

@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from alma.utils.sanitize import sanitize_for_prompt
+
 logger = logging.getLogger(__name__)
 
 
@@ -206,9 +208,9 @@ If no facts worth extracting, return: {{"facts": []}}
             )
 
         prompt = self.EXTRACTION_PROMPT.format(
-            agent_context=agent_context_section,
-            existing_facts_section=existing_facts_section,
-            conversation=conversation,
+            agent_context=sanitize_for_prompt(agent_context_section),
+            existing_facts_section=sanitize_for_prompt(existing_facts_section),
+            conversation=sanitize_for_prompt(conversation),
         )
 
         # Call LLM

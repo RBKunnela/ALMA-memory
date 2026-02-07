@@ -3,6 +3,10 @@ ALMA Storage Backend Interface.
 
 Abstract base class that all storage backends must implement.
 
+Convention: ALMA uses ABC for backend interfaces that require inheritance
+(StorageBackend, GraphBackend) and typing.Protocol for lightweight contracts
+that only need structural typing (LLMClient, VersionStore).
+
 v0.6.0 adds workflow context support:
 - Checkpoint CRUD operations
 - WorkflowOutcome storage and retrieval

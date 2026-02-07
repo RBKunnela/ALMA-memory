@@ -26,6 +26,7 @@ from alma.types import (
     DomainKnowledge,
     Heuristic,
 )
+from alma.utils.sanitize import sanitize_for_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -577,8 +578,8 @@ class ConsolidationEngine:
         heuristics_text = "\n\n".join(
             [
                 f"Heuristic {i + 1}:\n"
-                f"  Condition: {h.condition}\n"
-                f"  Strategy: {h.strategy}\n"
+                f"  Condition: {sanitize_for_prompt(h.condition)}\n"
+                f"  Strategy: {sanitize_for_prompt(h.strategy)}\n"
                 f"  Confidence: {h.confidence:.2f}\n"
                 f"  Occurrences: {h.occurrence_count}"
                 for i, h in enumerate(group)
@@ -597,8 +598,8 @@ class ConsolidationEngine:
         knowledge_text = "\n\n".join(
             [
                 f"Knowledge {i + 1}:\n"
-                f"  Domain: {dk.domain}\n"
-                f"  Fact: {dk.fact}\n"
+                f"  Domain: {sanitize_for_prompt(dk.domain)}\n"
+                f"  Fact: {sanitize_for_prompt(dk.fact)}\n"
                 f"  Confidence: {dk.confidence:.2f}"
                 for i, dk in enumerate(group)
             ]
@@ -616,9 +617,9 @@ class ConsolidationEngine:
         patterns_text = "\n\n".join(
             [
                 f"Anti-Pattern {i + 1}:\n"
-                f"  Pattern: {ap.pattern}\n"
-                f"  Why Bad: {ap.why_bad}\n"
-                f"  Alternative: {ap.better_alternative}\n"
+                f"  Pattern: {sanitize_for_prompt(ap.pattern)}\n"
+                f"  Why Bad: {sanitize_for_prompt(ap.why_bad)}\n"
+                f"  Alternative: {sanitize_for_prompt(ap.better_alternative)}\n"
                 f"  Occurrences: {ap.occurrence_count}"
                 for i, ap in enumerate(group)
             ]
