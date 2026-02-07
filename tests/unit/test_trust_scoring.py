@@ -253,7 +253,9 @@ class TestAgentTrustProfile:
         assert restored.sessions_completed == original.sessions_completed
         assert restored.total_actions == original.total_actions
         assert restored.total_violations == original.total_violations
-        assert restored.consecutive_clean_sessions == original.consecutive_clean_sessions
+        assert (
+            restored.consecutive_clean_sessions == original.consecutive_clean_sessions
+        )
         assert restored.trust_half_life_days == original.trust_half_life_days
         assert restored.behavior_trust == original.behavior_trust
 
@@ -465,12 +467,8 @@ class TestTrustAwareScorer:
 
     def test_score_anti_patterns_occurrence_score(self, scorer):
         """Higher occurrence count should yield higher occurrence score."""
-        ap_high = create_test_anti_pattern(
-            agent="trusted-agent", occurrence_count=10
-        )
-        ap_low = create_test_anti_pattern(
-            agent="trusted-agent", occurrence_count=1
-        )
+        ap_high = create_test_anti_pattern(agent="trusted-agent", occurrence_count=10)
+        ap_low = create_test_anti_pattern(agent="trusted-agent", occurrence_count=1)
         result = scorer.score_anti_patterns_with_trust([ap_high, ap_low])
         high_item = [r for r in result if r.item.occurrence_count == 10][0]
         low_item = [r for r in result if r.item.occurrence_count == 1][0]

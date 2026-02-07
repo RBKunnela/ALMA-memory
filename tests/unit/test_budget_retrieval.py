@@ -74,9 +74,7 @@ class TestBudgetReport:
     """Tests for BudgetReport."""
 
     def test_utilization_pct_half_used(self):
-        report = BudgetReport(
-            total_budget=1000, used_tokens=500, remaining_tokens=500
-        )
+        report = BudgetReport(total_budget=1000, used_tokens=500, remaining_tokens=500)
         assert report.utilization_pct == 50.0
 
     def test_utilization_pct_zero_budget(self):
@@ -84,15 +82,11 @@ class TestBudgetReport:
         assert report.utilization_pct == 0.0
 
     def test_utilization_pct_full(self):
-        report = BudgetReport(
-            total_budget=1000, used_tokens=1000, remaining_tokens=0
-        )
+        report = BudgetReport(total_budget=1000, used_tokens=1000, remaining_tokens=0)
         assert report.utilization_pct == 100.0
 
     def test_default_items_dropped_empty(self):
-        report = BudgetReport(
-            total_budget=1000, used_tokens=0, remaining_tokens=1000
-        )
+        report = BudgetReport(total_budget=1000, used_tokens=0, remaining_tokens=1000)
         assert report.items_dropped == []
         assert report.budget_exceeded is False
 
