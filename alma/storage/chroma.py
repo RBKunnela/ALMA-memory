@@ -568,7 +568,7 @@ class ChromaStorage(StorageBackend):
             try:
                 return len(emb) > 0
             except (TypeError, ValueError):
-                pass
+                logger.debug("Could not determine embedding length, assuming non-empty")
         if hasattr(emb, "size"):
             return emb.size > 0
         return True
