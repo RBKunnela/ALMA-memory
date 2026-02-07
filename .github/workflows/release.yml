@@ -44,8 +44,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-tags: true
 
       - name: Get version from tag
         id: get_version
@@ -84,11 +82,12 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           TAG="v${{ steps.get_version.outputs.version }}"
-          if ! git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
-            echo "Error: Git tag $TAG does not exist"
+          if ! git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Error: Git tag $TAG does not exist on remote"
             echo "Create the tag first: git tag $TAG && git push origin $TAG"
             exit 1
           fi
+          echo "Tag $TAG verified on remote"
 
       - name: Set up Python
         uses: actions/setup-python@v5
