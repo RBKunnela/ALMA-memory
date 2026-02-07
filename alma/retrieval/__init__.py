@@ -31,6 +31,11 @@ from alma.retrieval.embeddings import (
     MockEmbedder,
 )
 from alma.retrieval.engine import RetrievalEngine
+from alma.retrieval.hybrid import (
+    HybridResult,
+    HybridSearchConfig,
+    HybridSearchEngine,
+)
 from alma.retrieval.modes import (
     ModeConfig,
     RetrievalMode,
@@ -46,11 +51,21 @@ from alma.retrieval.progressive import (
     ProgressiveRetrieval,
     ProgressiveSlice,
 )
+from alma.retrieval.reranking import (
+    CrossEncoderReranker,
+    NoOpReranker,
+    Reranker,
+)
 from alma.retrieval.scoring import (
     MemoryScorer,
     ScoredItem,
     ScoringWeights,
     compute_composite_score,
+)
+from alma.retrieval.text_search import (
+    BM25SProvider,
+    SimpleTFIDFProvider,
+    TextSearchProvider,
 )
 from alma.retrieval.trust_scoring import (
     AgentTrustContext,
@@ -131,4 +146,15 @@ __all__ = [
     "VerificationConfig",
     "VerifiedRetriever",
     "create_verified_retriever",
+    # Hybrid Search (v0.8.0+)
+    "TextSearchProvider",
+    "SimpleTFIDFProvider",
+    "BM25SProvider",
+    "HybridSearchEngine",
+    "HybridSearchConfig",
+    "HybridResult",
+    # Reranking (v0.8.0+)
+    "Reranker",
+    "NoOpReranker",
+    "CrossEncoderReranker",
 ]

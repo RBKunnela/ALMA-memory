@@ -29,6 +29,11 @@ class MemoryEventType(Enum):
     CONFIDENCE_UPDATED = "confidence.updated"
     CONFIDENCE_DECAYED = "confidence.decayed"
 
+    # RAG integration events
+    RAG_ENHANCED = "rag.enhanced"
+    RAG_FEEDBACK = "rag.feedback"
+    METRICS_COMPLETED = "metrics.completed"
+
 
 @dataclass
 class MemoryEvent:

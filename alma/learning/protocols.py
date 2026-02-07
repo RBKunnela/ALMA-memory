@@ -92,6 +92,14 @@ class LearningProtocol:
         if scope is None:
             logger.warning(f"Agent '{agent}' has no defined scope")
 
+        # Generate embedding for searchability
+        embedding = None
+        if self.embedder is not None:
+            try:
+                embedding = self.embedder.encode(f"{task} {strategy_used}")
+            except Exception as e:
+                logger.warning(f"Failed to generate embedding for outcome: {e}")
+
         # Create outcome record
         outcome_record = Outcome(
             id=f"out_{uuid.uuid4().hex[:12]}",
@@ -105,6 +113,7 @@ class LearningProtocol:
             error_message=error_message,
             user_feedback=feedback,
             timestamp=datetime.now(timezone.utc),
+            embedding=embedding,
         )
 
         # Save outcome
@@ -175,6 +184,15 @@ class LearningProtocol:
 
             # Only create heuristic if confidence is meaningful
             if confidence > 0.5:
+                embedding = None
+                if self.embedder is not None:
+                    try:
+                        embedding = self.embedder.encode(f"{task_type} {strategy}")
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to generate embedding for heuristic: {e}"
+                        )
+
                 heuristic = Heuristic(
                     id=f"heur_{uuid.uuid4().hex[:12]}",
                     agent=agent,
@@ -186,6 +204,7 @@ class LearningProtocol:
                     success_count=success_count,
                     last_validated=datetime.now(timezone.utc),
                     created_at=datetime.now(timezone.utc),
+                    embedding=embedding,
                 )
                 self.storage.save_heuristic(heuristic)
                 logger.info(
@@ -220,6 +239,15 @@ class LearningProtocol:
         ]
 
         if len(similar) >= 2:  # At least 2 similar failures
+            embedding = None
+            if self.embedder is not None:
+                try:
+                    embedding = self.embedder.encode(f"{strategy} {error}")
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to generate embedding for anti-pattern: {e}"
+                    )
+
             anti_pattern = AntiPattern(
                 id=f"anti_{uuid.uuid4().hex[:12]}",
                 agent=agent,
@@ -229,6 +257,7 @@ class LearningProtocol:
                 better_alternative="[To be determined from successful outcomes]",
                 occurrence_count=len(similar),
                 last_seen=datetime.now(timezone.utc),
+                embedding=embedding,
             )
             self.storage.save_anti_pattern(anti_pattern)
             logger.info(f"Created anti-pattern for {agent}: {strategy[:50]}...")
@@ -261,7 +290,16 @@ class LearningProtocol:
         fact: str,
         source: str,
     ) -> DomainKnowledge:
-        """Add domain knowledge."""
+        """Add domain knowledge with optional write-time embedding."""
+        embedding = None
+        if self.embedder is not None:
+            try:
+                embedding = self.embedder.encode(fact)
+            except Exception as e:
+                logger.warning(
+                    f"Failed to generate embedding for domain knowledge: {e}"
+                )
+
         knowledge = DomainKnowledge(
             id=f"dk_{uuid.uuid4().hex[:12]}",
             agent=agent,
@@ -271,6 +309,7 @@ class LearningProtocol:
             source=source,
             confidence=1.0 if source == "user_stated" else 0.8,
             last_verified=datetime.now(timezone.utc),
+            embedding=embedding,
         )
         self.storage.save_domain_knowledge(knowledge)
         return knowledge
