@@ -78,6 +78,16 @@ jobs:
             exit 1
           fi
 
+      - name: Verify git tag exists
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          TAG="v${{ steps.get_version.outputs.version }}"
+          if ! git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Error: Git tag $TAG does not exist"
+            echo "Create the tag first: git tag $TAG && git push origin $TAG"
+            exit 1
+          fi
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -239,6 +249,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ needs.validate.outputs.version }}
           name: ALMA-memory v${{ needs.validate.outputs.version }}
           body_path: release_notes.md
           draft: false
