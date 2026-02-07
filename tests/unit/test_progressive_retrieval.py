@@ -87,16 +87,25 @@ class TestProgressiveSlice:
 
     def test_all_summaries_combines_types(self):
         s1 = MemorySummary(
-            id="h1", memory_type="heuristic", summary="h",
-            relevance_hint="", estimated_tokens=5,
+            id="h1",
+            memory_type="heuristic",
+            summary="h",
+            relevance_hint="",
+            estimated_tokens=5,
         )
         s2 = MemorySummary(
-            id="o1", memory_type="outcome", summary="o",
-            relevance_hint="", estimated_tokens=5,
+            id="o1",
+            memory_type="outcome",
+            summary="o",
+            relevance_hint="",
+            estimated_tokens=5,
         )
         s3 = MemorySummary(
-            id="ap1", memory_type="anti_pattern", summary="ap",
-            relevance_hint="", estimated_tokens=5,
+            id="ap1",
+            memory_type="anti_pattern",
+            summary="ap",
+            relevance_hint="",
+            estimated_tokens=5,
         )
         pslice = ProgressiveSlice(
             heuristic_summaries=[s1],
@@ -137,12 +146,18 @@ class TestProgressiveSlice:
 
     def test_get_ids_by_type_heuristic(self):
         s1 = MemorySummary(
-            id="h1", memory_type="heuristic", summary="",
-            relevance_hint="", estimated_tokens=0,
+            id="h1",
+            memory_type="heuristic",
+            summary="",
+            relevance_hint="",
+            estimated_tokens=0,
         )
         s2 = MemorySummary(
-            id="h2", memory_type="heuristic", summary="",
-            relevance_hint="", estimated_tokens=0,
+            id="h2",
+            memory_type="heuristic",
+            summary="",
+            relevance_hint="",
+            estimated_tokens=0,
         )
         pslice = ProgressiveSlice(heuristic_summaries=[s1, s2])
         ids = pslice.get_ids_by_type("heuristic")
@@ -150,8 +165,11 @@ class TestProgressiveSlice:
 
     def test_get_ids_by_type_outcome(self):
         s = MemorySummary(
-            id="o1", memory_type="outcome", summary="",
-            relevance_hint="", estimated_tokens=0,
+            id="o1",
+            memory_type="outcome",
+            summary="",
+            relevance_hint="",
+            estimated_tokens=0,
         )
         pslice = ProgressiveSlice(outcome_summaries=[s])
         assert pslice.get_ids_by_type("outcome") == ["o1"]
@@ -179,9 +197,7 @@ class TestSummaryExtractor:
         assert summary._full_item is None
 
     def test_heuristic_summary_level(self, extractor):
-        h = create_test_heuristic(
-            condition="API fails", strategy="retry with backoff"
-        )
+        h = create_test_heuristic(condition="API fails", strategy="retry with backoff")
         summary = extractor.extract_heuristic_summary(h, DisclosureLevel.SUMMARY)
         assert "When" in summary.summary
         assert summary.disclosure_level == DisclosureLevel.SUMMARY
@@ -269,9 +285,7 @@ class TestSummaryExtractor:
 
     def test_anti_pattern_reference_level(self, extractor):
         ap = create_test_anti_pattern(pattern="Using sleep() for waits")
-        summary = extractor.extract_anti_pattern_summary(
-            ap, DisclosureLevel.REFERENCE
-        )
+        summary = extractor.extract_anti_pattern_summary(ap, DisclosureLevel.REFERENCE)
         assert "Warning:" in summary.summary
         assert summary._full_item is None
 
@@ -281,9 +295,7 @@ class TestSummaryExtractor:
             why_bad="hides errors",
             occurrence_count=5,
         )
-        summary = extractor.extract_anti_pattern_summary(
-            ap, DisclosureLevel.SUMMARY
-        )
+        summary = extractor.extract_anti_pattern_summary(ap, DisclosureLevel.SUMMARY)
         assert "Avoid:" in summary.summary
         assert "5x" in summary.relevance_hint
 
@@ -314,9 +326,7 @@ class TestSummaryExtractor:
         assert summary._full_item is None
 
     def test_preference_summary_level(self, extractor):
-        p = create_test_preference(
-            category="communication", preference="no emojis"
-        )
+        p = create_test_preference(category="communication", preference="no emojis")
         summary = extractor.extract_preference_summary(p, DisclosureLevel.SUMMARY)
         assert "[communication]" in summary.summary
         assert "Confidence:" in summary.relevance_hint
@@ -369,9 +379,7 @@ class TestProgressiveRetrieval:
 
     def test_format_summaries_empty(self):
         """Formatting empty slice should return empty or minimal text."""
-        pr = ProgressiveRetrieval(
-            retrieval_engine=None, storage=None
-        )
+        pr = ProgressiveRetrieval(retrieval_engine=None, storage=None)
         pslice = ProgressiveSlice()
         result = pr.format_summaries_for_context(pslice)
         assert isinstance(result, str)
@@ -477,7 +485,8 @@ class TestProgressiveRetrieval:
     def test_format_summaries_no_fetch_hint(self):
         pr = ProgressiveRetrieval(retrieval_engine=None, storage=None)
         pslice = ProgressiveSlice(
-            summaries_included=5, estimated_summary_tokens=100,
+            summaries_included=5,
+            estimated_summary_tokens=100,
         )
         result = pr.format_summaries_for_context(pslice, include_fetch_hint=False)
         assert "summaries shown" not in result
@@ -503,32 +512,47 @@ class TestProgressiveRetrieval:
         pslice = ProgressiveSlice(
             heuristic_summaries=[
                 MemorySummary(
-                    id="h1", memory_type="heuristic", summary="h",
-                    relevance_hint="", estimated_tokens=5,
+                    id="h1",
+                    memory_type="heuristic",
+                    summary="h",
+                    relevance_hint="",
+                    estimated_tokens=5,
                 )
             ],
             anti_pattern_summaries=[
                 MemorySummary(
-                    id="ap1", memory_type="anti_pattern", summary="ap",
-                    relevance_hint="", estimated_tokens=5,
+                    id="ap1",
+                    memory_type="anti_pattern",
+                    summary="ap",
+                    relevance_hint="",
+                    estimated_tokens=5,
                 )
             ],
             outcome_summaries=[
                 MemorySummary(
-                    id="o1", memory_type="outcome", summary="o",
-                    relevance_hint="", estimated_tokens=5,
+                    id="o1",
+                    memory_type="outcome",
+                    summary="o",
+                    relevance_hint="",
+                    estimated_tokens=5,
                 )
             ],
             preference_summaries=[
                 MemorySummary(
-                    id="p1", memory_type="preference", summary="p",
-                    relevance_hint="", estimated_tokens=5,
+                    id="p1",
+                    memory_type="preference",
+                    summary="p",
+                    relevance_hint="",
+                    estimated_tokens=5,
                 )
             ],
             knowledge_summaries=[
                 MemorySummary(
-                    id="k1", memory_type="domain_knowledge", summary="k",
-                    relevance_hint="", estimated_tokens=5,
+                    id="k1",
+                    memory_type="domain_knowledge",
+                    summary="k",
+                    relevance_hint="",
+                    estimated_tokens=5,
                 )
             ],
             summaries_included=5,
