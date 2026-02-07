@@ -107,7 +107,7 @@ class ALMA:
             embedding_provider=config.get("embedding_provider", "local"),
         )
 
-        # Initialize learning protocol
+        # Initialize learning protocol (with embedder for write-time embeddings)
         learning = LearningProtocol(
             storage=storage,
             scopes={
@@ -121,6 +121,7 @@ class ALMA:
                 )
                 for name, scope in config.get("agents", {}).items()
             },
+            embedder=retrieval._embedder,
         )
 
         # Build scopes dict

@@ -75,6 +75,7 @@ from alma.exceptions import (
     ConfigurationError,
     EmbeddingError,
     ExtractionError,
+    RAGError,
     RetrievalError,
     ScopeViolationError,
     StorageError,
@@ -137,6 +138,20 @@ from alma.progress import (
     ProgressTracker,
     WorkItem,
     WorkItemStatus,
+)
+
+# RAG Integration (v0.8.0+)
+from alma.rag import (
+    EnhancedChunk,
+    MemoryEnhancer,
+    MemorySignals,
+    MetricsResult,
+    RAGBridge,
+    RAGChunk,
+    RAGContext,
+    RelevanceJudgment,
+    RetrievalFeedbackTracker,
+    RetrievalMetrics,
 )
 
 # Session Management (Phase 10)
@@ -271,6 +286,18 @@ __all__ = [
     "EmbeddingError",
     "RetrievalError",
     "ExtractionError",
+    "RAGError",
+    # RAG Integration
+    "RAGBridge",
+    "RAGChunk",
+    "EnhancedChunk",
+    "MemorySignals",
+    "RAGContext",
+    "MemoryEnhancer",
+    "RetrievalFeedbackTracker",
+    "RetrievalMetrics",
+    "RelevanceJudgment",
+    "MetricsResult",
     # Observability
     "configure_observability",
     "get_tracer",
