@@ -176,7 +176,7 @@ class TokenEstimator:
 
     def _estimate_preference(self, p: UserPreference) -> int:
         """Estimate tokens for a preference."""
-        text = f"{p.category} {p.preference} {p.context or ''}"
+        text = f"{p.category} {p.preference} {p.source or ''}"
         return len(text) // self.chars_per_token + 10
 
     def estimate_slice(self, memory_slice: MemorySlice) -> int:

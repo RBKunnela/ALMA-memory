@@ -217,6 +217,7 @@ class MemorySlice:
     query: Optional[str] = None
     agent: Optional[str] = None
     retrieval_time_ms: Optional[int] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_prompt(
         self,
