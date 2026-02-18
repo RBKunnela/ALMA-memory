@@ -109,10 +109,9 @@ PRPs/
 scripts/
 .benchmarks/
 
-# AI Coding Tool Configurations (AIOS)
+# AI Coding Tool Configurations (AIOS & IDE - NOT PUBLIC)
+# These are development/IDE-specific files not needed for ALMA users
 .aios-core/
-!.aios-core/development/
-!.aios-core/development/agents/
 .aios/
 .agent/
 .claude/
@@ -123,6 +122,8 @@ scripts/
 .antigravity/
 .github/agents/
 .github/copilot-instructions.md
+.hintrc
+.lintrc
 
 # MCP & Template Files
 .mcp.json
