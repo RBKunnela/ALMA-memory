@@ -43,6 +43,10 @@ htmlcov/
 # Type checking
 .mypy_cache/
 
+# Linting & Build tools
+.ruff_cache/
+.wrangler/
+
 # Jupyter
 .ipynb_checkpoints/
 

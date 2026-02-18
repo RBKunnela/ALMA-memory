@@ -12,6 +12,7 @@ This fixes the issues where:
 
 import asyncio
 import functools
+import inspect
 import time
 from typing import Any, Callable, Dict, Optional, TypeVar
 
@@ -147,7 +148,7 @@ def rate_limit_llm_call(func: Callable[..., T]) -> Callable[..., T]:
         return func(*args, **kwargs)
 
     # Return appropriate wrapper based on function type
-    if asyncio.iscoroutinefunction(func):
+    if inspect.iscoroutinefunction(func):
         return async_wrapper  # type: ignore
     else:
         return sync_wrapper  # type: ignore

@@ -498,19 +498,25 @@ class TestHeuristicConsolidationStrategy:
         assert len(result["consolidated"]) == 1
 
     def test_keeps_unique_items(self):
-        """Heuristic strategy uses getattr(item, 'title') for text.
-        Heuristic has 'condition' not 'title', so all items appear
-        identical (empty string). This is a known text-extraction gap.
-        Use Outcome items which have task_description via 'action' fallback."""
+        """Unique conditions should not be deduped."""
         now = datetime.now(timezone.utc)
-        # Use MagicMocks with 'title' attribute to test actual dedup logic
-        m1 = MagicMock()
-        m1.title = "unique title 1"
-        m2 = MagicMock()
-        m2.title = "unique title 2"
+        items = [
+            Heuristic(
+                id="h1", agent="a", project_id="p",
+                condition="unique condition alpha", strategy="s1",
+                confidence=0.9, occurrence_count=1, success_count=1,
+                last_validated=now, created_at=now,
+            ),
+            Heuristic(
+                id="h2", agent="a", project_id="p",
+                condition="unique condition beta", strategy="s2",
+                confidence=0.8, occurrence_count=1, success_count=1,
+                last_validated=now, created_at=now,
+            ),
+        ]
         strategy = HeuristicConsolidationStrategy()
         result = strategy.consolidate(
-            items=[m1, m2], agent="a", project_id="p"
+            items=items, agent="a", project_id="p"
         )
         assert result["skipped"] == 0
         assert len(result["consolidated"]) == 2
@@ -603,14 +609,25 @@ class TestDeduplicationEngine:
         assert result.duplicates_found == 0
 
     def test_identical_texts_merged(self, engine):
-        """DeduplicationEngine._extract_text uses 'title' then 'action',
-        falling through to str(item) for Heuristic. Use MagicMocks with
-        'title' to test the actual grouping logic."""
-        m1 = MagicMock()
-        m1.title = "form testing with validation rules"
-        m2 = MagicMock()
-        m2.title = "form testing with validation rules"
-        result = engine.deduplicate([m1, m2])
+        """Heuristics with identical condition+strategy should be merged."""
+        now = datetime.now(timezone.utc)
+        items = [
+            Heuristic(
+                id="h1", agent="a", project_id="p",
+                condition="form testing with validation rules",
+                strategy="validate inputs", confidence=0.9,
+                occurrence_count=5, success_count=4,
+                last_validated=now, created_at=now,
+            ),
+            Heuristic(
+                id="h2", agent="a", project_id="p",
+                condition="form testing with validation rules",
+                strategy="validate inputs", confidence=0.8,
+                occurrence_count=3, success_count=2,
+                last_validated=now, created_at=now,
+            ),
+        ]
+        result = engine.deduplicate(items)
         assert len(result.deduplicated) == 1
         assert result.duplicates_found == 1
         assert result.merge_operations == 1
@@ -639,15 +656,23 @@ class TestDeduplicationEngine:
         assert result.duplicates_found == 0
 
     def test_keeps_representative_from_group(self, engine):
-        """_merge_group keeps first item as representative when
-        items are grouped. Use MagicMocks with 'title' for text extraction."""
-        m1 = MagicMock()
-        m1.title = "exact same text here"
-        m1.confidence = 0.7
-        m2 = MagicMock()
-        m2.title = "exact same text here"
-        m2.confidence = 0.95
-        result = engine.deduplicate([m1, m2])
+        """_merge_group keeps first item as representative."""
+        now = datetime.now(timezone.utc)
+        items = [
+            Heuristic(
+                id="h1", agent="a", project_id="p",
+                condition="exact same text", strategy="same strategy",
+                confidence=0.7, occurrence_count=1, success_count=1,
+                last_validated=now, created_at=now,
+            ),
+            Heuristic(
+                id="h2", agent="a", project_id="p",
+                condition="exact same text", strategy="same strategy",
+                confidence=0.95, occurrence_count=5, success_count=5,
+                last_validated=now, created_at=now,
+            ),
+        ]
+        result = engine.deduplicate(items)
         assert len(result.deduplicated) == 1
 
     def test_threshold_affects_grouping(self):
@@ -713,12 +738,21 @@ class TestDeduplicationEngine:
         assert sim == 1.0
 
     def test_calculate_similarity_no_overlap(self, engine):
-        """Use MagicMocks with 'title' for clean text extraction."""
-        m1 = MagicMock()
-        m1.title = "alpha beta gamma"
-        m2 = MagicMock()
-        m2.title = "delta epsilon zeta"
-        sim = engine._calculate_similarity(m1, m2)
+        """Items with zero word overlap have 0.0 similarity."""
+        now = datetime.now(timezone.utc)
+        h1 = Heuristic(
+            id="h1", agent="a", project_id="p",
+            condition="alpha beta gamma", strategy="",
+            confidence=0.9, occurrence_count=1, success_count=1,
+            last_validated=now, created_at=now,
+        )
+        h2 = Heuristic(
+            id="h2", agent="a", project_id="p",
+            condition="delta epsilon zeta", strategy="",
+            confidence=0.9, occurrence_count=1, success_count=1,
+            last_validated=now, created_at=now,
+        )
+        sim = engine._calculate_similarity(h1, h2)
         assert sim == 0.0
 
     def test_merge_group_raises_on_empty(self, engine):
