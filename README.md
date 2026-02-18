@@ -1136,6 +1136,8 @@ logging.getLogger("alma").setLevel(logging.DEBUG)
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+For questions, support, or contribution guidelines, email **dev@friendlyai.fi**.
+
 **What we need most:**
 - Documentation improvements
 - Test coverage for edge cases
@@ -1189,6 +1191,7 @@ If ALMA helps your AI agents get smarter:
 - **[Buy me a coffee](https://buymeacoffee.com/aiagentsprp)** - Support continued development
 - **[Sponsor on GitHub](https://github.com/sponsors/RBKunnela)** - Become an official sponsor
 - **Contribute** - PRs welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Get help** - Email **dev@friendlyai.fi** for support and inquiries
 
 ---
 
