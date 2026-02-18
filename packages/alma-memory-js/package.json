@@ -1,6 +1,6 @@
 {
   "name": "@rbkunnela/alma-memory",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "TypeScript/JavaScript SDK for ALMA Memory - Persistent memory for AI agents",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",

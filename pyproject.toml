@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alma-memory"
-version = "0.7.1"
+version = "0.8.0"
 description = "Agent Learning Memory Architecture - Persistent memory for AI agents"
 readme = "README.md"
 license = {text = "MIT"}
@@ -20,6 +20,11 @@ keywords = [
     "llm",
     "azure",
     "claude",
+    "rag",
+    "retrieval-augmented-generation",
+    "hybrid-search",
+    "reranking",
+    "bm25",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",

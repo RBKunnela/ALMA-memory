@@ -103,7 +103,7 @@ __all__ = [
     "ScoringWeights",
     "ScoredItem",
     "compute_composite_score",
-    # Trust-Integrated Scoring (v0.8.0+)
+    # Trust-Integrated Scoring (v0.8.0)
     "TrustAwareScorer",
     "TrustWeights",
     "TrustScoredItem",
@@ -111,13 +111,13 @@ __all__ = [
     "AgentTrustProfile",
     "AgentTrustContext",
     "TrustPatternStore",
-    # Token Budget (v0.8.0+)
+    # Token Budget (v0.8.0)
     "PriorityTier",
     "TokenEstimator",
     "BudgetedItem",
     "BudgetReport",
     "RetrievalBudget",
-    # Progressive Disclosure (v0.8.0+)
+    # Progressive Disclosure (v0.8.0)
     "DisclosureLevel",
     "MemorySummary",
     "ProgressiveSlice",
@@ -146,14 +146,14 @@ __all__ = [
     "VerificationConfig",
     "VerifiedRetriever",
     "create_verified_retriever",
-    # Hybrid Search (v0.8.0+)
+    # Hybrid Search (v0.8.0)
     "TextSearchProvider",
     "SimpleTFIDFProvider",
     "BM25SProvider",
     "HybridSearchEngine",
     "HybridSearchConfig",
     "HybridResult",
-    # Reranking (v0.8.0+)
+    # Reranking (v0.8.0)
     "Reranker",
     "NoOpReranker",
     "CrossEncoderReranker",
