@@ -2,7 +2,30 @@
 
 ## Completed
 
-### v0.6.0 - Workflow Context Layer (Current)
+### v0.8.0 - RAG Integration (Current)
+
+- [x] RAG Bridge - Accept external RAG chunks, enhance with memory signals
+- [x] Memory Enhancer - Enrich retrieval with heuristics, anti-patterns, domain knowledge
+- [x] Retrieval Feedback Loop - Learn which retrieval strategies work
+- [x] IR Metrics - MRR, NDCG, Recall, Precision, MAP (pure Python)
+- [x] Hybrid Search - Vector + keyword (BM25/TF-IDF) with RRF fusion
+- [x] Cross-Encoder Reranking - Pluggable reranker with optional `rerankers` library
+- [x] Text Search Providers - BM25S + pure-Python TF-IDF fallback
+- [x] Optional dependency group: `pip install alma-memory[rag]`
+
+### v0.7.0 - Intelligence Layer
+
+- [x] Memory Decay - Time-based confidence decay for aging memories
+- [x] Memory Compression - LLM + rule-based memory summarization
+- [x] Retrieval Verification - Two-stage verified retrieval pipeline
+- [x] Retrieval Modes - 7 cognitive task modes (standard, progressive, verified, budget, etc.)
+- [x] Trust-Integrated Scoring - Agent trust weighting for memory retrieval
+- [x] Token Budget Management - Context window management
+- [x] Progressive Disclosure - Summary, highlights, full detail levels
+- [x] 6 New MCP Tools - Memory Wall tools for Claude Code
+- [x] Archive System - Soft-delete with recovery
+
+### v0.6.0 - Workflow Context Layer
 
 - [x] Checkpoint & Resume - Save and restore workflow state
 - [x] State Reducers - Merge outputs from parallel agents
@@ -41,18 +64,13 @@
 
 ## In Progress
 
-### v0.7.0 - Intelligence Layer (Planned)
-
-- [ ] Memory compression / summarization
-- [ ] Temporal reasoning (time-aware retrieval)
-- [ ] Proactive memory suggestions
-- [ ] Memory importance scoring
-
-### v0.8.0 - Visualization (Planned)
+### v0.9.0 - Visualization & Temporal (Planned)
 
 - [ ] Visual memory explorer dashboard
 - [ ] Memory graph visualization
 - [ ] Analytics and insights
+- [ ] Temporal reasoning (time-aware retrieval)
+- [ ] Proactive memory suggestions
 
 ## Future
 

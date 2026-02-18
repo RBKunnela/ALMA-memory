@@ -29,7 +29,7 @@ Testing Support:
     - create_test_heuristic(), create_test_outcome(), etc.
 """
 
-__version__ = "0.7.1"
+__version__ = "0.8.0"
 
 # Core
 # Confidence Engine (Phase 12)
@@ -140,18 +140,22 @@ from alma.progress import (
     WorkItemStatus,
 )
 
-# RAG Integration (v0.8.0+)
+# RAG Integration (v0.8.0)
 from alma.rag import (
     EnhancedChunk,
     MemoryEnhancer,
     MemorySignals,
+    MetricsHistory,
     MetricsResult,
     RAGBridge,
     RAGChunk,
     RAGContext,
     RelevanceJudgment,
+    RetrievalEffectiveness,
+    RetrievalFeedback,
     RetrievalFeedbackTracker,
     RetrievalMetrics,
+    RetrievalRecord,
 )
 
 # Session Management (Phase 10)
@@ -295,9 +299,13 @@ __all__ = [
     "RAGContext",
     "MemoryEnhancer",
     "RetrievalFeedbackTracker",
+    "RetrievalRecord",
+    "RetrievalFeedback",
+    "RetrievalEffectiveness",
     "RetrievalMetrics",
     "RelevanceJudgment",
     "MetricsResult",
+    "MetricsHistory",
     # Observability
     "configure_observability",
     "get_tracer",

@@ -7,6 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] - 2026-02-18
+
+### Added - RAG Integration Layer
+
+- **RAG Bridge** (`alma/rag/bridge.py`)
+  - Accept external RAG chunks and enhance with ALMA memory signals
+  - `RAGBridge.enhance()` injects relevant heuristics, anti-patterns, and domain knowledge
+  - Configurable signal weights for memory-aware re-ranking
+  - Works with any RAG framework (LangChain, LlamaIndex, custom)
+
+- **Memory Enhancer** (`alma/rag/enhancer.py`)
+  - `MemoryEnhancer` enriches RAG chunks with memory context
+  - Computes memory signals (relevance, recency, trust) per chunk
+  - Produces `EnhancedChunk` with original content + memory overlay
+
+- **Retrieval Feedback Loop** (`alma/rag/feedback.py`, `feedback_types.py`)
+  - `RetrievalFeedbackTracker` records retrieval outcomes
+  - `record_retrieval()` then `record_feedback()` then `compute_weight_adjustments()`
+  - Learns which retrieval strategies work for which queries
+  - Feedback stored as DomainKnowledge (no storage ABC changes needed)
+  - Types: `RetrievalRecord`, `RetrievalFeedback`, `RetrievalEffectiveness`
+
+- **IR Metrics Engine** (`alma/rag/metrics.py`, `metrics_types.py`)
+  - Pure-Python, deterministic implementations
+  - MRR (Mean Reciprocal Rank), NDCG at K, Recall at K, Precision at K, MAP
+  - `MetricsHistory` for tracking metric trends over time
+  - `RelevanceJudgment` for ground-truth labeling
+
+- **Hybrid Search** (`alma/retrieval/hybrid.py`)
+  - `HybridSearchEngine` combines vector + keyword search
+  - Reciprocal Rank Fusion (RRF) for score combination
+  - Configurable vector/keyword weight balance via `HybridSearchConfig`
+
+- **Text Search Providers** (`alma/retrieval/text_search.py`)
+  - `TextSearchProvider` ABC for pluggable keyword search
+  - `SimpleTFIDFProvider` pure-Python TF-IDF with cosine similarity (zero deps)
+  - `BM25SProvider` wraps optional `bm25s` library, falls back to TF-IDF
+
+- **Cross-Encoder Reranking** (`alma/retrieval/reranking.py`)
+  - `Reranker` ABC with pluggable implementations
+  - `CrossEncoderReranker` wraps optional `rerankers` library
+  - `NoOpReranker` passthrough for when reranking is not needed
+
+- **New optional dependency group**: `pip install alma-memory[rag]`
+  - Installs `bm25s>=0.2.0` and `rerankers>=0.5.0`
+  - All RAG features work without these (graceful degradation)
+
+- **New exceptions**: `RAGError` for RAG-specific error handling
+
+### Added - Missing Exports
+
+- Added `MetricsHistory`, `RetrievalRecord`, `RetrievalFeedback`, `RetrievalEffectiveness` to top-level `alma` package exports
+
+### Changed
+
+- Bumped version to 0.8.0 across `pyproject.toml`, `alma/__init__.py`, `packages/alma-memory-js/package.json`
+- Added RAG-related keywords to `pyproject.toml`: `rag`, `retrieval-augmented-generation`, `hybrid-search`, `reranking`, `bm25`
+- Updated version labels in `alma/retrieval/__init__.py` (removed `+` suffix)
+
+### Fixed - Tech Debt Remediation (v0.7.1 work, shipped in v0.8.0)
+
+- **HIGH-001**: Split `alma/mcp/tools.py` (~3,000 lines) into `alma/mcp/tools/` package with 5 focused modules
+- **HIGH-003**: Added 155 tests for retrieval modules (`trust_scoring`, `budget`, `progressive`), found and fixed 3 latent bugs
+- **MED-001**: Standardized logging across all modules
+- **MED-002**: Added missing docstrings to public API methods
+- **MED-003**: Added input sanitization for user-facing parameters
+- **MED-004**: Added configuration validation tests
+- **MED-005**: Improved error messages with actionable context
+- Embedding performance boost (2.6x faster via batched processing + LRU cache)
+- Storage backend factory pattern for cleaner instantiation
+- Consolidation strategy pattern (LLM + heuristic strategies)
+- Standalone deduplication engine
+- 15 cross-module integration tests
+
+### Tests
+
+- 118 new RAG tests across 8 test files
+- Dedicated `test_text_search.py` for text search providers
+- Total test count: 1,545+ passing, 212 skipped, 0 failing
+
+---
+
 ## [0.7.0] - 2026-02-03
 
 ### Added - Memory Wall Enhancements

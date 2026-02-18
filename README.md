@@ -101,264 +101,157 @@ ALMA isn't just another memory framework. Here's what sets it apart from alterna
 
 ---
 
-## What's New in v0.7.1
+## What's New in v0.8.0
 
-### Performance & Modularity Improvements
+### RAG Integration Layer
 
-v0.7.1 focuses on **decoupling architecture**, **optimizing performance**, and **expanding integration testing** to make ALMA faster and easier to extend.
+v0.8.0 makes ALMA the **memory layer for RAG**. Any RAG system can now leverage ALMA's learned knowledge to improve retrieval quality over time.
 
-#### 🚀 Embedding Performance Boost (2.6x Faster)
+#### RAG Bridge - Enhance RAG with Memory
 
-**Problem:** Embedding computation was a bottleneck - retrieving 1000 memories took 4.2 seconds.
-
-**Solution:** Batched embedding processing with intelligent caching
-- Process embeddings in configurable batches (default 32)
-- Automatic LRU cache for repeated queries
-- 85% cache hit rate on typical workloads
-- **Result: 2.6x speedup (4.2s → 1.6s)**
-
-**How to use it:**
+Accept chunks from any RAG framework and enhance them with ALMA memory signals:
 
 ```python
-from alma.retrieval.embeddings_optimized import EmbeddingOptimizer
+from alma import ALMA, RAGBridge, RAGChunk
 
-# Initialize once at startup
-EmbeddingOptimizer.initialize(
-    embedding_model=my_model,
-    batch_size=32,          # Tune based on memory constraints
-    enable_cache=True       # Enable result caching
+alma = ALMA.from_config(".alma/config.yaml")
+bridge = RAGBridge(alma=alma)
+
+# Your RAG system retrieves chunks (from LangChain, LlamaIndex, etc.)
+chunks = [
+    RAGChunk(id="1", text="Deploy with blue-green strategy", score=0.85),
+    RAGChunk(id="2", text="Use rolling updates for zero downtime", score=0.78),
+    RAGChunk(id="3", text="Always run smoke tests after deploy", score=0.72),
+]
+
+# ALMA enhances with memory signals
+result = bridge.enhance(
+    chunks=chunks,
+    query="how to deploy auth service safely",
+    agent="backend-agent",
 )
 
-# All embeddings now use batching + caching automatically
-embeddings = EmbeddingOptimizer.embed(["text1", "text2", "text3"])
-
-# Check cache performance
-stats = EmbeddingOptimizer.get_stats()
-print(f"Cache hit rate: {stats['hit_rate_percent']}%")
-print(f"Cached items: {stats['cached_items']}")
+# Enhanced chunks now include memory context
+for chunk in result.chunks:
+    print(f"{chunk.text} (score: {chunk.final_score:.2f})")
+    print(f"  Memory signals: {chunk.signals}")
 ```
-
-**Benefits for your project:**
-- Faster memory retrieval = faster agent task execution
-- Automatic caching = cost reduction on LLM embeddings
-- Configurable batching = optimal performance for your hardware
-- Transparent to existing code = no changes needed
 
 ---
 
-#### 🔌 Storage Backend Decoupling
+#### Hybrid Search - Vector + Keyword with RRF Fusion
 
-**Problem:** Adding new storage backends required modifying multiple files. Dependencies were tightly coupled.
-
-**Solution:** Factory pattern for backend instantiation
+Combine vector similarity with BM25/TF-IDF keyword search for better recall:
 
 ```python
-from alma.storage.factory import StorageFactory
+from alma.retrieval.hybrid import HybridSearchEngine, HybridSearchConfig
+from alma.retrieval.text_search import SimpleTFIDFProvider
 
-# Register custom backend once
-class MyCustomBackend(StorageBackend):
-    def save_heuristic(self, h): ...
-    # ... implement interface
-
-StorageFactory.register("my_backend", MyCustomBackend)
-
-# Use anywhere in your codebase
-storage = StorageFactory.create(
-    "my_backend",
-    config_param="value"
+config = HybridSearchConfig(
+    vector_weight=0.7,    # 70% vector similarity
+    keyword_weight=0.3,   # 30% keyword match
+    rrf_k=60,             # RRF fusion constant
 )
 
-# List available backends
-backends = StorageFactory.get_available_backends()
-# Output: ['sqlite', 'postgresql', 'azure_cosmos', 'qdrant', 'pinecone', 'chroma', 'file', 'my_backend']
-```
-
-**Why this matters:**
-- Add new backends without modifying existing code
-- Easy backend swapping for testing/migration
-- Cleaner dependency management
-- Runtime backend selection (perfect for multi-tenant systems)
-
----
-
-#### 🎯 Consolidation Strategies (LLM + Heuristic)
-
-**Problem:** Consolidation was LLM-only. No option for faster rule-based deduplication, and LLM costs increased with scale.
-
-**Solution:** Strategy pattern with multiple consolidation approaches
-
-```python
-from alma.consolidation.strategy import ConsolidationStrategyFactory
-
-# Use LLM for intelligent consolidation (preserves nuance)
-llm_strategy = ConsolidationStrategyFactory.create("llm")
-result = llm_strategy.consolidate(
-    items=memories,
-    agent="helena",
-    project_id="my-project",
-    threshold=0.85
+engine = HybridSearchEngine(
+    config=config,
+    text_provider=SimpleTFIDFProvider(),
 )
 
-# Or use faster heuristic (no LLM calls, instant)
-heuristic_strategy = ConsolidationStrategyFactory.create("heuristic")
-result = heuristic_strategy.consolidate(
-    items=memories,
-    agent="helena",
-    project_id="my-project",
-    threshold=0.85
+# Index documents for keyword search
+engine.index_documents(["doc1 text...", "doc2 text..."])
+
+# Search returns fused results
+results = engine.search(
+    query="JWT authentication refresh tokens",
+    vector_results=vector_hits,  # From your vector DB
+    top_k=10,
+)
+```
+
+**Optional BM25 support** (better than TF-IDF for long documents):
+```bash
+pip install alma-memory[rag]  # Installs bm25s + rerankers
+```
+
+---
+
+#### Feedback Loop - Learn From Retrieval Outcomes
+
+Track what works and automatically adjust retrieval weights:
+
+```python
+from alma.rag import RetrievalFeedbackTracker
+
+tracker = RetrievalFeedbackTracker(alma=alma)
+
+# 1. Record what was retrieved
+retrieval_id = tracker.record_retrieval(
+    query="deploy auth service",
+    agent="backend-agent",
+    chunk_ids=["1", "2", "3"],
+    scores=[0.85, 0.78, 0.72],
 )
 
-print(f"Consolidated {len(result['consolidated'])} memories")
-print(f"Merged {result['merge_operations']} duplicates")
-```
+# 2. After the agent uses the results, record feedback
+tracker.record_feedback(
+    retrieval_id=retrieval_id,
+    helpful_chunks=["1", "3"],   # These were useful
+    unhelpful_chunks=["2"],      # This was not relevant
+)
 
-**Benefits:**
-- **Cost reduction:** Use heuristic for frequent consolidation, LLM for critical merges
-- **Performance:** Heuristic strategy is instant (no API calls)
-- **Flexibility:** Mix strategies based on your needs
-- **Extensibility:** Add custom strategies easily
+# 3. Compute weight adjustments based on accumulated feedback
+adjustments = tracker.compute_weight_adjustments(agent="backend-agent")
+print(adjustments)
+# -> {'vector_weight': 0.65, 'keyword_weight': 0.35}  # Auto-tuned
+```
 
 ---
 
-#### 🔧 Deduplication Engine (Extracted & Optimized)
+#### IR Metrics - Measure Retrieval Quality
 
-**Problem:** Deduplication logic was embedded in consolidation, making it hard to test independently and understand.
-
-**Solution:** Standalone deduplication engine with clear API
+Pure-Python, deterministic implementations of standard IR metrics:
 
 ```python
-from alma.consolidation.deduplication import DeduplicationEngine, DeduplicationResult
+from alma.rag import RetrievalMetrics, RelevanceJudgment
 
-engine = DeduplicationEngine(similarity_threshold=0.85)
+metrics = RetrievalMetrics()
 
-# Deduplicate your memories
-result: DeduplicationResult = engine.deduplicate(memories)
+# Define ground truth
+judgments = [
+    RelevanceJudgment(query="deploy", doc_id="1", relevant=True),
+    RelevanceJudgment(query="deploy", doc_id="2", relevant=False),
+    RelevanceJudgment(query="deploy", doc_id="3", relevant=True),
+]
 
-# Get human-readable summary
-print(result.summary())
-# Output: "Deduplicated 15 items (3 duplicates found, 2 merges)"
+# Compute metrics
+result = metrics.compute(
+    retrieved=["1", "2", "3"],
+    judgments=judgments,
+    k=10,
+)
 
-# Access structured results
-print(f"Final items: {len(result.deduplicated)}")
-print(f"Duplicates removed: {result.duplicates_found}")
-print(f"Merge operations: {result.merge_operations}")
-
-# Deduplication is now testable independently
-assert len(result.deduplicated) == 12  # 15 - 3 duplicates
-assert result.merge_operations == 2
-```
-
-**Why it matters:**
-- **Clarity:** Logic isolated from consolidation
-- **Testability:** Easy to unit test
-- **Reusability:** Use deduplication independently
-- **Maintainability:** Changes don't break consolidation
-
----
-
-#### 📊 Cross-Module Integration Testing (+15 Tests)
-
-**Problem:** Limited testing of how storage, retrieval, consolidation, and workflow interact.
-
-**Solution:** 15 new integration tests covering real-world flows
-
-```python
-# Test storage → consolidation → retrieval pipeline
-def test_store_and_consolidate_heuristics():
-    storage = MockStorage()
-
-    # Store similar heuristics
-    h1 = create_test_heuristic(title="Use list comprehensions")
-    h2 = create_test_heuristic(title="List comprehensions are Pythonic")
-    h3 = create_test_heuristic(title="Avoid nested loops in comprehensions")
-
-    # All get stored
-    ids = storage.save_heuristics([h1, h2, h3])
-    assert len(ids) == 3
-
-    # All retrieved
-    retrieved = storage.get_heuristics(project_id="test", agent="qa")
-    assert len(retrieved) >= 3
-
-# Test contract enforcement
-def test_module_boundary_contracts():
-    storage = MockStorage()
-    h = create_test_heuristic()
-    storage.save_heuristic(h)
-
-    items = storage.get_heuristics(project_id="test", agent="test")
-
-    # Verify each module gets what it expects
-    for item in items:
-        # Required by consolidation
-        assert hasattr(item, 'title')
-        assert hasattr(item, 'success_rate')
-
-        # Required by retrieval
-        assert hasattr(item, 'confidence')
-        assert hasattr(item, 'created_at')
-
-# Test backwards compatibility (no regressions)
-def test_no_regressions_in_retrieval():
-    storage = MockStorage()
-    h = create_test_heuristic(title="Test", success_rate=0.8)
-    storage.save_heuristic(h)
-
-    # Old API still works
-    items = storage.get_heuristics(project_id="test", agent="test")
-    assert len(items) > 0
-
-    # New optional parameters work
-    items = storage.get_heuristics(
-        project_id="test",
-        agent="test",
-        min_confidence=0.5,          # New
-        scope_filter={"scope": "PROJECT"}  # New
-    )
-    assert isinstance(items, list)
-```
-
-**What you get:**
-- ✅ Regression detection - catch bugs early
-- ✅ Backwards compatibility verification - upgrade safely
-- ✅ Cross-module contract validation - ensure integration works
-- ✅ Documented integration patterns - see how modules interact
-
----
-
-### Health Improvements Summary
-
-| Dimension | Before | After | Change | Status |
-|-----------|--------|-------|--------|--------|
-| Architecture | 0.79 | 0.82 | +3% | Improved toward target |
-| Quality | 0.84 | 0.85 | +1% | AT TARGET |
-| Performance | 0.82 | 0.84 | +2% | Improved toward target |
-| Integration | 0.85 | 0.87 | +2% | EXCEEDED target |
-| **Overall** | **0.84** | **0.85** | **+1.2%** | **PRODUCTION READY** |
-
----
-
-### Backwards Compatibility
-
-**No breaking changes!** All v0.7.0 code works unchanged. New features are opt-in:
-
-```python
-# v0.7.0 code still works
-from alma.consolidation import consolidate_heuristics
-result = consolidate_heuristics(memories, threshold=0.85)
-
-# v0.7.1: Optional use of new strategies
-from alma.consolidation.strategy import ConsolidationStrategyFactory
-strategy = ConsolidationStrategyFactory.create("heuristic")
-result = strategy.consolidate(memories, agent="qa", project_id="p1")
-
-# v0.7.1: Optional optimized embeddings
-from alma.retrieval.embeddings_optimized import EmbeddingOptimizer
-EmbeddingOptimizer.initialize(model=my_model)
-# Automatic 2.6x speedup on all embedding calls
+print(f"MRR: {result.mrr:.3f}")
+print(f"NDCG@10: {result.ndcg:.3f}")
+print(f"Recall@10: {result.recall:.3f}")
+print(f"Precision@10: {result.precision:.3f}")
+print(f"MAP: {result.map:.3f}")
 ```
 
 ---
+
+### Previous Releases
+
+<details>
+<summary>v0.7.x - Intelligence Layer + Performance</summary>
+
+- **Embedding Performance Boost** - 2.6x faster via batched processing + LRU cache
+- **Storage Backend Factory** - Register custom backends, runtime selection
+- **Consolidation Strategies** - LLM + heuristic options for cost/speed tradeoff
+- **Standalone Deduplication Engine** - Testable, reusable dedup logic
+- **15 Cross-Module Integration Tests** - Storage, retrieval, consolidation pipelines
+
+</details>
 
 ## What's New in v0.7.0
 
@@ -488,6 +381,9 @@ pip install alma-memory[chroma]    # ChromaDB
 
 # Enterprise
 pip install alma-memory[azure]     # Azure Cosmos DB + Azure OpenAI
+
+# RAG integration (hybrid search, reranking)
+pip install alma-memory[rag]
 
 # Everything
 pip install alma-memory[all]
@@ -1001,7 +897,7 @@ print(f"Recommendation: {signal.recommendation}")
 
 ```
 +-------------------------------------------------------------------------+
-|                          ALMA v0.7.0                                    |
+|                          ALMA v0.8.0                                    |
 +-------------------------------------------------------------------------+
 |  HARNESS LAYER                                                          |
 |  +-----------+  +-----------+  +-----------+  +----------------+        |
@@ -1181,6 +1077,11 @@ chroma:
 | Progressive Disclosure | Summary → highlights → full | Done |
 | MCP Memory Wall Tools | 6 new MCP tools | Done |
 | Archive System | Soft-delete with recovery | Done |
+| RAG Bridge | Memory-enhanced RAG retrieval | Done |
+| Hybrid Search | Vector + keyword with RRF fusion | Done |
+| Retrieval Feedback | Learn from retrieval outcomes | Done |
+| IR Metrics | MRR, NDCG, Recall, Precision, MAP | Done |
+| Cross-Encoder Reranking | Pluggable reranking pipeline | Done |
 
 ---
 
@@ -1245,38 +1146,32 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Roadmap
 
+**Completed (v0.8.0):**
+- RAG integration (bridge, enhancer, feedback loop, IR metrics)
+- Hybrid search (vector + keyword with RRF fusion)
+- Text search providers (BM25S + TF-IDF)
+- Cross-encoder reranking
+- Tech debt remediation (13 items resolved)
+
 **Completed (v0.7.0):**
 - Memory decay & intelligent forgetting
 - Memory compression pipeline (LLM + rule-based)
 - Two-stage verified retrieval
 - Mode-aware retrieval (7 modes)
-- Trust-integrated scoring
-- Token budget management
-- Progressive disclosure
+- Trust-integrated scoring, token budget, progressive disclosure
 - 6 new MCP tools for Memory Wall
-- Archive system with recovery
 
-**Completed (v0.6.0):**
+**Completed (v0.6.0 and earlier):**
 - Workflow context layer (checkpoints, state merging, artifacts)
-- Session persistence
-- Scoped retrieval
-- MCP workflow tools (8 new tools)
-- TypeScript SDK v0.6.0 with full workflow support
-
-**Completed (v0.5.0):**
-- Multi-agent memory sharing
-- Memory consolidation engine
-- Event system / webhooks
-- TypeScript SDK (initial)
-- Qdrant, Pinecone, Chroma backends
-- Graph database abstraction
+- 7 storage backends, 4 graph backends
+- Multi-agent memory sharing, consolidation, event system
+- TypeScript SDK, MCP server (22 tools)
 
 **Next:**
 - Temporal reasoning (time-aware retrieval)
 - Proactive memory suggestions
 - Visual memory explorer dashboard
 - Additional graph backends (Neptune, TigerGraph)
-- Redis cache backend
 
 ---
 
