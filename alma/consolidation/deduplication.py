@@ -176,11 +176,24 @@ class DeduplicationEngine:
         return overlap / total if total > 0 else 0.0
 
     def _extract_text(self, item: Heuristic | Outcome) -> str:
-        """Extract text content from item for comparison."""
-        if hasattr(item, "title"):
+        """Extract text content from item for comparison.
+
+        Handles all ALMA memory types:
+        - Heuristic: condition + strategy
+        - Outcome: task_description + strategy_used
+        - DomainKnowledge: domain + fact
+        - AntiPattern: pattern + why_bad + better_alternative
+        """
+        if hasattr(item, "condition") and hasattr(item, "strategy"):
+            return f"{item.condition} {item.strategy}"
+        elif hasattr(item, "task_description") and hasattr(item, "strategy_used"):
+            return f"{item.task_description} {item.strategy_used}"
+        elif hasattr(item, "domain") and hasattr(item, "fact"):
+            return f"{item.domain} {item.fact}"
+        elif hasattr(item, "pattern") and hasattr(item, "why_bad"):
+            return f"{item.pattern} {item.why_bad} {getattr(item, 'better_alternative', '')}"
+        elif hasattr(item, "title"):
             return getattr(item, "title", "")
-        elif hasattr(item, "action"):
-            return getattr(item, "action", "")
         else:
             return str(item)
 

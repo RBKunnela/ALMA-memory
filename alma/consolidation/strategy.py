@@ -123,7 +123,17 @@ class HeuristicConsolidationStrategy(ConsolidationStrategy):
         seen_texts = set()
 
         for item in items:
-            text = getattr(item, "title", getattr(item, "action", ""))
+            # Extract text from ALMA types: Heuristic.condition, Outcome.task_description, etc.
+            if hasattr(item, "condition"):
+                text = getattr(item, "condition", "")
+            elif hasattr(item, "task_description"):
+                text = getattr(item, "task_description", "")
+            elif hasattr(item, "pattern"):
+                text = getattr(item, "pattern", "")
+            elif hasattr(item, "fact"):
+                text = getattr(item, "fact", "")
+            else:
+                text = getattr(item, "title", getattr(item, "action", ""))
             if text not in seen_texts:
                 consolidated.append(item)
                 seen_texts.add(text)
