@@ -1,0 +1,61 @@
+# CodeRabbit Configuration
+# https://docs.coderabbit.ai/guides/configure-coderabbit
+
+language: en-US
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  auto_title_placeholder: "@coderabbitai"
+  review_status: true
+  poem: false
+  collapse_walkthrough: false
+  sequence_diagrams: true
+  changed_files_summary: true
+  labeling_instructions: []
+  path_filters: []
+  path_instructions:
+    - path: "alma/**"
+      instructions: |
+        This is the core ALMA library. Review for:
+        - Python 3.10+ compatibility
+        - Proper use of ABC patterns for storage/graph backends
+        - Async variants using asyncio.to_thread()
+        - Google-style docstrings for public API
+        - Custom exceptions from alma.exceptions (never bare except)
+        - No eval() or dynamic code execution
+        - No hardcoded credentials or secrets
+    - path: "alma/storage/**"
+      instructions: |
+        Storage backend implementations follow the StorageBackend ABC in alma/storage/base.py.
+        Check for: explicit column lists (no SELECT *), proper connection pooling,
+        parameterized queries (no SQL injection), and consistent error handling with StorageError.
+    - path: "alma/graph/**"
+      instructions: |
+        Graph backend implementations follow the GraphBackend ABC in alma/graph/base.py.
+        Check for: proper connection management and consistent error handling.
+    - path: "alma/mcp/**"
+      instructions: |
+        MCP server with 22 tools. This module is known tech debt (~3000 lines in tools.py).
+        Focus on: input validation, proper error responses, and security of exposed operations.
+    - path: "tests/**"
+      instructions: |
+        Tests use pytest with alma.testing module (MockStorage, MockEmbedder, factories).
+        Async tests use pytest-asyncio with asyncio_mode="auto".
+        Check for: proper use of test factories, no hardcoded paths, and meaningful assertions.
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  jira:
+    project_keys: []
+  linear:
+    team_keys: []
