@@ -1,0 +1,415 @@
+---
+workflow:
+  id: alma-open-brain-evolution
+  name: "ALMA Open Brain Evolution"
+  version: "1.0.0"
+  description: |
+    Master workflow that orchestrates 3 squads to evolve ALMA-memory from
+    an agent memory library into the definitive Open Brain backend.
+
+    Inspired by: "Why Your AI Starts From Zero" (Nate B Jones)
+    Target: ALMA v1.0 — Personal Knowledge Infrastructure for the Agent Web
+
+  owner: capture-chief
+  trigger: "*open-brain-evolution"
+  mode: interactive
+
+  squads:
+    - id: alma-capture
+      role: "ETL/Ingestion — Build thought capture pipeline"
+      phase: 1
+    - id: alma-synthesis
+      role: "Intelligence — Build review and pattern detection"
+      phase: 2
+    - id: alma-openness
+      role: "Protocol — Build cross-tool access and quickstart"
+      phase: 3
+
+# ============================================================================
+# PHASE 1: FOUNDATION — Capture Pipeline (alma-capture squad)
+# ============================================================================
+phases:
+  - id: phase-1-foundation
+    name: "Foundation — Thought Capture"
+    squad: alma-capture
+    description: |
+      Build the core capture pipeline. Without capture, nothing else works.
+      This phase adds the ability to store and retrieve personal thoughts via MCP.
+
+    steps:
+      - id: step-1-1
+        name: "Design Capture Pipeline"
+        agent: capture-chief
+        task: tasks/design-capture-pipeline.md
+        inputs:
+          - name: alma_codebase
+            type: directory
+            path: "alma/"
+          - name: open_brain_kb
+            type: file
+            path: "data/open-brain-kb.md"
+        outputs:
+          - name: capture_architecture
+            type: document
+            description: "Architecture document with data flow, API surface, metadata extraction"
+        gate:
+          type: review
+          criteria:
+            - "Architecture covers: capture → embed → extract metadata → store → confirm"
+            - "MCP tool API surface is defined (parameters, return types)"
+            - "Metadata extraction prompt is designed"
+
+      - id: step-1-2
+        name: "Build Metadata Extractor"
+        agent: metadata-extractor
+        task: tasks/build-metadata-extractor.md
+        requires: [step-1-1]
+        inputs:
+          - name: capture_architecture
+            type: document
+            from: step-1-1
+        outputs:
+          - name: metadata_module
+            type: python_module
+            path: "alma/extraction/metadata.py"
+        gate:
+          type: automated
+          criteria:
+            - "Extracts: type, topics, people, action_items, importance"
+            - "Unit tests pass with >80% accuracy on test corpus"
+            - "Works with configurable LLM provider"
+
+      - id: step-1-3
+        name: "Implement Capture MCP Tool"
+        agent: mcp-capture-dev
+        task: tasks/implement-capture-tool.md
+        requires: [step-1-2]
+        inputs:
+          - name: metadata_module
+            type: python_module
+            from: step-1-2
+        outputs:
+          - name: capture_tool
+            type: python_function
+            path: "alma/mcp/tools.py"
+            function: "alma_capture_thought"
+        gate:
+          type: automated
+          criteria:
+            - "MCP tool registered and callable"
+            - "Thought stored with embedding + metadata"
+            - "Retrievable via existing alma_retrieve"
+
+      - id: step-1-4
+        name: "Implement List & Browse Tools"
+        agent: mcp-capture-dev
+        task: tasks/implement-list-memories.md
+        requires: [step-1-3]
+        outputs:
+          - name: list_tool
+            type: python_function
+            path: "alma/mcp/tools.py"
+            function: "alma_list_memories"
+          - name: browse_tool
+            type: python_function
+            path: "alma/mcp/tools.py"
+            function: "alma_browse_timeline"
+        gate:
+          type: automated
+          criteria:
+            - "List memories with date filtering works"
+            - "Browse timeline returns chronological results"
+            - "Pagination works correctly"
+
+    phase_gate:
+      name: "Phase 1 Complete"
+      criteria:
+        - "Can capture a thought via MCP and retrieve it"
+        - "Metadata is automatically extracted"
+        - "Can list recent memories with date filtering"
+        - "All unit tests pass"
+      on_pass: "Proceed to Phase 2"
+      on_fail: "Fix blocking issues before proceeding"
+
+  # ============================================================================
+  # PHASE 2: INTELLIGENCE — Synthesis Engine (alma-synthesis squad)
+  # ============================================================================
+  - id: phase-2-intelligence
+    name: "Intelligence — Synthesis & Patterns"
+    squad: alma-synthesis
+    requires: [phase-1-foundation]
+    description: |
+      Build the compounding advantage layer. Weekly reviews, pattern detection,
+      and connection surfacing that make the system more valuable over time.
+
+    steps:
+      - id: step-2-1
+        name: "Build Weekly Review Engine"
+        agent: review-engine-dev
+        task: tasks/build-weekly-review.md
+        inputs:
+          - name: capture_tool
+            type: python_function
+            from: phase-1-foundation/step-1-3
+        outputs:
+          - name: review_engine
+            type: python_module
+            path: "alma/synthesis/review.py"
+          - name: review_mcp_tool
+            type: python_function
+            path: "alma/mcp/tools.py"
+            function: "alma_weekly_review"
+        gate:
+          type: review
+          criteria:
+            - "Generates structured weekly synthesis"
+            - "Identifies themes, open loops, gaps"
+            - "MCP tool returns formatted review"
+
+      - id: step-2-2
+        name: "Implement Pattern Detection"
+        agent: pattern-detector
+        task: tasks/implement-pattern-detection.md
+        requires: [step-2-1]
+        outputs:
+          - name: pattern_module
+            type: python_module
+            path: "alma/synthesis/patterns.py"
+        gate:
+          type: automated
+          criteria:
+            - "Detects recurring themes across weeks"
+            - "Tracks topic frequency evolution"
+            - "Low false positive rate (<20%)"
+
+      - id: step-2-3
+        name: "Integrate Graph + Vector Search"
+        agent: graph-integrator
+        task: tasks/integrate-graph-vector.md
+        requires: [step-2-1]
+        outputs:
+          - name: unified_retrieval
+            type: python_module
+            path: "alma/retrieval/unified.py"
+        gate:
+          type: automated
+          criteria:
+            - "Query returns results from both vector and graph"
+            - "Graph edges enhance relevance scoring"
+            - "Works with all 4 graph backends"
+
+      - id: step-2-4
+        name: "Build Connection Finder"
+        agent: graph-integrator
+        task: tasks/implement-connection-finder.md
+        requires: [step-2-3]
+        outputs:
+          - name: connection_tool
+            type: python_function
+            path: "alma/mcp/tools.py"
+            function: "alma_find_connections"
+        gate:
+          type: automated
+          criteria:
+            - "Finds non-obvious connections via vector + graph"
+            - "Returns explanation of why memories are connected"
+
+    phase_gate:
+      name: "Phase 2 Complete"
+      criteria:
+        - "Weekly review generates useful synthesis from real data"
+        - "Pattern detection finds genuine patterns"
+        - "Connection finder surfaces non-obvious links"
+        - "All unit tests pass"
+      on_pass: "Proceed to Phase 3"
+      on_fail: "Fix blocking issues"
+
+  # ============================================================================
+  # PHASE 3: OPENNESS — Cross-Tool Protocol (alma-openness squad)
+  # ============================================================================
+  - id: phase-3-openness
+    name: "Openness — Universal Access"
+    squad: alma-openness
+    requires: [phase-1-foundation]
+    description: |
+      Make ALMA the definitive Open Brain backend. Zero switching cost,
+      any AI tool, any platform, with a 45-minute setup experience.
+
+    steps:
+      - id: step-3-1
+        name: "Design Personal Brain Schema"
+        agent: domain-designer
+        task: tasks/design-personal-brain-schema.md
+        outputs:
+          - name: personal_brain_domain
+            type: python_module
+            path: "alma/domains/personal_brain.py"
+        gate:
+          type: review
+          criteria:
+            - "Entity types cover: Thought, Insight, Decision, Person, Project, Lesson"
+            - "Relationship types are meaningful"
+            - "Follows existing DomainSchema pattern"
+
+      - id: step-3-2
+        name: "Build Quickstart CLI"
+        agent: quickstart-dev
+        task: tasks/build-quickstart-cli.md
+        requires: [step-3-1]
+        outputs:
+          - name: init_command
+            type: python_module
+            description: "alma init --open-brain command"
+          - name: config_template
+            type: yaml_template
+            path: "templates/open-brain-config.yaml"
+        gate:
+          type: automated
+          criteria:
+            - "alma init --open-brain generates valid config"
+            - "SQL migration script works with Supabase"
+            - ".mcp.json generated for Claude Code"
+
+      - id: step-3-3
+        name: "Implement Multi-Client Protocol"
+        agent: protocol-architect
+        task: tasks/implement-multi-client-protocol.md
+        requires: [step-3-1]
+        outputs:
+          - name: multi_client_module
+            type: python_module
+            path: "alma/mcp/multi_client.py"
+        gate:
+          type: review
+          criteria:
+            - "Concurrent writes from 2+ MCP clients handled"
+            - "source_tool tracked per memory"
+            - "Deduplication prevents duplicate saves"
+
+      - id: step-3-4
+        name: "Build Memory Migration Tools"
+        agent: migration-engineer
+        task: tasks/build-memory-migration.md
+        requires: [step-3-1]
+        outputs:
+          - name: migration_tools
+            type: python_module
+            path: "alma/migration/"
+        gate:
+          type: automated
+          criteria:
+            - "Import from Claude memory export works"
+            - "Import from ChatGPT memory export works"
+            - "Import from Obsidian vault works"
+            - "Metadata preserved during migration"
+
+    phase_gate:
+      name: "Phase 3 Complete"
+      criteria:
+        - "Personal Brain domain schema registered"
+        - "alma init --open-brain works end-to-end"
+        - "Multiple MCP clients can connect simultaneously"
+        - "At least 2 migration importers work"
+      on_pass: "Proceed to Phase 4"
+      on_fail: "Fix blocking issues"
+
+  # ============================================================================
+  # PHASE 4: COMPOUND — Compounding Advantage (All squads)
+  # ============================================================================
+  - id: phase-4-compound
+    name: "Compound — Making Memory Compound"
+    squad: all
+    requires: [phase-2-intelligence, phase-3-openness]
+    description: |
+      The final phase where all three layers work together to create
+      compounding value. Week 4 should be measurably better than week 1.
+
+    steps:
+      - id: step-4-1
+        name: "Importance Scoring"
+        agent: pattern-detector
+        description: |
+          Add importance scoring to memories based on:
+          - Retrieval frequency (memories that get searched often are important)
+          - Connection density (memories with many graph edges are important)
+          - Recency-weighted access patterns
+          - User-provided importance signals
+
+      - id: step-4-2
+        name: "Auto-Relationship Extraction"
+        agent: graph-integrator
+        description: |
+          When capturing a new thought, automatically:
+          - Find semantically similar existing memories
+          - Suggest graph relationships via LLM
+          - Create edges for strong matches (>0.85 similarity)
+          - Track relationship provenance (auto vs manual)
+
+      - id: step-4-3
+        name: "Temporal Pattern Analysis"
+        agent: review-engine-dev
+        description: |
+          Detect daily/weekly rhythms in capture patterns:
+          - When does the user capture most thoughts?
+          - Which topics appear on which days?
+          - Are there "capture gaps" that suggest missing context?
+          - Feed insights into weekly review
+
+      - id: step-4-4
+        name: "Compounding Metrics Dashboard"
+        agent: capture-chief
+        description: |
+          Build alma_compound_score MCP tool that shows:
+          - Total memories and growth rate
+          - Connection density over time
+          - Retrieval hit rate (% of searches that return useful results)
+          - Pattern detection accuracy
+          - Comparison: week N vs week N-4
+
+    phase_gate:
+      name: "Phase 4 Complete — ALMA v1.0 Open Brain"
+      criteria:
+        - "Compound score shows measurable improvement over 4 weeks"
+        - "Auto-relationship extraction creates meaningful connections"
+        - "Importance scoring improves retrieval relevance"
+        - "Full test suite passes"
+        - "Documentation covers end-to-end Open Brain setup"
+      on_pass: "ALMA v1.0 Open Brain release candidate"
+      on_fail: "Iterate on weakest metrics"
+
+# ============================================================================
+# SUCCESS CRITERIA
+# ============================================================================
+success_criteria:
+  technical:
+    - "All new MCP tools registered and callable"
+    - "All existing 1,210 tests still pass"
+    - "New test coverage >80% for new modules"
+    - "No regressions in existing functionality"
+
+  product:
+    - "New user can go from zero to working Open Brain in <1 hour"
+    - "Weekly review generates actionable insights from 20+ memories"
+    - "Cross-tool memory works (Claude Code + at least 1 other MCP client)"
+    - "Memory migration preserves >90% of metadata"
+
+  compounding:
+    - "Week 4 retrieval quality measurably better than week 1"
+    - "Connection density grows with each captured thought"
+    - "Pattern detection accuracy improves with more data"
+
+# ============================================================================
+# RISK MITIGATION
+# ============================================================================
+risks:
+  - risk: "LLM metadata extraction is slow/expensive"
+    mitigation: "Make extraction async, cache prompts, offer rule-based fallback"
+
+  - risk: "Graph integration adds latency to retrieval"
+    mitigation: "Make graph traversal optional, cache frequent paths"
+
+  - risk: "Multi-client writes cause data corruption"
+    mitigation: "Use database-level locking, optimistic concurrency, dedup layer"
+
+  - risk: "Weekly review is generic/unhelpful"
+    mitigation: "Test with real data early, iterate on prompts, add user feedback loop"
