@@ -10,9 +10,11 @@
 
 <div align="center">
 
-### Persistent memory for AI agents that improves over time
+### Your AI forgets everything. ALMA fixes that.
 
-**No fine-tuning. No model changes. Just smarter prompts built from relevant past experiences.**
+**One memory layer. Every AI. Never start from zero.**
+
+`pip install alma-memory` — 5 minutes to your first persistent memory. $0.00 to start.
 
 [**Documentation**](https://alma-memory.pages.dev) | [**PyPI**](https://pypi.org/project/alma-memory/) | [**npm**](https://www.npmjs.com/package/@rbkunnela/alma-memory) | [**Support**](https://buymeacoffee.com/aiagentsprp)
 
@@ -20,9 +22,11 @@
 
 ---
 
-## What ALMA Does
+## The Problem
 
-ALMA gives your AI agents **long-term memory**. Instead of starting every conversation from scratch, agents retrieve relevant past experiences, strategies, and knowledge — then learn from new outcomes to get better over time.
+Every time you start a new AI session, your AI forgets everything — your context, your preferences, your project history, the lessons it learned. You repeat yourself hundreds of times a year. Each AI tool you use knows nothing about what you told the others.
+
+**ALMA fixes this.** It gives your AI agents **permanent, searchable, compounding memory** backed by the database you already have. Not a service — a library. Your infrastructure, your data, your rules.
 
 ```
 BEFORE TASK                        DURING TASK                      AFTER TASK
@@ -32,9 +36,10 @@ BEFORE TASK                        DURING TASK                      AFTER TASK
 | - Anti-patterns            |     | from memory             |     | - Failure? Anti-pattern   |
 | - Domain knowledge         |     |                         |     | - Always: Knowledge grows |
 +----------------------------+     +-------------------------+     +---------------------------+
+                         Every conversation makes the next one better.
 ```
 
-**The core insight:** AI agents don't need weight modifications to "learn." They need **smart prompts** built from **relevant past experiences** — retrieved, scored, and injected at runtime.
+**Memory that compounds:** Week 1, basic search works. Week 4, patterns emerge. Week 12, cross-domain connections surface automatically. Week 52, the system knows your work better than any single conversation ever could.
 
 ---
 
@@ -92,6 +97,254 @@ npm install @rbkunnela/alma-memory
 # or
 yarn add @rbkunnela/alma-memory
 ```
+
+---
+
+## Database Setup
+
+ALMA stores memories in a database you control. Choose your path:
+
+### Path 1: Local Development (Zero Infrastructure)
+
+No database setup needed. SQLite + FAISS runs entirely on your machine:
+
+```bash
+pip install alma-memory[local]
+```
+
+```yaml
+# .alma/config.yaml
+alma:
+  project_id: "my-project"
+  storage: sqlite
+  embedding_provider: local
+  storage_dir: .alma
+  db_name: alma.db
+  embedding_dim: 384
+```
+
+Tables are created automatically on first run. Nothing else to install.
+
+### Path 2: PostgreSQL + pgvector (Production)
+
+For persistent, cloud-hosted memory. Works with any PostgreSQL provider (Supabase, Neon, AWS RDS, self-hosted).
+
+**Step 1: Enable pgvector**
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+**Step 2: Create the ALMA tables**
+
+```sql
+-- Core memory tables (ALMA creates these automatically, but you can run manually)
+
+CREATE TABLE alma_heuristics (
+    id TEXT PRIMARY KEY,
+    agent TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    condition TEXT NOT NULL,
+    strategy TEXT NOT NULL,
+    confidence REAL DEFAULT 0.0,
+    occurrence_count INTEGER DEFAULT 0,
+    success_count INTEGER DEFAULT 0,
+    last_validated TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    metadata JSONB,
+    embedding VECTOR(384)
+);
+CREATE INDEX idx_heuristics_project_agent ON alma_heuristics(project_id, agent);
+CREATE INDEX idx_heuristics_confidence ON alma_heuristics(project_id, confidence DESC);
+
+CREATE TABLE alma_outcomes (
+    id TEXT PRIMARY KEY,
+    agent TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    task_type TEXT,
+    task_description TEXT NOT NULL,
+    success BOOLEAN DEFAULT FALSE,
+    strategy_used TEXT,
+    duration_ms INTEGER,
+    error_message TEXT,
+    user_feedback TEXT,
+    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    metadata JSONB,
+    embedding VECTOR(384)
+);
+CREATE INDEX idx_outcomes_project_agent ON alma_outcomes(project_id, agent);
+CREATE INDEX idx_outcomes_task_type ON alma_outcomes(project_id, agent, task_type);
+CREATE INDEX idx_outcomes_timestamp ON alma_outcomes(project_id, timestamp DESC);
+
+CREATE TABLE alma_preferences (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    category TEXT,
+    preference TEXT NOT NULL,
+    source TEXT,
+    confidence REAL DEFAULT 1.0,
+    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    metadata JSONB
+);
+CREATE INDEX idx_preferences_user ON alma_preferences(user_id);
+
+CREATE TABLE alma_domain_knowledge (
+    id TEXT PRIMARY KEY,
+    agent TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    domain TEXT,
+    fact TEXT NOT NULL,
+    source TEXT,
+    confidence REAL DEFAULT 1.0,
+    last_verified TIMESTAMPTZ DEFAULT NOW(),
+    metadata JSONB,
+    embedding VECTOR(384)
+);
+CREATE INDEX idx_domain_knowledge_project_agent ON alma_domain_knowledge(project_id, agent);
+CREATE INDEX idx_domain_knowledge_confidence ON alma_domain_knowledge(project_id, confidence DESC);
+
+CREATE TABLE alma_anti_patterns (
+    id TEXT PRIMARY KEY,
+    agent TEXT NOT NULL,
+    project_id TEXT NOT NULL,
+    pattern TEXT NOT NULL,
+    why_bad TEXT,
+    better_alternative TEXT,
+    occurrence_count INTEGER DEFAULT 1,
+    last_seen TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    metadata JSONB,
+    embedding VECTOR(384)
+);
+CREATE INDEX idx_anti_patterns_project_agent ON alma_anti_patterns(project_id, agent);
+```
+
+<details>
+<summary>Workflow tables (optional — for checkpoint/resume features)</summary>
+
+```sql
+CREATE TABLE alma_checkpoints (
+    id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    node_id TEXT NOT NULL,
+    state_json JSONB NOT NULL,
+    state_hash TEXT NOT NULL,
+    sequence_number INTEGER NOT NULL,
+    branch_id TEXT,
+    parent_checkpoint_id TEXT REFERENCES alma_checkpoints(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    metadata JSONB,
+    CONSTRAINT uk_checkpoint_run_seq UNIQUE (run_id, sequence_number)
+);
+CREATE INDEX idx_checkpoints_run_seq ON alma_checkpoints(run_id, sequence_number DESC);
+CREATE INDEX idx_checkpoints_run_branch ON alma_checkpoints(run_id, branch_id) WHERE branch_id IS NOT NULL;
+
+CREATE TABLE alma_workflow_outcomes (
+    id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
+    workflow_id TEXT NOT NULL,
+    workflow_version TEXT DEFAULT '1.0',
+    run_id TEXT NOT NULL UNIQUE,
+    success BOOLEAN NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    node_count INTEGER NOT NULL,
+    nodes_succeeded INTEGER NOT NULL DEFAULT 0,
+    nodes_failed INTEGER NOT NULL DEFAULT 0,
+    error_message TEXT,
+    artifacts_json JSONB,
+    learnings_extracted INTEGER DEFAULT 0,
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    embedding VECTOR(384),
+    metadata JSONB,
+    CONSTRAINT chk_nodes_count CHECK (nodes_succeeded + nodes_failed <= node_count)
+);
+CREATE INDEX idx_wo_tenant ON alma_workflow_outcomes(tenant_id);
+CREATE INDEX idx_wo_workflow ON alma_workflow_outcomes(tenant_id, workflow_id);
+CREATE INDEX idx_wo_timestamp ON alma_workflow_outcomes(timestamp DESC);
+
+CREATE TABLE alma_artifact_links (
+    id TEXT PRIMARY KEY,
+    memory_id TEXT NOT NULL,
+    memory_type TEXT NOT NULL,
+    artifact_id TEXT NOT NULL,
+    artifact_type TEXT NOT NULL,
+    storage_path TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    metadata JSONB,
+    CONSTRAINT chk_size_positive CHECK (size_bytes > 0)
+);
+CREATE INDEX idx_artifact_memory ON alma_artifact_links(memory_id, memory_type);
+```
+
+</details>
+
+**Step 3: Configure ALMA**
+
+```yaml
+# .alma/config.yaml
+alma:
+  project_id: "my-project"
+  storage: postgres
+  embedding_dim: 384
+
+  postgres:
+    host: localhost
+    port: 5432
+    database: alma
+    user: alma_user
+    password: ${POSTGRES_PASSWORD}
+    vector_index_type: hnsw
+```
+
+> **Note:** ALMA automatically creates tables on first connection if they don't exist. Running the SQL manually is optional but recommended for production deployments where you want explicit control over schema migrations.
+
+### Path 3: Supabase (Free Tier — Recommended for Getting Started)
+
+Supabase provides free PostgreSQL with pgvector. Total cost: **$0.00** (free tier) to **$0.30/month** at scale.
+
+**Step 1:** Create a free account at [supabase.com](https://supabase.com)
+
+**Step 2:** Create a new project. Note your:
+- **Host:** `db.<your-project-ref>.supabase.co`
+- **Password:** (set during project creation)
+- **Port:** `5432` (default) or `6543` (connection pooler — recommended)
+
+**Step 3:** Run in the Supabase SQL Editor:
+
+```sql
+-- Enable pgvector (required for semantic search)
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- ALMA creates tables automatically on first connection.
+-- Or copy the SQL from "Path 2" above if you prefer explicit setup.
+```
+
+**Step 4:** Configure ALMA:
+
+```yaml
+# .alma/config.yaml
+alma:
+  project_id: "my-project"
+  storage: postgres
+  embedding_dim: 384
+
+  postgres:
+    host: db.<your-project-ref>.supabase.co
+    port: 6543  # Use connection pooler port
+    database: postgres
+    user: postgres
+    password: ${SUPABASE_DB_PASSWORD}
+    vector_index_type: hnsw
+```
+
+```bash
+# Set your password as an environment variable
+export SUPABASE_DB_PASSWORD="your-password-here"
+```
+
+That's it. Your AI now has persistent memory in the cloud for free.
 
 ---
 
@@ -226,15 +479,16 @@ for mem in memories.heuristics:
 
 ### Deployment Platforms
 
-ALMA is a library — you bring your own infrastructure:
+ALMA is a library, not a service. You bring your own infrastructure — your data stays yours:
 
-| Platform | Storage Backend | Best For |
-|----------|----------------|----------|
-| **Azure** | Azure Cosmos DB (native backend) | Enterprise, compliance-heavy workloads |
-| **AWS** | PostgreSQL (RDS + pgvector), Pinecone, Qdrant Cloud | Scalable production deployments |
-| **Google Cloud** | PostgreSQL (Cloud SQL + pgvector), Pinecone | Serverless agents, Firebase apps |
-| **Cloudflare** | Qdrant Cloud, Pinecone (external) | Edge-deployed agents |
-| **Self-hosted** | SQLite+FAISS, PostgreSQL+pgvector | Full control, offline/air-gapped |
+| Platform | Storage Backend | Cost | Best For |
+|----------|----------------|------|----------|
+| **Your Laptop** | SQLite+FAISS | $0.00 | Development, testing, offline |
+| **Supabase** | PostgreSQL+pgvector | $0.00 (free tier) | Getting started, personal brain |
+| **AWS** | PostgreSQL (RDS + pgvector), Pinecone, Qdrant Cloud | Varies | Scalable production |
+| **Azure** | Azure Cosmos DB (native backend) | Varies | Enterprise, compliance |
+| **Google Cloud** | PostgreSQL (Cloud SQL + pgvector), Pinecone | Varies | Serverless agents |
+| **Self-hosted** | PostgreSQL+pgvector | $5-10/mo | Full control, air-gapped |
 
 ---
 
@@ -900,11 +1154,19 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete history.
 
 ## Roadmap
 
-**Next:**
+**v0.9.0 — Personal Brain:**
+- Thought capture pipeline (natural language → classify → store → confirm)
+- Personal Brain domain schema (7th pre-built schema)
+- `alma init --open-brain` interactive CLI setup
+- Memory migration from Claude, ChatGPT, Obsidian, Notion
+- Multi-client MCP protocol (concurrent access from any AI tool)
+
+**v1.0.0 — Open Brain:**
+- Weekly review synthesis (pattern detection, connection finding)
+- Confidence-based routing with fix flow
+- Operating modes (always-on / scheduled / session-based)
+- Full documentation site with 45-minute tutorial
 - Temporal reasoning (time-aware retrieval)
-- Proactive memory suggestions
-- Visual memory explorer dashboard
-- Additional graph backends (Neptune, TigerGraph)
 
 ---
 
@@ -997,6 +1259,23 @@ If ALMA helps your AI agents get smarter:
 
 ---
 
-**Built for AI agents that get better with every task.**
+| Metric | Value |
+|--------|-------|
+| Tests passing | 1,210 |
+| Tests failing | 0 |
+| Storage backends | 7 |
+| Graph backends | 4 |
+| MCP tools | 22 |
+| Source files | 107 |
+| Monthly cost (local) | $0.00 |
+| Monthly cost (Supabase) | $0.00 (free tier) |
+| Time to first memory | < 5 minutes |
+| Vendor lock-in | None |
+
+---
+
+**Your AI should not treat you like a stranger every morning. ALMA makes sure it never does again.**
+
+**Every conversation makes the next one better.**
 
 *Created by [@RBKunnela](https://github.com/RBKunnela)*
