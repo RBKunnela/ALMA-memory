@@ -1,0 +1,320 @@
+---
+workflow:
+  id: synthesis-development-cycle
+  name: "Synthesis Development Cycle"
+  version: "1.0.0"
+  description: |
+    Development workflow for the ALMA Synthesis Squad (Phase 2: Intelligence).
+    Builds the review engine, pattern detection, unified retrieval, and connection
+    finder in dependency order. Each step has quality gates that must pass before
+    the next step can begin.
+
+    This workflow produces the compounding advantage layer — weekly reviews, pattern
+    detection, and connection surfacing that make ALMA more valuable over time.
+
+  owner: synthesis-chief
+  squad: alma-synthesis
+  trigger: "*synthesis-cycle"
+  mode: sequential
+  phase: "2 — Intelligence"
+
+  requires:
+    - phase-1-foundation  # Capture pipeline must be functional
+
+# ============================================================================
+# STEP 1: Build Weekly Review Engine
+# ============================================================================
+steps:
+  - id: step-1-build-weekly-review
+    name: "Build Weekly Review Engine"
+    agent: review-engine-dev
+    task: tasks/build-weekly-review.md
+    description: |
+      Build the weekly review synthesis engine and alma_weekly_review MCP tool.
+      This is the foundation that all other synthesis features build upon.
+      Creates: alma/synthesis/review.py, alma/synthesis/clustering.py,
+      alma/synthesis/types.py, alma/synthesis/config.py, alma_weekly_review MCP tool.
+
+    inputs:
+      - name: alma_codebase
+        type: directory
+        path: "alma/"
+      - name: open_brain_kb
+        type: file
+        path: ".claude/commands/alma-capture/data/open-brain-kb.md"
+      - name: synthesis_kb
+        type: file
+        path: ".claude/commands/alma-synthesis/data/synthesis-patterns-kb.md"
+
+    outputs:
+      - name: review_engine
+        type: python_module
+        path: "alma/synthesis/review.py"
+      - name: clustering_module
+        type: python_module
+        path: "alma/synthesis/clustering.py"
+      - name: synthesis_types
+        type: python_module
+        path: "alma/synthesis/types.py"
+      - name: synthesis_config
+        type: python_module
+        path: "alma/synthesis/config.py"
+      - name: review_mcp_tool
+        type: python_function
+        path: "alma/mcp/tools.py"
+        function: "alma_weekly_review"
+
+    gate:
+      type: review
+      criteria:
+        - "WeeklyReviewEngine.generate_review() returns valid SynthesisResult from 20+ test memories"
+        - "Themes identified match actual content topics (>80% relevance)"
+        - "Open loops correctly identify unresolved action items"
+        - "Gap analysis identifies domains with insufficient coverage"
+        - "alma_weekly_review MCP tool registered, callable, returns formatted review"
+        - "Output matches Weekly Review Protocol format"
+        - "All unit tests pass (tests/unit/test_synthesis_review.py)"
+        - "ruff check + ruff format pass on all new files"
+
+    on_failure:
+      action: fix_and_retry
+      max_retries: 2
+      description: |
+        If tests fail, review the test output and fix the implementation.
+        Common issues: clustering threshold too high/low, missing edge cases,
+        type errors in SynthesisResult dataclass.
+
+  # ============================================================================
+  # STEP 2: Implement Pattern Detection (requires Step 1)
+  # ============================================================================
+  - id: step-2-implement-pattern-detection
+    name: "Implement Pattern Detection"
+    agent: pattern-detector
+    task: tasks/implement-pattern-detection.md
+    requires: [step-1-build-weekly-review]
+    description: |
+      Build cross-session pattern detection that identifies recurring themes,
+      tracks topic frequency evolution, and detects anomalies. Depends on
+      the clustering infrastructure from Step 1.
+
+    inputs:
+      - name: synthesis_types
+        type: python_module
+        from: step-1-build-weekly-review
+        path: "alma/synthesis/types.py"
+      - name: clustering_module
+        type: python_module
+        from: step-1-build-weekly-review
+        path: "alma/synthesis/clustering.py"
+      - name: synthesis_kb
+        type: file
+        path: ".claude/commands/alma-synthesis/data/synthesis-patterns-kb.md"
+
+    outputs:
+      - name: pattern_module
+        type: python_module
+        path: "alma/synthesis/patterns.py"
+
+    gate:
+      type: automated
+      criteria:
+        - "PatternDetector.detect_patterns() finds recurring themes in multi-week test data"
+        - "PatternDetector.track_evolution() classifies topics as emerging/stable/declining"
+        - "PatternDetector.find_anomalies() detects injected spikes against baseline"
+        - "Confidence scores in [0.0, 1.0] with meaningful differentiation"
+        - "False positive rate < 20%"
+        - "Handles edge cases: too few memories, single-topic weeks, burst events"
+        - "All unit tests pass (tests/unit/test_synthesis_patterns.py)"
+        - "ruff check + ruff format pass"
+
+    on_failure:
+      action: fix_and_retry
+      max_retries: 2
+      description: |
+        If false positive rate is too high, review thresholds (min_occurrences,
+        min_confidence). If trend detection fails, check linear regression
+        implementation and R-squared thresholds.
+
+  # ============================================================================
+  # STEP 3: Integrate Graph + Vector Search (requires Step 1, parallel with Step 2)
+  # ============================================================================
+  - id: step-3-integrate-graph-vector
+    name: "Integrate Graph + Vector Search"
+    agent: graph-integrator
+    task: tasks/integrate-graph-vector.md
+    requires: [step-1-build-weekly-review]
+    description: |
+      Build unified retrieval that combines vector search with graph traversal.
+      Can run in parallel with Step 2 since both depend only on Step 1.
+
+    inputs:
+      - name: graph_backends
+        type: directory
+        path: "alma/graph/"
+      - name: retrieval_engine
+        type: python_module
+        path: "alma/retrieval/engine.py"
+      - name: scoring_module
+        type: python_module
+        path: "alma/retrieval/scoring.py"
+
+    outputs:
+      - name: unified_retrieval
+        type: python_module
+        path: "alma/retrieval/unified.py"
+
+    gate:
+      type: automated
+      criteria:
+        - "UnifiedRetriever.search() returns results from vector search"
+        - "Graph edges enhance relevance scoring (connected > isolated at equal similarity)"
+        - "Works with InMemoryGraphBackend in tests"
+        - "Uses only GraphBackend ABC methods (no backend-specific code)"
+        - "Graceful degradation when graph=None (vector-only fallback)"
+        - "Deduplication merges results from both paths"
+        - "All unit tests pass (tests/unit/test_unified_retrieval.py)"
+        - "ruff check + ruff format pass"
+
+    on_failure:
+      action: fix_and_retry
+      max_retries: 2
+      description: |
+        If graph scoring does not improve relevance, review the graph_score
+        formula and weight configuration. If backend compatibility fails,
+        ensure only ABC methods are used.
+
+  # ============================================================================
+  # STEP 4: Implement Connection Finder (requires Step 3)
+  # ============================================================================
+  - id: step-4-implement-connection-finder
+    name: "Build Connection Finder"
+    agent: graph-integrator
+    task: tasks/implement-connection-finder.md
+    requires: [step-3-integrate-graph-vector]
+    description: |
+      Build the alma_find_connections MCP tool that surfaces non-obvious
+      links between memories using the unified retrieval from Step 3.
+
+    inputs:
+      - name: unified_retrieval
+        type: python_module
+        from: step-3-integrate-graph-vector
+        path: "alma/retrieval/unified.py"
+      - name: synthesis_types
+        type: python_module
+        path: "alma/synthesis/types.py"
+
+    outputs:
+      - name: connection_finder
+        type: python_module
+        path: "alma/synthesis/connections.py"
+      - name: connection_mcp_tool
+        type: python_function
+        path: "alma/mcp/tools.py"
+        function: "alma_find_connections"
+
+    gate:
+      type: automated
+      criteria:
+        - "ConnectionFinder.find_connections() discovers planted connections"
+        - "Connections via both vector + graph ranked highest"
+        - "Cross-domain connections surfaced"
+        - "Each connection includes meaningful explanation"
+        - "alma_find_connections MCP tool registered, callable"
+        - "Accepts both memory_id and query input modes"
+        - "Graceful degradation without graph backend"
+        - "All unit tests pass (tests/unit/test_connection_finder.py)"
+        - "ruff check + ruff format pass"
+
+    on_failure:
+      action: fix_and_retry
+      max_retries: 2
+      description: |
+        If connection explanations are poor, review the explanation templates.
+        If cross-domain connections are not found, review the novelty scoring
+        and non-obvious connection heuristics.
+
+# ============================================================================
+# PHASE GATE: Synthesis Complete
+# ============================================================================
+phase_gate:
+  name: "Phase 2 Intelligence Complete"
+  checklist: checklists/synthesis-quality-gate.md
+  criteria:
+    - "All 4 steps completed with gates passed"
+    - "Weekly review generates useful synthesis from 20+ sample memories"
+    - "Pattern detection finds genuine patterns in multi-week data"
+    - "Unified retrieval improves relevance with graph edges"
+    - "Connection finder surfaces non-obvious links with explanations"
+    - "All existing 1,210+ tests still pass (no regressions)"
+    - "New test coverage > 80% for all new modules"
+    - "All code passes ruff check + ruff format"
+  on_pass: "Phase 2 complete. Ready for Phase 3 (Openness) or Phase 4 (Compound)."
+  on_fail: "Review failing gates. Fix blocking issues before proceeding."
+
+# ============================================================================
+# ROLLBACK PROCEDURES
+# ============================================================================
+rollback:
+  description: |
+    If a step fails and cannot be fixed within 2 retries, roll back to
+    the last known good state and proceed with available functionality.
+
+  procedures:
+    - step: step-1-build-weekly-review
+      on_failure: |
+        This is the foundation step. If it fails completely:
+        1. Verify alma/storage/ and alma/retrieval/ are functional
+        2. Check that MockStorage and MockEmbedder work correctly
+        3. Simplify clustering (use k-means instead of agglomerative if scipy issues)
+        4. Build a minimal review that lists memories without clustering
+        5. Iterate from the minimal version
+
+    - step: step-2-implement-pattern-detection
+      on_failure: |
+        Pattern detection is independent. If it fails:
+        1. Do not block Steps 3 and 4 (they have a different dependency)
+        2. Build a minimal pattern detector with frequency counting only (no regression)
+        3. Add trend detection and anomaly detection incrementally
+        4. Lower confidence thresholds temporarily
+
+    - step: step-3-integrate-graph-vector
+      on_failure: |
+        If unified retrieval fails:
+        1. Verify graph backends work independently (test InMemoryGraphBackend)
+        2. Verify retrieval engine works independently
+        3. Build a wrapper that calls both separately and merges results
+        4. Skip re-scoring initially; add it after basic merging works
+        5. Step 4 can proceed with a simplified unified retriever
+
+    - step: step-4-implement-connection-finder
+      on_failure: |
+        If connection finder fails:
+        1. Fall back to vector-only connection finding (skip graph)
+        2. Use simple template explanations (skip LLM-enhanced)
+        3. Build MCP tool with basic functionality, enhance iteratively
+        4. Phase 2 can still pass with a basic connection finder
+
+# ============================================================================
+# DEPENDENCY GRAPH
+# ============================================================================
+# Visual representation of step dependencies:
+#
+#   step-1-build-weekly-review
+#          |              |
+#          v              v
+#   step-2-patterns   step-3-graph-vector
+#                         |
+#                         v
+#                   step-4-connection-finder
+#
+# Steps 2 and 3 can run in PARALLEL after Step 1 completes.
+# Step 4 depends only on Step 3.
+# ============================================================================
+
+parallel_groups:
+  - name: "Post-Review Parallel Work"
+    requires: [step-1-build-weekly-review]
+    steps:
+      - step-2-implement-pattern-detection
+      - step-3-integrate-graph-vector

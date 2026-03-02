@@ -1,359 +1,235 @@
 # ALMA Integration Squad
 
-**Version:** 1.0.0
-**Status:** Complete - Ready for Production
-**Created:** 2026-02-18
-
-## Overview
-
-The **ALMA Integration Squad** is the master orchestrator of all ALMA squads. It validates
-cross-module contracts, detects regressions, and enables autonomous improvement through
-comprehensive integration testing and metrics.
-
-## Mission
-
-Orchestrate architecture, quality, and performance improvements through:
-- **Contract Validation** - Enforce type safety at module boundaries
-- **Regression Detection** - Catch behavior changes before production
-- **Integration Testing** - Test how modules work together
-- **Metrics & Feedback** - Drive autonomous improvement cycles
-
-## Squad Structure
-
-### Leadership Tier
-
-**alma-integration-chief** (Orchestrator)
-- Synthesizes all 3 frameworks
-- Routes to masters and specialists
-- Coordinates cross-squad feedback
-
-### Masters Tier (3 agents)
-
-1. **okken-pytest-architect** - Brian Okken's test orchestration
-   - Designs pytest fixtures spanning modules
-   - Manages parametrized integration scenarios
-   - Organizes tests with markers
-
-2. **batchelder-coverage-validator** - Ned Batchelder's coverage science
-   - Tracks integration coverage metrics
-   - Detects regressions via coverage deltas
-   - Identifies untested cross-module flows
-
-3. **bradshaw-contract-enforcer** - Robert Bradshaw's contract patterns
-   - Validates type contracts at boundaries
-   - Detects breaking changes
-   - Enforces API stability
-
-### Specialists Tier (6 agents)
-
-1. **cross-module-flow-mapper** - Maps module interactions
-2. **regression-detector** - Detects behavior changes
-3. **contract-validator** - Enforces type/API contracts
-4. **metrics-aggregator** - Consolidates integration metrics
-5. **squad-coordinator** - Manages cross-squad feedback
-6. **ci-orchestrator** - Automates integration test execution
-
-**Total:** 10 agents (1 + 3 + 6)
-
-## Key Frameworks
-
-### Framework 1: Fixture-Based Integration (Okken)
-
-```python
-@pytest.fixture
-def populated_storage(storage):
-    """Setup cross-module test data"""
-    for i in range(10):
-        storage.save_heuristic(create_test_heuristic(i))
-    return storage
-
-@pytest.fixture
-def after_consolidation(consolidation_engine, populated_storage):
-    """Execute consolidation"""
-    return consolidation_engine.consolidate(...)
-
-def test_retrieval_after_consolidation(after_consolidation):
-    """Test storage → consolidation → retrieval"""
-    assert after_consolidation.success
-```
-
-### Framework 2: Coverage-Driven Metrics (Batchelder)
-
-```
-Integration Health = Branch Coverage + Delta Analysis + Regression Risk
-
-Target: >= 85%
-Current: 82% (4% below target)
-
-Coverage Gaps:
-  • consolidation → retrieval: 75% (10 point gap!)
-  • storage → consolidation: 85% (acceptable)
-  • retrieval → graph: 80% (5 point gap)
-```
-
-### Framework 3: Type Contracts (Bradshaw)
-
-```python
-# Define contracts explicitly
-def consolidate(
-    agent: str,
-    project_id: str,
-    similarity_threshold: float = 0.85  # Must be 0.0-1.0
-) -> ConsolidationResult:
-    """Integration contract"""
-    if not (0.0 <= similarity_threshold <= 1.0):
-        raise ValueError(f"Invalid threshold: {similarity_threshold}")
-```
-
-## Integration Testing Flow
-
-```
-Phase 1: Map Module Interactions
-  cross-module-flow-mapper
-  → "Identified 23 cross-module flows"
-
-Phase 2: Execute Integration Tests
-  ci-orchestrator runs pytest
-  → "35/35 tests passed"
-
-Phase 3: Validate Contracts
-  contract-validator runs mypy --strict
-  → "0 type violations"
-
-Phase 4: Detect Regressions
-  regression-detector compares before/after
-  → "Coverage stable, no regressions"
-
-Phase 5: Aggregate Metrics
-  metrics-aggregator consolidates scores
-  → "Integration health: 85%"
-
-Phase 6: Coordinate with Other Squads
-  squad-coordinator routes findings
-  → "Send optimization targets to alma-performance"
-```
-
-## Quality Gates
-
-All integration tests must pass these gates before deployment:
-
-| Gate | Threshold | Current | Status |
-|------|-----------|---------|--------|
-| Test Pass Rate | 100% | 100% | ✅ |
-| Integration Coverage | >= 85% | 82% | ⚠️ |
-| Type Violations | 0 | 0 | ✅ |
-| Breaking Changes | 0 (or documented) | 0 | ✅ |
-| Regression Risk | < 0.5 | 0.3 | ✅ |
-
-## Integration Metrics
-
-### Coverage by Module
-
-| Module | Target | Current | Gap | Status |
-|--------|--------|---------|-----|--------|
-| storage | 90% | 95% | +5% | ✅ |
-| consolidation | 85% | 82% | -3% | ⚠️ |
-| retrieval | 85% | 78% | -7% | ❌ |
-| graph | 85% | 88% | +3% | ✅ |
-
-### Cross-Module Coverage
-
-| Interaction | Coverage | Status |
-|-------------|----------|--------|
-| storage → consolidation | 85% | ✅ |
-| consolidation → retrieval | 75% | ❌ |
-| retrieval → graph | 80% | ⚠️ |
-| graph → storage | 90% | ✅ |
-
-### Regression Analysis
-
-**This Sprint:** -1% coverage (1 regression introduced)
-- New deduplication strategy: 40% coverage ← Critical gap!
-- Action: Add integration tests for new strategy
-
-## Autonomous Improvement Cycle
-
-The squad implements a feedback loop for continuous improvement:
-
-```
-1. Measure Integration Health (metrics-aggregator)
-   ↓
-2. Identify Gaps (cross-module-flow-mapper + regression-detector)
-   ↓
-3. Prioritize Fixes (integration-chief)
-   ↓
-4. Route to Appropriate Squad (squad-coordinator)
-   ├─ Architecture: If pattern issues
-   ├─ Quality: If standard violations
-   └─ Performance: If optimization opportunities
-   ↓
-5. Other Squad Executes Fix
-   ↓
-6. Re-measure Integration Health (back to step 1)
-```
-
-## Commands
-
-### Run Integration Tests
-
-```bash
-# All integration tests
-pytest tests/integration/ -v
-
-# Fast integration tests only
-pytest tests/integration/ -m "not slow" -v
-
-# With coverage report
-pytest tests/integration/ --cov=alma --cov-report=html
-```
-
-### Check Type Contracts
-
-```bash
-# Strict type checking
-mypy alma/ --strict
-
-# Report only changes
-mypy alma/ --strict --incremental
-```
-
-### Generate Metrics Report
-
-```bash
-# Integration health dashboard
-python -m alma.integration.metrics generate-dashboard
-
-# Coverage analysis
-python -m alma.integration.metrics coverage-analysis
-
-# Regression detection
-python -m alma.integration.metrics detect-regressions
-```
-
-## Integration with Other Squads
-
-### Feeds TO (sends findings)
-
-- **alma-architecture** - Coupling analysis, pattern findings
-- **alma-quality** - Coverage gaps, standard violations
-- **alma-performance** - Optimization targets, bottlenecks
-
-### Feeds FROM (receives requirements)
-
-- **alma-architecture** - Module boundaries to validate
-- **alma-quality** - Quality standards to enforce
-- **alma-performance** - Performance targets to verify
-
-## Success Indicators
-
-The squad is succeeding when:
-
-1. ✅ **Integration tests are reliable** (95%+ pass rate)
-2. ✅ **Coverage gaps are known** (tracked per cross-module flow)
-3. ✅ **Regressions are caught early** (before production)
-4. ✅ **Type contracts are enforced** (0 violations)
-5. ✅ **Metrics are trusted** (decisions based on data)
-6. ✅ **Other squads improve** (feedback loop working)
-7. ✅ **Integration health trending up** (month-over-month improvement)
-
-## Next Steps
-
-1. **Immediate (This Sprint)**
-   - [ ] Add integration tests for new consolidation strategy
-   - [ ] Improve consolidation → retrieval coverage (75% → 85%)
-   - [ ] Document module boundaries for all 4 squads
-
-2. **Short-term (Next Sprint)**
-   - [ ] Achieve 85%+ integration coverage
-   - [ ] Implement automated regression detection
-   - [ ] Setup daily metrics dashboard
-
-3. **Long-term (Roadmap)**
-   - [ ] Implement fully autonomous improvement cycles
-   - [ ] Create multi-day integration test scenarios
-   - [ ] Establish SLA for integration test execution
-
-## Architecture Diagrams
-
-### Squad Composition
-
-```
-                    Integration Chief
-                    (alma-integration-chief)
-                            |
-         ___________________|___________________
-         |                  |                  |
-    Okken Master       Batchelder Master  Bradshaw Master
-    (pytest)           (coverage)         (contracts)
-         |                  |                  |
-         └──────────────────┼──────────────────┘
-                            |
-         ___________________|___________________
-         |        |        |        |        |        |
-      Mapper  Detector Validator Aggregator Coordinator Orchestrator
-```
-
-### Integration Data Flow
-
-```
-Module Code Changes
-        ↓
-ci-orchestrator.run_tests()
-        ↓
-contract-validator.validate_types()
-contract-validator.check_breaking_changes()
-        ↓
-cross-module-flow-mapper.trace_interactions()
-        ↓
-regression-detector.compare_results()
-        ↓
-metrics-aggregator.calculate_health()
-        ↓
-squad-coordinator.route_findings()
-        ↓
-Integration Dashboard + Feedback to Other Squads
-```
-
-## File Structure
-
-```
-squads/alma-integration/
-├── README.md                         # This file
-├── agents/
-│   ├── alma-integration-chief.md    # Orchestrator (3000+ lines)
-│   ├── okken-pytest-architect.md    # Master 1 (2000+ lines)
-│   ├── batchelder-coverage-validator.md  # Master 2 (2000+ lines)
-│   ├── bradshaw-contract-enforcer.md    # Master 3 (2000+ lines)
-│   └── specialists.md               # 6 specialists (1500 lines)
-├── config/
-│   ├── coding-standards.md          # Python standards
-│   ├── tech-stack.md               # Tools & frameworks
-│   └── source-tree.md              # Codebase structure
-└── tasks/
-    └── integration-test-suite.md    # Core integration tests
-```
-
-## Elite Minds Synthesis
-
-This squad synthesizes insights from 3 elite minds:
-
-1. **Brian Okken** (pytest)
-   - Fixture-based test design
-   - Multi-module orchestration
-   - Parametrized scenarios
-
-2. **Ned Batchelder** (coverage.py)
-   - Coverage-driven metrics
-   - Regression detection
-   - Integration health
-
-3. **Robert Bradshaw** (Cython)
-   - Type contracts
-   - Boundary validation
-   - Breaking change detection
+**Squad ID**: `alma-integration`
+**Version**: 1.0.0
+**Purpose**: Complete ALMA + Veritas integration with task-first architecture
 
 ---
 
-**Status:** ✅ READY FOR PRODUCTION
+## Overview
 
-*Created with quality mode (full research loop + synthesis + validation)*
+This squad completes the integration of:
+- **ALMA-Memory**: Adaptive Long-term Memory Agent (5 memory types)
+- **Veritas-Framework**: Evidence-based trust verification (5 behaviors)
+
+### What This Squad Does
+
+1. **Enables Cross-Agent Learning**: Agents share memories based on scope rules
+2. **Enforces Trust Behaviors**: All claims require verifiable evidence
+3. **Provides Memory Persistence**: Learnings persist across sessions
+4. **Implements Trust Profiles**: Dynamic trust scores per agent
+
+---
+
+## Task-First Architecture
+
+This squad uses a **task-first** approach where each task has:
+
+```yaml
+task:
+  id: unique_identifier
+  agent: specialized_agent
+  inputs: [required_artifacts]
+  output: produced_artifact
+  gates:
+    must_implement: [features]
+    evidence_required: [tests, coverage]
+```
+
+### Benefits
+
+- Clear progress tracking
+- Parallel execution where possible
+- Rollback at task boundaries
+- Verification gates prevent incomplete work
+
+---
+
+## Squad Agents
+
+| Agent | Role | Specialization |
+|--------|------|----------------|
+| **@architect-alma** | Architecture | Memory design, scope configuration, MCP integration |
+| **@dev-alma** | Implementation | ALMA adapter, Veritas hook, CLI commands |
+| **@qa-veritas** | Verification | Trust behavior verification, evidence validation |
+
+---
+
+## Workflow Phases
+
+### Phase 1: Foundation (INT-001, INT-002)
+- MCP Integration Layer
+- ALMA Memory Adapter
+
+### Phase 2: Trust Framework (INT-003, INT-004)
+- Veritas Trust Hook
+- Enhanced Context Injection
+
+### Phase 3: Cross-Agent Learning (INT-005)
+- Memory Scope Configuration
+
+### Phase 4: Agent Integration (INT-006, INT-007)
+- Agent Invoker Updates
+- CLI Commands
+
+### Phase 5: Verification (INT-008)
+- Integration Testing
+- Final Verification
+
+---
+
+## ALMA Memory Types
+
+| Type | Description | Lifecycle |
+|-------|-------------|------------|
+| **Heuristics** | Successful verified patterns | Long-lived |
+| **Outcomes** | Task results for learning | Permanent |
+| **Preferences** | User communication settings | Until changed |
+| **Domain Knowledge** | Project-specific facts | Medium-lived |
+| **Anti-Patterns** | Gotchas to avoid | Until resolved |
+
+---
+
+## Veritas Trust Behaviors
+
+| Behavior | Description | Severity |
+|-----------|-------------|------------|
+| **Verification Before Claim** | Claims require test evidence | High |
+| **Loud Failure** | Errors explicitly reported | Medium |
+| **Honest Uncertainty** | Low confidence acknowledged | Low |
+| **Paper Trail** | Documentation/artifacts exist | Medium |
+| **Diligent Execution** | Tests run before complete | High |
+
+---
+
+## Quick Start
+
+### 1. Activate Architect Agent
+```bash
+# Design memory architecture
+@architect-alma *design-memory-schema --types all
+```
+
+### 2. Activate Dev Agent
+```bash
+# Implement ALMA adapter
+@dev-alma *implement-alma-adapter --types all
+
+# Implement Veritas hook
+@dev-alma *implement-veritas-hook --behaviors all
+```
+
+### 3. Activate QA Agent
+```bash
+# Verify integration
+@qa-veritas *run-integration-tests
+
+# Verify trust behaviors
+@qa-veritas *verify-behaviors --agent dev
+```
+
+---
+
+## Files Structure
+
+```
+squads/alma-integration/
+├── squad.yaml                          # Squad configuration
+├── README.md                           # This file
+├── agents/
+│   ├── architect-alma.md                # @architect specialized
+│   ├── dev-alma.md                     # @dev specialized
+│   └── qa-veritas.md                   # @qa specialized
+├── workflows/
+│   ├── alma-integration-workflow.yaml   # Main workflow
+│   ├── memory-learning-workflow.yaml     # Cross-agent learning
+│   └── trust-verification-workflow.yaml # Trust verification
+└── config/
+    ├── memory-scopes.yaml              # Memory scope rules
+    ├── trust-thresholds.yaml          # Trust level thresholds
+    └── mental-models.md              # Applied mental models
+```
+
+---
+
+## Integration Status
+
+| Phase | Tasks | Status |
+|-------|--------|--------|
+| INT-001: MCP Integration Layer | 3 tasks | Completed |
+| INT-002: ALMA Memory Integration | 4 tasks | Completed |
+| INT-003: Veritas Framework Integration | 4 tasks | Completed |
+| INT-004: Context Injection Enhancement | 2 tasks | Completed |
+| INT-005: Cross-Agent Learning | 3 tasks | In Progress |
+| INT-006: Agent Integration | 3 tasks | Pending |
+| INT-007: CLI Integration | 3 tasks | Pending |
+| INT-008: Testing & Documentation | 4 tasks | Pending |
+
+---
+
+## Configuration
+
+### Memory Scopes
+See `config/memory-scopes.yaml` for which agents can learn, share with, and inherit from.
+
+### Trust Thresholds
+See `config/trust-thresholds.yaml` for permission thresholds by trust level.
+
+### Mental Models
+See `config/mental-models.md` for the design principles applied.
+
+---
+
+## CLI Commands
+
+### Memory Commands
+```bash
+*alma heuristic "Test happy path first" --context "API testing" --confidence 0.9
+*alma outcome task-123 --success --learnings "Tests pass"
+*alma query "api testing" --limit 5
+*alma stats
+```
+
+### Trust Commands
+```bash
+*trust report dev --verbose
+*trust guidance dev
+*trust violations dev --limit 10
+*trust list
+```
+
+---
+
+## Rollback Plan
+
+If issues occur:
+
+1. **Disable MCP**: Edit `~/.aios/mcp/global-config.json` → set `disabled: true`
+2. **Restore Gotchas**: Copy `.aios/gotchas.backup.json` to `.aios/gotchas.json`
+3. **Revert Code**: `git checkout` modified files
+4. **Clear Trust**: Delete `.aios/veritas/profiles.json`
+
+---
+
+## Contributing
+
+When adding tasks to this squad:
+
+1. Follow task-first pattern (inputs/outputs/gates)
+2. Add Veritas behavior requirements
+3. Specify evidence needed for verification
+4. Update workflow YAML files
+
+---
+
+## Related Documentation
+
+- ALMA Adapter: `.aios-core/core/memory/alma-adapter.js`
+- Veritas Hook: `.aios-core/core/hooks/veritas-trust-hook.js`
+- Scope Config: `.aios-core/core/memory/scope-config.js`
+- Integration Summary: `.aios-core/core/INTEGRATION_SUMMARY.md`
+
+---
+
+*ALMA Integration Squad - Task-First Architecture*
+*Version: 1.0.0*
