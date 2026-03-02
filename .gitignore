@@ -124,10 +124,14 @@ scripts/
 .gemini/
 .trae/
 .antigravity/
+.codex/
 .github/agents/
 .github/copilot-instructions.md
 .hintrc
 .lintrc
+
+# Squads (development-only, not needed by library users)
+squads/
 
 # MCP & Template Files
 .mcp.json
