@@ -728,7 +728,10 @@ class PostgreSQLStorage(StorageBackend):
             if embedding and self._pgvector_available:
                 # Use pgvector similarity search
                 query = f"""
-                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    SELECT id, agent, project_id, condition, strategy, confidence,
+                           occurrence_count, success_count, last_validated, created_at,
+                           metadata, embedding,
+                           1 - (embedding <=> %s::vector) as similarity
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                     WHERE project_id = %s AND confidence >= %s
                 """
@@ -747,7 +750,9 @@ class PostgreSQLStorage(StorageBackend):
             else:
                 # Standard query
                 query = f"""
-                    SELECT *
+                    SELECT id, agent, project_id, condition, strategy, confidence,
+                           occurrence_count, success_count, last_validated, created_at,
+                           metadata, embedding
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                     WHERE project_id = %s AND confidence >= %s
                 """
@@ -784,14 +789,19 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             if embedding and self._pgvector_available:
                 query = f"""
-                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    SELECT id, agent, project_id, task_type, task_description, success,
+                           strategy_used, duration_ms, error_message, user_feedback,
+                           timestamp, metadata, embedding,
+                           1 - (embedding <=> %s::vector) as similarity
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]}
                     WHERE project_id = %s
                 """
                 params: List[Any] = [self._embedding_to_db(embedding), project_id]
             else:
                 query = f"""
-                    SELECT *
+                    SELECT id, agent, project_id, task_type, task_description, success,
+                           strategy_used, duration_ms, error_message, user_feedback,
+                           timestamp, metadata, embedding
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]}
                     WHERE project_id = %s
                 """
@@ -831,7 +841,7 @@ class PostgreSQLStorage(StorageBackend):
     ) -> List[UserPreference]:
         """Get user preferences."""
         with self._get_connection() as conn:
-            query = f"SELECT * FROM {self.schema}.{self.TABLE_NAMES[MemoryType.PREFERENCES]} WHERE user_id = %s"
+            query = f"SELECT id, user_id, category, preference, source, confidence, timestamp, metadata FROM {self.schema}.{self.TABLE_NAMES[MemoryType.PREFERENCES]} WHERE user_id = %s"
             params: List[Any] = [user_id]
 
             if category:
@@ -855,14 +865,17 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             if embedding and self._pgvector_available:
                 query = f"""
-                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    SELECT id, agent, project_id, domain, fact, source, confidence,
+                           last_verified, metadata, embedding,
+                           1 - (embedding <=> %s::vector) as similarity
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]}
                     WHERE project_id = %s
                 """
                 params: List[Any] = [self._embedding_to_db(embedding), project_id]
             else:
                 query = f"""
-                    SELECT *
+                    SELECT id, agent, project_id, domain, fact, source, confidence,
+                           last_verified, metadata, embedding
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]}
                     WHERE project_id = %s
                 """
@@ -903,14 +916,17 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             if embedding and self._pgvector_available:
                 query = f"""
-                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    SELECT id, agent, project_id, pattern, why_bad, better_alternative,
+                           occurrence_count, last_seen, created_at, metadata, embedding,
+                           1 - (embedding <=> %s::vector) as similarity
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]}
                     WHERE project_id = %s
                 """
                 params: List[Any] = [self._embedding_to_db(embedding), project_id]
             else:
                 query = f"""
-                    SELECT *
+                    SELECT id, agent, project_id, pattern, why_bad, better_alternative,
+                           occurrence_count, last_seen, created_at, metadata, embedding
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]}
                     WHERE project_id = %s
                 """
@@ -973,7 +989,10 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             if embedding and self._pgvector_available:
                 query = f"""
-                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    SELECT id, agent, project_id, condition, strategy, confidence,
+                           occurrence_count, success_count, last_validated, created_at,
+                           metadata, embedding,
+                           1 - (embedding <=> %s::vector) as similarity
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                     WHERE project_id = %s AND confidence >= %s AND agent = ANY(%s)
                     ORDER BY similarity DESC LIMIT %s
@@ -987,7 +1006,9 @@ class PostgreSQLStorage(StorageBackend):
                 ]
             else:
                 query = f"""
-                    SELECT *
+                    SELECT id, agent, project_id, condition, strategy, confidence,
+                           occurrence_count, success_count, last_validated, created_at,
+                           metadata, embedding
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.HEURISTICS]}
                     WHERE project_id = %s AND confidence >= %s AND agent = ANY(%s)
                     ORDER BY confidence DESC LIMIT %s
@@ -1022,7 +1043,10 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             if embedding and self._pgvector_available:
                 query = f"""
-                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    SELECT id, agent, project_id, task_type, task_description, success,
+                           strategy_used, duration_ms, error_message, user_feedback,
+                           timestamp, metadata, embedding,
+                           1 - (embedding <=> %s::vector) as similarity
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
@@ -1033,7 +1057,9 @@ class PostgreSQLStorage(StorageBackend):
                 ]
             else:
                 query = f"""
-                    SELECT *
+                    SELECT id, agent, project_id, task_type, task_description, success,
+                           strategy_used, duration_ms, error_message, user_feedback,
+                           timestamp, metadata, embedding
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.OUTCOMES]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
@@ -1079,7 +1105,9 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             if embedding and self._pgvector_available:
                 query = f"""
-                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    SELECT id, agent, project_id, domain, fact, source, confidence,
+                           last_verified, metadata, embedding,
+                           1 - (embedding <=> %s::vector) as similarity
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
@@ -1090,7 +1118,8 @@ class PostgreSQLStorage(StorageBackend):
                 ]
             else:
                 query = f"""
-                    SELECT *
+                    SELECT id, agent, project_id, domain, fact, source, confidence,
+                           last_verified, metadata, embedding
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.DOMAIN_KNOWLEDGE]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
@@ -1132,7 +1161,9 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             if embedding and self._pgvector_available:
                 query = f"""
-                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    SELECT id, agent, project_id, pattern, why_bad, better_alternative,
+                           occurrence_count, last_seen, created_at, metadata, embedding,
+                           1 - (embedding <=> %s::vector) as similarity
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
@@ -1143,7 +1174,8 @@ class PostgreSQLStorage(StorageBackend):
                 ]
             else:
                 query = f"""
-                    SELECT *
+                    SELECT id, agent, project_id, pattern, why_bad, better_alternative,
+                           occurrence_count, last_seen, created_at, metadata, embedding
                     FROM {self.schema}.{self.TABLE_NAMES[MemoryType.ANTI_PATTERNS]}
                     WHERE project_id = %s AND agent = ANY(%s)
                 """
@@ -1606,7 +1638,7 @@ class PostgreSQLStorage(StorageBackend):
         """Get a checkpoint by ID."""
         with self._get_connection() as conn:
             cursor = conn.execute(
-                f"SELECT * FROM {self.schema}.alma_checkpoints WHERE id = %s",
+                f"SELECT id, run_id, node_id, state_json, state_hash, sequence_number, branch_id, parent_checkpoint_id, metadata, created_at FROM {self.schema}.alma_checkpoints WHERE id = %s",
                 (checkpoint_id,),
             )
             row = cursor.fetchone()
@@ -1625,7 +1657,9 @@ class PostgreSQLStorage(StorageBackend):
             if branch_id is not None:
                 cursor = conn.execute(
                     f"""
-                    SELECT * FROM {self.schema}.alma_checkpoints
+                    SELECT id, run_id, node_id, state_json, state_hash, sequence_number,
+                           branch_id, parent_checkpoint_id, metadata, created_at
+                    FROM {self.schema}.alma_checkpoints
                     WHERE run_id = %s AND branch_id = %s
                     ORDER BY sequence_number DESC LIMIT 1
                     """,
@@ -1634,7 +1668,9 @@ class PostgreSQLStorage(StorageBackend):
             else:
                 cursor = conn.execute(
                     f"""
-                    SELECT * FROM {self.schema}.alma_checkpoints
+                    SELECT id, run_id, node_id, state_json, state_hash, sequence_number,
+                           branch_id, parent_checkpoint_id, metadata, created_at
+                    FROM {self.schema}.alma_checkpoints
                     WHERE run_id = %s
                     ORDER BY sequence_number DESC LIMIT 1
                     """,
@@ -1657,7 +1693,9 @@ class PostgreSQLStorage(StorageBackend):
             if branch_id is not None:
                 cursor = conn.execute(
                     f"""
-                    SELECT * FROM {self.schema}.alma_checkpoints
+                    SELECT id, run_id, node_id, state_json, state_hash, sequence_number,
+                           branch_id, parent_checkpoint_id, metadata, created_at
+                    FROM {self.schema}.alma_checkpoints
                     WHERE run_id = %s AND branch_id = %s
                     ORDER BY sequence_number ASC LIMIT %s
                     """,
@@ -1666,7 +1704,9 @@ class PostgreSQLStorage(StorageBackend):
             else:
                 cursor = conn.execute(
                     f"""
-                    SELECT * FROM {self.schema}.alma_checkpoints
+                    SELECT id, run_id, node_id, state_json, state_hash, sequence_number,
+                           branch_id, parent_checkpoint_id, metadata, created_at
+                    FROM {self.schema}.alma_checkpoints
                     WHERE run_id = %s
                     ORDER BY sequence_number ASC LIMIT %s
                     """,
@@ -1778,7 +1818,7 @@ class PostgreSQLStorage(StorageBackend):
         """Get a workflow outcome by ID."""
         with self._get_connection() as conn:
             cursor = conn.execute(
-                f"SELECT * FROM {self.schema}.alma_workflow_outcomes WHERE id = %s",
+                f"SELECT id, tenant_id, workflow_id, run_id, agent, project_id, result, summary, strategies_used, successful_patterns, failed_patterns, extracted_heuristics, extracted_anti_patterns, duration_seconds, node_count, error_message, metadata, embedding, created_at FROM {self.schema}.alma_workflow_outcomes WHERE id = %s",
                 (outcome_id,),
             )
             row = cursor.fetchone()
@@ -1800,14 +1840,23 @@ class PostgreSQLStorage(StorageBackend):
         with self._get_connection() as conn:
             if embedding and self._pgvector_available:
                 query = f"""
-                    SELECT *, 1 - (embedding <=> %s::vector) as similarity
+                    SELECT id, tenant_id, workflow_id, run_id, agent, project_id,
+                           result, summary, strategies_used, successful_patterns,
+                           failed_patterns, extracted_heuristics, extracted_anti_patterns,
+                           duration_seconds, node_count, error_message, metadata,
+                           embedding, created_at,
+                           1 - (embedding <=> %s::vector) as similarity
                     FROM {self.schema}.alma_workflow_outcomes
                     WHERE project_id = %s
                 """
                 params: List[Any] = [self._embedding_to_db(embedding), project_id]
             else:
                 query = f"""
-                    SELECT *
+                    SELECT id, tenant_id, workflow_id, run_id, agent, project_id,
+                           result, summary, strategies_used, successful_patterns,
+                           failed_patterns, extracted_heuristics, extracted_anti_patterns,
+                           duration_seconds, node_count, error_message, metadata,
+                           embedding, created_at
                     FROM {self.schema}.alma_workflow_outcomes
                     WHERE project_id = %s
                 """
@@ -1912,7 +1961,7 @@ class PostgreSQLStorage(StorageBackend):
         """Get all artifact references linked to a memory."""
         with self._get_connection() as conn:
             cursor = conn.execute(
-                f"SELECT * FROM {self.schema}.alma_artifact_links WHERE memory_id = %s",
+                f"SELECT id, memory_id, artifact_type, storage_url, filename, mime_type, size_bytes, checksum, metadata, created_at FROM {self.schema}.alma_artifact_links WHERE memory_id = %s",
                 (memory_id,),
             )
             rows = cursor.fetchall()
