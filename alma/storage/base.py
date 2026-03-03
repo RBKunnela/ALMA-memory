@@ -23,6 +23,7 @@ from alma.types import (
     DomainKnowledge,
     Heuristic,
     Outcome,
+    ScopeFilter,
     UserPreference,
 )
 
@@ -94,7 +95,7 @@ class StorageBackend(ABC):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         min_confidence: float = 0.0,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[Heuristic]:
         """
         Get heuristics, optionally filtered by agent and similarity.
@@ -122,7 +123,7 @@ class StorageBackend(ABC):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         success_only: bool = False,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[Outcome]:
         """
         Get outcomes, optionally filtered.
@@ -168,7 +169,7 @@ class StorageBackend(ABC):
         domain: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[DomainKnowledge]:
         """
         Get domain knowledge.
@@ -194,7 +195,7 @@ class StorageBackend(ABC):
         agent: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[AntiPattern]:
         """
         Get anti-patterns.
@@ -774,7 +775,7 @@ class StorageBackend(ABC):
         workflow_id: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 10,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List["WorkflowOutcome"]:
         """
         Get workflow outcomes with optional filtering.

@@ -39,6 +39,7 @@ from alma.types import (
     DomainKnowledge,
     Heuristic,
     Outcome,
+    ScopeFilter,
     UserPreference,
 )
 
@@ -1834,7 +1835,7 @@ class PostgreSQLStorage(StorageBackend):
         workflow_id: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 10,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List["WorkflowOutcome"]:
         """Get workflow outcomes with optional filtering."""
         with self._get_connection() as conn:
@@ -1872,15 +1873,15 @@ class PostgreSQLStorage(StorageBackend):
 
             # Apply scope filter
             if scope_filter:
-                if scope_filter.get("tenant_id"):
+                if scope_filter.tenant_id:
                     query += " AND tenant_id = %s"
-                    params.append(scope_filter["tenant_id"])
-                if scope_filter.get("workflow_id"):
+                    params.append(scope_filter.tenant_id)
+                if scope_filter.workflow_id:
                     query += " AND workflow_id = %s"
-                    params.append(scope_filter["workflow_id"])
-                if scope_filter.get("run_id"):
+                    params.append(scope_filter.workflow_id)
+                if scope_filter.run_id:
                     query += " AND run_id = %s"
-                    params.append(scope_filter["run_id"])
+                    params.append(scope_filter.run_id)
 
             if embedding and self._pgvector_available:
                 query += " ORDER BY similarity DESC LIMIT %s"

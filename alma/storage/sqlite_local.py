@@ -28,6 +28,7 @@ from alma.types import (
     DomainKnowledge,
     Heuristic,
     Outcome,
+    ScopeFilter,
     UserPreference,
 )
 
@@ -869,7 +870,7 @@ class SQLiteStorage(StorageBackend):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         min_confidence: float = 0.0,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[Heuristic]:
         """Get heuristics with optional vector search and scope filtering."""
         # If embedding provided, use vector search to get candidate IDs
@@ -915,7 +916,7 @@ class SQLiteStorage(StorageBackend):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         success_only: bool = False,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[Outcome]:
         """Get outcomes with optional vector search and scope filtering."""
         candidate_ids = None
@@ -987,7 +988,7 @@ class SQLiteStorage(StorageBackend):
         domain: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[DomainKnowledge]:
         """Get domain knowledge with optional vector search and scope filtering."""
         candidate_ids = None
@@ -1034,7 +1035,7 @@ class SQLiteStorage(StorageBackend):
         agent: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[AntiPattern]:
         """Get anti-patterns with optional vector search and scope filtering."""
         candidate_ids = None
@@ -1678,7 +1679,7 @@ class SQLiteStorage(StorageBackend):
         self,
         query: str,
         params: List[Any],
-        scope_filter: Dict[str, Any],
+        scope_filter: ScopeFilter,
     ) -> Tuple[str, List[Any]]:
         """
         Apply workflow scope filter to a query.
@@ -1690,7 +1691,7 @@ class SQLiteStorage(StorageBackend):
         Args:
             query: The SQL query string
             params: The query parameters
-            scope_filter: Dict with keys: tenant_id, workflow_id, run_id, node_id
+            scope_filter: ScopeFilter with fields: tenant_id, workflow_id, run_id, node_id
 
         Returns:
             Tuple of (modified query, modified params)
@@ -1915,7 +1916,7 @@ class SQLiteStorage(StorageBackend):
         workflow_id: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 10,
-        scope_filter: Optional[Dict[str, Any]] = None,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List["WorkflowOutcome"]:
         """Get workflow outcomes with optional filtering."""
         candidate_ids = None
@@ -1946,15 +1947,15 @@ class SQLiteStorage(StorageBackend):
 
             # Apply scope filter for workflow columns
             if scope_filter:
-                if scope_filter.get("tenant_id"):
+                if scope_filter.tenant_id:
                     query += " AND tenant_id = ?"
-                    params.append(scope_filter["tenant_id"])
-                if scope_filter.get("workflow_id"):
+                    params.append(scope_filter.tenant_id)
+                if scope_filter.workflow_id:
                     query += " AND workflow_id = ?"
-                    params.append(scope_filter["workflow_id"])
-                if scope_filter.get("run_id"):
+                    params.append(scope_filter.workflow_id)
+                if scope_filter.run_id:
                     query += " AND run_id = ?"
-                    params.append(scope_filter["run_id"])
+                    params.append(scope_filter.run_id)
 
             query += " ORDER BY created_at DESC LIMIT ?"
             params.append(top_k)

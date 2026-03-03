@@ -86,6 +86,62 @@ class MemoryScope:
 
 
 @dataclass
+class ScopeFilter:
+    """
+    Typed workflow scope filter for memory queries.
+
+    Replaces the untyped Dict[str, Any] pattern to prevent silent
+    key-name bugs and enable IDE autocompletion.
+
+    Hierarchy: tenant > workflow > run > node/branch
+    """
+
+    tenant_id: Optional[str] = None
+    workflow_id: Optional[str] = None
+    run_id: Optional[str] = None
+    node_id: Optional[str] = None
+    branch_id: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "ScopeFilter":
+        """Create ScopeFilter from a dictionary."""
+        return cls(
+            tenant_id=d.get("tenant_id"),
+            workflow_id=d.get("workflow_id"),
+            run_id=d.get("run_id"),
+            node_id=d.get("node_id"),
+            branch_id=d.get("branch_id"),
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dict, omitting None values."""
+        return {
+            k: v
+            for k, v in {
+                "tenant_id": self.tenant_id,
+                "workflow_id": self.workflow_id,
+                "run_id": self.run_id,
+                "node_id": self.node_id,
+                "branch_id": self.branch_id,
+            }.items()
+            if v is not None
+        }
+
+    @property
+    def is_empty(self) -> bool:
+        """Check if no filters are set."""
+        return not any(
+            [
+                self.tenant_id,
+                self.workflow_id,
+                self.run_id,
+                self.node_id,
+                self.branch_id,
+            ]
+        )
+
+
+@dataclass
 class Heuristic:
     """
     A learned rule: "When condition X, strategy Y works N% of the time."

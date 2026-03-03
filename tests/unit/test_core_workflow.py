@@ -454,7 +454,7 @@ class TestRetrieveWithScope:
 
         assert result.metadata["scope"] == "workflow"
         scope_filter = result.metadata["scope_filter"]
-        assert scope_filter.get("workflow_id") == "wf-001"
+        assert scope_filter.workflow_id == "wf-001"
 
     def test_retrieve_with_scope_run(self, alma_instance, mock_retrieval):
         """Test scoped retrieval at run level."""
@@ -486,7 +486,7 @@ class TestRetrieveWithScope:
         )
 
         scope_filter = result.metadata["scope_filter"]
-        assert scope_filter.get("run_id") == "run-123"
+        assert scope_filter.run_id == "run-123"
 
 
 class TestAsyncWorkflowMethods:

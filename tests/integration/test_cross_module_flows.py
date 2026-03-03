@@ -22,7 +22,7 @@ from alma.testing.factories import (
     create_test_project,
 )
 from alma.testing.mocks import MockStorage, MockEmbedder
-from alma.types import Heuristic, Outcome, MemoryScope
+from alma.types import Heuristic, Outcome, MemoryScope, ScopeFilter
 
 
 class TestStorageConsolidationFlow:
@@ -272,7 +272,7 @@ class TestRegressionDetectionFlow:
             agent="test_agent",
             top_k=5,
             min_confidence=0.3,  # New parameter
-            scope_filter={"scope": MemoryScope.PROJECT},  # New parameter
+            scope_filter=ScopeFilter(tenant_id="test_tenant"),  # Typed scope filter
         )
 
         assert isinstance(items, list)
