@@ -320,7 +320,18 @@ class AzureCosmosStorage(StorageBackend):
             f"Using cross-partition query for {doc_id} in {container_key} "
             "(consider providing project_id for better performance)"
         )
-        query = "SELECT * FROM c WHERE c.id = @id"
+        query = (
+            "SELECT c.id, c.agent, c.project_id, c.user_id, c.type, "
+            "c.condition, c.strategy, c.confidence, c.occurrence_count, "
+            "c.success_count, c.last_validated, c.created_at, "
+            "c.task_type, c.task_description, c.success, c.strategy_used, "
+            "c.duration_ms, c.error_message, c.user_feedback, c.timestamp, "
+            "c.category, c.preference, c.source, "
+            "c.domain, c.fact, c.last_verified, "
+            "c.pattern, c.why_bad, c.better_alternative, c.last_seen, "
+            "c.embedding, c.metadata "
+            "FROM c WHERE c.id = @id"
+        )
         items = list(
             container.query_items(
                 query=query,
@@ -651,7 +662,11 @@ class AzureCosmosStorage(StorageBackend):
         """Get user preferences."""
         container = self._get_container(MemoryType.PREFERENCES)
 
-        query = "SELECT * FROM c WHERE c.user_id = @user_id"
+        query = (
+            "SELECT c.id, c.user_id, c.category, c.preference, c.source, "
+            "c.confidence, c.timestamp, c.metadata, c.type "
+            "FROM c WHERE c.user_id = @user_id"
+        )
         parameters = [{"name": "@user_id", "value": user_id}]
 
         if category:

@@ -883,7 +883,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            query = "SELECT * FROM heuristics WHERE project_id = ? AND confidence >= ?"
+            query = "SELECT id, agent, project_id, condition, strategy, confidence, occurrence_count, success_count, last_validated, created_at, metadata FROM heuristics WHERE project_id = ? AND confidence >= ?"
             params: List[Any] = [project_id, min_confidence]
 
             if agent:
@@ -928,7 +928,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            query = "SELECT * FROM outcomes WHERE project_id = ?"
+            query = "SELECT id, agent, project_id, task_type, task_description, success, strategy_used, duration_ms, error_message, user_feedback, timestamp, metadata FROM outcomes WHERE project_id = ?"
             params: List[Any] = [project_id]
 
             if agent:
@@ -968,7 +968,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            query = "SELECT * FROM preferences WHERE user_id = ?"
+            query = "SELECT id, user_id, category, preference, source, confidence, timestamp, metadata FROM preferences WHERE user_id = ?"
             params: List[Any] = [user_id]
 
             if category:
@@ -1000,7 +1000,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            query = "SELECT * FROM domain_knowledge WHERE project_id = ?"
+            query = "SELECT id, agent, project_id, domain, fact, source, confidence, last_verified, metadata FROM domain_knowledge WHERE project_id = ?"
             params: List[Any] = [project_id]
 
             if agent:
@@ -1047,7 +1047,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            query = "SELECT * FROM anti_patterns WHERE project_id = ?"
+            query = "SELECT id, agent, project_id, pattern, why_bad, better_alternative, occurrence_count, last_seen, created_at, metadata FROM anti_patterns WHERE project_id = ?"
             params: List[Any] = [project_id]
 
             if agent:
@@ -1096,7 +1096,7 @@ class SQLiteStorage(StorageBackend):
             cursor = conn.cursor()
 
             placeholders = ",".join("?" * len(agents))
-            query = f"SELECT * FROM heuristics WHERE project_id = ? AND confidence >= ? AND agent IN ({placeholders})"
+            query = f"SELECT id, agent, project_id, condition, strategy, confidence, occurrence_count, success_count, last_validated, created_at, metadata FROM heuristics WHERE project_id = ? AND confidence >= ? AND agent IN ({placeholders})"
             params: List[Any] = [project_id, min_confidence] + list(agents)
 
             if candidate_ids is not None:
@@ -1136,7 +1136,7 @@ class SQLiteStorage(StorageBackend):
             cursor = conn.cursor()
 
             placeholders = ",".join("?" * len(agents))
-            query = f"SELECT * FROM outcomes WHERE project_id = ? AND agent IN ({placeholders})"
+            query = f"SELECT id, agent, project_id, task_type, task_description, success, strategy_used, duration_ms, error_message, user_feedback, timestamp, metadata FROM outcomes WHERE project_id = ? AND agent IN ({placeholders})"
             params: List[Any] = [project_id] + list(agents)
 
             if task_type:
@@ -1182,7 +1182,7 @@ class SQLiteStorage(StorageBackend):
             cursor = conn.cursor()
 
             placeholders = ",".join("?" * len(agents))
-            query = f"SELECT * FROM domain_knowledge WHERE project_id = ? AND agent IN ({placeholders})"
+            query = f"SELECT id, agent, project_id, domain, fact, source, confidence, last_verified, metadata FROM domain_knowledge WHERE project_id = ? AND agent IN ({placeholders})"
             params: List[Any] = [project_id] + list(agents)
 
             if domain:
@@ -1224,7 +1224,7 @@ class SQLiteStorage(StorageBackend):
             cursor = conn.cursor()
 
             placeholders = ",".join("?" * len(agents))
-            query = f"SELECT * FROM anti_patterns WHERE project_id = ? AND agent IN ({placeholders})"
+            query = f"SELECT id, agent, project_id, pattern, why_bad, better_alternative, occurrence_count, last_seen, created_at, metadata FROM anti_patterns WHERE project_id = ? AND agent IN ({placeholders})"
             params: List[Any] = [project_id] + list(agents)
 
             if candidate_ids is not None:
@@ -1735,7 +1735,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM checkpoints WHERE id = ?",
+                "SELECT id, run_id, node_id, state, sequence_number, branch_id, parent_checkpoint_id, state_hash, metadata, created_at FROM checkpoints WHERE id = ?",
                 (checkpoint_id,),
             )
             row = cursor.fetchone()
@@ -1753,7 +1753,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            query = "SELECT * FROM checkpoints WHERE run_id = ?"
+            query = "SELECT id, run_id, node_id, state, sequence_number, branch_id, parent_checkpoint_id, state_hash, metadata, created_at FROM checkpoints WHERE run_id = ?"
             params: List[Any] = [run_id]
 
             if branch_id is not None:
@@ -1779,7 +1779,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            query = "SELECT * FROM checkpoints WHERE run_id = ?"
+            query = "SELECT id, run_id, node_id, state, sequence_number, branch_id, parent_checkpoint_id, state_hash, metadata, created_at FROM checkpoints WHERE run_id = ?"
             params: List[Any] = [run_id]
 
             if branch_id is not None:
@@ -1899,7 +1899,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM workflow_outcomes WHERE id = ?",
+                "SELECT id, tenant_id, workflow_id, run_id, agent, project_id, result, summary, strategies_used, successful_patterns, failed_patterns, extracted_heuristics, extracted_anti_patterns, duration_seconds, node_count, error_message, metadata, created_at FROM workflow_outcomes WHERE id = ?",
                 (outcome_id,),
             )
             row = cursor.fetchone()
@@ -1928,7 +1928,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            query = "SELECT * FROM workflow_outcomes WHERE project_id = ?"
+            query = "SELECT id, tenant_id, workflow_id, run_id, agent, project_id, result, summary, strategies_used, successful_patterns, failed_patterns, extracted_heuristics, extracted_anti_patterns, duration_seconds, node_count, error_message, metadata, created_at FROM workflow_outcomes WHERE project_id = ?"
             params: List[Any] = [project_id]
 
             if agent:
@@ -2036,7 +2036,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM artifact_links WHERE memory_id = ?",
+                "SELECT id, memory_id, artifact_type, storage_url, filename, mime_type, size_bytes, checksum, metadata, created_at FROM artifact_links WHERE memory_id = ?",
                 (memory_id,),
             )
             rows = cursor.fetchall()
@@ -2124,7 +2124,7 @@ class SQLiteStorage(StorageBackend):
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT * FROM session_handoffs
+                SELECT id, project_id, agent, session_id, last_action, last_outcome, current_goal, key_decisions, active_files, blockers, next_steps, test_status, confidence_level, risk_flags, session_start, session_end, duration_ms, metadata, created_at FROM session_handoffs
                 WHERE project_id = ? AND agent = ?
                 ORDER BY created_at DESC
                 LIMIT ?
@@ -2306,7 +2306,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM memory_strength WHERE memory_id = ?",
+                "SELECT memory_id, memory_type, project_id, agent, initial_strength, decay_half_life_days, created_at, last_accessed, access_count, explicit_importance, reinforcement_events FROM memory_strength WHERE memory_id = ?",
                 (memory_id,),
             )
             row = cursor.fetchone()
@@ -2337,7 +2337,7 @@ class SQLiteStorage(StorageBackend):
             if agent:
                 cursor.execute(
                     """
-                    SELECT * FROM memory_strength
+                    SELECT memory_id, memory_type, project_id, agent, initial_strength, decay_half_life_days, created_at, last_accessed, access_count, explicit_importance, reinforcement_events FROM memory_strength
                     WHERE project_id = ? AND agent = ?
                     """,
                     (project_id, agent),
@@ -2345,7 +2345,7 @@ class SQLiteStorage(StorageBackend):
             else:
                 cursor.execute(
                     """
-                    SELECT * FROM memory_strength
+                    SELECT memory_id, memory_type, project_id, agent, initial_strength, decay_half_life_days, created_at, last_accessed, access_count, explicit_importance, reinforcement_events FROM memory_strength
                     WHERE project_id = ?
                     """,
                     (project_id,),
@@ -2440,7 +2440,17 @@ class SQLiteStorage(StorageBackend):
             if not table_name:
                 raise ValueError(f"Unknown memory type: {memory_type}")
 
-            cursor.execute(f"SELECT * FROM {table_name} WHERE id = ?", (memory_id,))
+            table_columns = {
+                "heuristics": "id, agent, project_id, condition, strategy, confidence, occurrence_count, success_count, last_validated, created_at, metadata",
+                "outcomes": "id, agent, project_id, task_type, task_description, success, strategy_used, duration_ms, error_message, user_feedback, timestamp, metadata",
+                "domain_knowledge": "id, agent, project_id, domain, fact, source, confidence, last_verified, metadata",
+                "anti_patterns": "id, agent, project_id, pattern, why_bad, better_alternative, occurrence_count, last_seen, created_at, metadata",
+                "preferences": "id, user_id, category, preference, source, confidence, timestamp, metadata",
+            }
+            columns = table_columns[table_name]
+            cursor.execute(
+                f"SELECT {columns} FROM {table_name} WHERE id = ?", (memory_id,)
+            )
             row = cursor.fetchone()
 
             if row is None:
@@ -2600,7 +2610,7 @@ class SQLiteStorage(StorageBackend):
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM memory_archive WHERE id = ?",
+                "SELECT id, original_id, memory_type, content, embedding, metadata, original_created_at, archived_at, archive_reason, final_strength, project_id, agent, restored, restored_at, restored_as FROM memory_archive WHERE id = ?",
                 (archive_id,),
             )
             row = cursor.fetchone()
@@ -2671,7 +2681,7 @@ class SQLiteStorage(StorageBackend):
 
             cursor.execute(
                 f"""
-                SELECT * FROM memory_archive
+                SELECT id, original_id, memory_type, content, embedding, metadata, original_created_at, archived_at, archive_reason, final_strength, project_id, agent, restored, restored_at, restored_as FROM memory_archive
                 WHERE {where_clause}
                 ORDER BY archived_at DESC
                 LIMIT ?
@@ -2704,7 +2714,7 @@ class SQLiteStorage(StorageBackend):
 
             # Get the archive
             cursor.execute(
-                "SELECT * FROM memory_archive WHERE id = ?",
+                "SELECT id, original_id, memory_type, content, embedding, metadata, original_created_at, archived_at, archive_reason, final_strength, project_id, agent, restored, restored_at, restored_as FROM memory_archive WHERE id = ?",
                 (archive_id,),
             )
             row = cursor.fetchone()
