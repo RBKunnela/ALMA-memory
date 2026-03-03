@@ -396,6 +396,15 @@ class StorageBackend(ABC):
         This enables multi-agent memory sharing where an agent can
         read memories from agents it inherits from.
 
+        Default implementation fetches all heuristics for the project
+        (without agent filter) and filters client-side, avoiding the
+        N+1 query pattern of calling get_heuristics() per agent.
+
+        SQL backends (PostgreSQL, SQLite) should override this method
+        with a single ``WHERE agent IN (...)`` query for optimal
+        performance. See PostgreSQLStorage and SQLiteStorage for
+        reference implementations.
+
         Args:
             project_id: Project to query
             agents: List of agent names to query
@@ -406,18 +415,25 @@ class StorageBackend(ABC):
         Returns:
             List of matching heuristics from all specified agents
         """
-        # Default implementation: query each agent individually
-        results = []
-        for agent in agents:
-            agent_heuristics = self.get_heuristics(
-                project_id=project_id,
-                agent=agent,
-                embedding=embedding,
-                top_k=top_k,
-                min_confidence=min_confidence,
-            )
-            results.extend(agent_heuristics)
-        return results
+        if not agents:
+            return []
+
+        agents_set = set(agents)
+
+        # Single broad query without agent filter, then filter client-side.
+        # We request a larger top_k to account for results that will be
+        # filtered out, capped at a reasonable maximum.
+        broad_top_k = top_k * len(agents) * 2
+        all_results = self.get_heuristics(
+            project_id=project_id,
+            agent=None,
+            embedding=embedding,
+            top_k=broad_top_k,
+            min_confidence=min_confidence,
+        )
+
+        filtered = [h for h in all_results if h.agent in agents_set]
+        return filtered[: top_k * len(agents)]
 
     def get_outcomes_for_agents(
         self,
@@ -431,6 +447,13 @@ class StorageBackend(ABC):
         """
         Get outcomes from multiple agents in one call.
 
+        Default implementation fetches all outcomes for the project
+        (without agent filter) and filters client-side, avoiding the
+        N+1 query pattern.
+
+        SQL backends should override with ``WHERE agent IN (...)``
+        for optimal performance.
+
         Args:
             project_id: Project to query
             agents: List of agent names to query
@@ -442,18 +465,23 @@ class StorageBackend(ABC):
         Returns:
             List of matching outcomes from all specified agents
         """
-        results = []
-        for agent in agents:
-            agent_outcomes = self.get_outcomes(
-                project_id=project_id,
-                agent=agent,
-                task_type=task_type,
-                embedding=embedding,
-                top_k=top_k,
-                success_only=success_only,
-            )
-            results.extend(agent_outcomes)
-        return results
+        if not agents:
+            return []
+
+        agents_set = set(agents)
+
+        broad_top_k = top_k * len(agents) * 2
+        all_results = self.get_outcomes(
+            project_id=project_id,
+            agent=None,
+            task_type=task_type,
+            embedding=embedding,
+            top_k=broad_top_k,
+            success_only=success_only,
+        )
+
+        filtered = [o for o in all_results if o.agent in agents_set]
+        return filtered[: top_k * len(agents)]
 
     def get_domain_knowledge_for_agents(
         self,
@@ -466,6 +494,13 @@ class StorageBackend(ABC):
         """
         Get domain knowledge from multiple agents in one call.
 
+        Default implementation fetches all domain knowledge for the
+        project (without agent filter) and filters client-side,
+        avoiding the N+1 query pattern.
+
+        SQL backends should override with ``WHERE agent IN (...)``
+        for optimal performance.
+
         Args:
             project_id: Project to query
             agents: List of agent names to query
@@ -476,17 +511,22 @@ class StorageBackend(ABC):
         Returns:
             List of matching domain knowledge from all specified agents
         """
-        results = []
-        for agent in agents:
-            agent_knowledge = self.get_domain_knowledge(
-                project_id=project_id,
-                agent=agent,
-                domain=domain,
-                embedding=embedding,
-                top_k=top_k,
-            )
-            results.extend(agent_knowledge)
-        return results
+        if not agents:
+            return []
+
+        agents_set = set(agents)
+
+        broad_top_k = top_k * len(agents) * 2
+        all_results = self.get_domain_knowledge(
+            project_id=project_id,
+            agent=None,
+            domain=domain,
+            embedding=embedding,
+            top_k=broad_top_k,
+        )
+
+        filtered = [dk for dk in all_results if dk.agent in agents_set]
+        return filtered[: top_k * len(agents)]
 
     def get_anti_patterns_for_agents(
         self,
@@ -498,6 +538,13 @@ class StorageBackend(ABC):
         """
         Get anti-patterns from multiple agents in one call.
 
+        Default implementation fetches all anti-patterns for the
+        project (without agent filter) and filters client-side,
+        avoiding the N+1 query pattern.
+
+        SQL backends should override with ``WHERE agent IN (...)``
+        for optimal performance.
+
         Args:
             project_id: Project to query
             agents: List of agent names to query
@@ -507,16 +554,21 @@ class StorageBackend(ABC):
         Returns:
             List of matching anti-patterns from all specified agents
         """
-        results = []
-        for agent in agents:
-            agent_patterns = self.get_anti_patterns(
-                project_id=project_id,
-                agent=agent,
-                embedding=embedding,
-                top_k=top_k,
-            )
-            results.extend(agent_patterns)
-        return results
+        if not agents:
+            return []
+
+        agents_set = set(agents)
+
+        broad_top_k = top_k * len(agents) * 2
+        all_results = self.get_anti_patterns(
+            project_id=project_id,
+            agent=None,
+            embedding=embedding,
+            top_k=broad_top_k,
+        )
+
+        filtered = [ap for ap in all_results if ap.agent in agents_set]
+        return filtered[: top_k * len(agents)]
 
     # ==================== STATS ====================
 
