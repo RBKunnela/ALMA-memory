@@ -172,6 +172,7 @@ from alma.types import (
     MemoryScope,
     MemorySlice,
     Outcome,
+    ScopeFilter,
     UserPreference,
 )
 
@@ -214,6 +215,7 @@ __all__ = [
     "AntiPattern",
     "MemorySlice",
     "MemoryScope",
+    "ScopeFilter",
     # Harness Pattern
     "Setting",
     "Context",

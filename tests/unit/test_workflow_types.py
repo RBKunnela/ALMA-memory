@@ -21,6 +21,7 @@ from alma.workflow.checkpoint import (
     Checkpoint,
     CheckpointManager,
 )
+from alma.types import ScopeFilter
 from alma.workflow.context import RetrievalScope, WorkflowContext
 from alma.workflow.outcomes import WorkflowOutcome, WorkflowResult
 
@@ -156,22 +157,24 @@ class TestWorkflowContext:
         assert "branch_id requires run_id" in str(exc.value)
 
     def test_get_scope_filter_global(self):
-        """Test global scope filter returns empty dict."""
+        """Test global scope filter returns empty ScopeFilter."""
         ctx = WorkflowContext(tenant_id="t1", workflow_id="wf1")
         filters = ctx.get_scope_filter(RetrievalScope.GLOBAL)
-        assert filters == {}
+        assert filters == ScopeFilter()
+        assert filters.is_empty
 
     def test_get_scope_filter_tenant(self):
         """Test tenant scope filter."""
         ctx = WorkflowContext(tenant_id="t1", workflow_id="wf1")
         filters = ctx.get_scope_filter(RetrievalScope.TENANT)
-        assert filters == {"tenant_id": "t1"}
+        assert filters == ScopeFilter(tenant_id="t1")
+        assert filters.tenant_id == "t1"
 
     def test_get_scope_filter_workflow(self):
         """Test workflow scope filter."""
         ctx = WorkflowContext(tenant_id="t1", workflow_id="wf1", run_id="r1")
         filters = ctx.get_scope_filter(RetrievalScope.WORKFLOW)
-        assert filters == {"tenant_id": "t1", "workflow_id": "wf1"}
+        assert filters == ScopeFilter(tenant_id="t1", workflow_id="wf1")
 
     def test_get_scope_filter_run(self):
         """Test run scope filter."""
@@ -179,7 +182,9 @@ class TestWorkflowContext:
             tenant_id="t1", workflow_id="wf1", run_id="r1", node_id="n1"
         )
         filters = ctx.get_scope_filter(RetrievalScope.RUN)
-        assert filters == {"tenant_id": "t1", "workflow_id": "wf1", "run_id": "r1"}
+        assert filters == ScopeFilter(
+            tenant_id="t1", workflow_id="wf1", run_id="r1"
+        )
 
     def test_get_scope_filter_node(self):
         """Test node scope filter."""
@@ -187,12 +192,9 @@ class TestWorkflowContext:
             tenant_id="t1", workflow_id="wf1", run_id="r1", node_id="n1"
         )
         filters = ctx.get_scope_filter(RetrievalScope.NODE)
-        assert filters == {
-            "tenant_id": "t1",
-            "workflow_id": "wf1",
-            "run_id": "r1",
-            "node_id": "n1",
-        }
+        assert filters == ScopeFilter(
+            tenant_id="t1", workflow_id="wf1", run_id="r1", node_id="n1"
+        )
 
     def test_with_node(self):
         """Test creating context with new node."""

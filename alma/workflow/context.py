@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Optional
 
+from alma.types import ScopeFilter
+
 
 class RetrievalScope(Enum):
     """
@@ -123,54 +125,45 @@ class WorkflowContext:
         if self.branch_id and not self.run_id:
             raise ValueError("branch_id requires run_id to be set")
 
-    def get_scope_filter(self, scope: RetrievalScope) -> Dict[str, Any]:
+    def get_scope_filter(self, scope: RetrievalScope) -> ScopeFilter:
         """
-        Build a filter dict for the given retrieval scope.
+        Build a ScopeFilter for the given retrieval scope.
 
-        Returns a dictionary that can be used to filter memories
+        Returns a ScopeFilter that can be used to filter memories
         based on the workflow context and requested scope.
 
         Args:
             scope: The retrieval scope to filter by.
 
         Returns:
-            Dictionary with filter criteria.
+            ScopeFilter with the appropriate fields set.
         """
-        filters: Dict[str, Any] = {}
-
         if scope == RetrievalScope.GLOBAL:
-            # No filters - return everything
-            pass
+            return ScopeFilter()
         elif scope == RetrievalScope.TENANT:
-            if self.tenant_id:
-                filters["tenant_id"] = self.tenant_id
+            return ScopeFilter(tenant_id=self.tenant_id)
         elif scope == RetrievalScope.AGENT:
-            if self.tenant_id:
-                filters["tenant_id"] = self.tenant_id
-            # Agent filtering is done separately via the agent parameter
+            return ScopeFilter(tenant_id=self.tenant_id)
         elif scope == RetrievalScope.WORKFLOW:
-            if self.tenant_id:
-                filters["tenant_id"] = self.tenant_id
-            if self.workflow_id:
-                filters["workflow_id"] = self.workflow_id
+            return ScopeFilter(
+                tenant_id=self.tenant_id,
+                workflow_id=self.workflow_id,
+            )
         elif scope == RetrievalScope.RUN:
-            if self.tenant_id:
-                filters["tenant_id"] = self.tenant_id
-            if self.workflow_id:
-                filters["workflow_id"] = self.workflow_id
-            if self.run_id:
-                filters["run_id"] = self.run_id
+            return ScopeFilter(
+                tenant_id=self.tenant_id,
+                workflow_id=self.workflow_id,
+                run_id=self.run_id,
+            )
         elif scope == RetrievalScope.NODE:
-            if self.tenant_id:
-                filters["tenant_id"] = self.tenant_id
-            if self.workflow_id:
-                filters["workflow_id"] = self.workflow_id
-            if self.run_id:
-                filters["run_id"] = self.run_id
-            if self.node_id:
-                filters["node_id"] = self.node_id
+            return ScopeFilter(
+                tenant_id=self.tenant_id,
+                workflow_id=self.workflow_id,
+                run_id=self.run_id,
+                node_id=self.node_id,
+            )
 
-        return filters
+        return ScopeFilter()
 
     def with_node(self, node_id: str) -> "WorkflowContext":
         """Create a new context with a different node_id."""
