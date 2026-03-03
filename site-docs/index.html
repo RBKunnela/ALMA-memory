@@ -174,13 +174,12 @@
             border-color: rgba(59, 130, 246, 0.5);
         }
 
-        /* Comparison table styling */
-        .comparison-table th:first-child,
-        .comparison-table td:first-child {
-            position: sticky;
-            left: 0;
-            background: #1e293b;
-            z-index: 1;
+        /* Proof numbers gradient */
+        .gradient-text-lg {
+            background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
     </style>
 </head>
@@ -538,10 +537,10 @@ result = agent.run_with_context(memories)</code></pre>
                         </svg>
                     </div>
                     <h3 class="text-lg font-semibold mb-2">MCP Integration</h3>
-                    <p class="text-slate-400 text-sm mb-4">Native MCP server with 16 tools. Works directly with Claude Code.</p>
+                    <p class="text-slate-400 text-sm mb-4">Native MCP server with 22 tools. Works directly with Claude Code.</p>
                     <div class="text-xs font-mono bg-slate-900 rounded p-3 text-slate-300">
                         python -m alma.mcp<br>
-                        <span class="text-slate-500"># 16 tools ready to use</span>
+                        <span class="text-slate-500"># 22 tools ready to use</span>
                     </div>
                 </div>
 
@@ -552,8 +551,8 @@ result = agent.run_with_context(memories)</code></pre>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
                         </svg>
                     </div>
-                    <h3 class="text-lg font-semibold mb-2">6 Vector Backends</h3>
-                    <p class="text-slate-400 text-sm mb-4">PostgreSQL, Qdrant, Pinecone, Chroma, SQLite, Azure Cosmos. Deploy anywhere.</p>
+                    <h3 class="text-lg font-semibold mb-2">7 Storage Backends</h3>
+                    <p class="text-slate-400 text-sm mb-4">PostgreSQL, Qdrant, Pinecone, Chroma, SQLite, Azure Cosmos, File. Deploy anywhere.</p>
                     <div class="flex flex-wrap gap-2 mt-3">
                         <span class="px-2 py-1 text-xs rounded bg-slate-700 text-slate-300">PostgreSQL</span>
                         <span class="px-2 py-1 text-xs rounded bg-slate-700 text-slate-300">Qdrant</span>
@@ -572,7 +571,7 @@ result = agent.run_with_context(memories)</code></pre>
                     <div class="text-sm text-slate-400">Memory Types</div>
                 </div>
                 <div class="p-4 rounded-lg bg-slate-800/30 border border-slate-800 text-center">
-                    <div class="text-2xl font-bold text-white">16</div>
+                    <div class="text-2xl font-bold text-white">22</div>
                     <div class="text-sm text-slate-400">MCP Tools</div>
                 </div>
                 <div class="p-4 rounded-lg bg-slate-800/30 border border-slate-800 text-center">
@@ -587,98 +586,98 @@ result = agent.run_with_context(memories)</code></pre>
         </div>
     </section>
 
-    <!-- Comparison Section -->
-    <section id="comparison" class="py-24 bg-slate-950">
+    <!-- Memory That Compounds Section -->
+    <section id="compound" class="py-24 bg-slate-950">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
-                <h2 class="text-3xl sm:text-4xl font-bold mb-4">ALMA vs Alternatives</h2>
-                <p class="text-slate-400 text-lg max-w-2xl mx-auto">See how ALMA compares to Mem0 and LangChain Memory.</p>
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Memory That <span class="gradient-text">Compounds</span></h2>
+                <p class="text-slate-400 text-lg max-w-2xl mx-auto">Every conversation makes the next one better. Watch the difference week by week.</p>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="comparison-table w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-slate-700">
-                            <th class="text-left py-4 px-4 font-semibold text-slate-300 min-w-[200px]">Feature</th>
-                            <th class="text-center py-4 px-6 min-w-[150px]">
-                                <div class="flex flex-col items-center">
-                                    <span class="font-bold text-lg gradient-text">ALMA</span>
-                                    <span class="text-xs text-slate-500">v0.6.0</span>
-                                </div>
-                            </th>
-                            <th class="text-center py-4 px-6 text-slate-400 min-w-[150px]">Mem0</th>
-                            <th class="text-center py-4 px-6 text-slate-400 min-w-[150px]">LangChain Memory</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-800">
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="py-4 px-4 font-medium">Memory Scoping</td>
-                            <td class="text-center py-4 px-6">
-                                <span class="inline-flex items-center px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">can_learn / cannot_learn</span>
-                            </td>
-                            <td class="text-center py-4 px-6 text-slate-500">Basic isolation</td>
-                            <td class="text-center py-4 px-6 text-slate-500">None</td>
-                        </tr>
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="py-4 px-4 font-medium">Anti-Pattern Learning</td>
-                            <td class="text-center py-4 px-6"><span class="text-green-400">Yes</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                        </tr>
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="py-4 px-4 font-medium">Multi-Agent Sharing</td>
-                            <td class="text-center py-4 px-6"><span class="text-green-400">inherit_from + share_with</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                        </tr>
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="py-4 px-4 font-medium">Workflow Checkpoints</td>
-                            <td class="text-center py-4 px-6"><span class="text-green-400">Yes</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                        </tr>
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="py-4 px-4 font-medium">MCP Integration</td>
-                            <td class="text-center py-4 px-6"><span class="text-green-400">16 tools</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                        </tr>
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="py-4 px-4 font-medium">TypeScript SDK</td>
-                            <td class="text-center py-4 px-6"><span class="text-green-400">Full-featured</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Limited</span></td>
-                        </tr>
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="py-4 px-4 font-medium">Vector Backends</td>
-                            <td class="text-center py-4 px-6"><span class="text-green-400">6 options</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Limited</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Via integrations</span></td>
-                        </tr>
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="py-4 px-4 font-medium">Graph Memory</td>
-                            <td class="text-center py-4 px-6"><span class="text-green-400">Neo4j, Memgraph, Kuzu</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Limited</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Entity memory</span></td>
-                        </tr>
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="py-4 px-4 font-medium">Event System</td>
-                            <td class="text-center py-4 px-6"><span class="text-green-400">Webhooks + callbacks</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-red-400">No</span></td>
-                        </tr>
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="py-4 px-4 font-medium">License</td>
-                            <td class="text-center py-4 px-6"><span class="text-green-400">MIT (fully open)</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-yellow-400">Partially open</span></td>
-                            <td class="text-center py-4 px-6"><span class="text-green-400">MIT</span></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="grid md:grid-cols-3 gap-8 mb-16">
+                <!-- Week 1 -->
+                <div class="relative p-8 rounded-2xl bg-slate-900 border border-slate-800">
+                    <div class="absolute -top-4 left-8 px-4 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-medium">
+                        Week 1
+                    </div>
+                    <div class="mt-4 space-y-4">
+                        <div class="w-14 h-14 rounded-xl bg-red-500/20 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold">Without ALMA</h3>
+                        <p class="text-slate-400">Your AI makes the same mistakes. Every session starts from zero. You repeat yourself constantly.</p>
+                        <div class="text-sm text-slate-500 font-mono bg-slate-800 rounded-lg p-3">
+                            "Use sleep() for waits"<br>
+                            <span class="text-red-400">// Failed again...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Week 2 -->
+                <div class="relative p-8 rounded-2xl bg-slate-900 border border-slate-800">
+                    <div class="absolute -top-4 left-8 px-4 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-sm font-medium">
+                        Week 2
+                    </div>
+                    <div class="mt-4 space-y-4">
+                        <div class="w-14 h-14 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold">ALMA Installed</h3>
+                        <p class="text-slate-400">Memories start accumulating. Your AI avoids known failures. Strategies that worked get reused.</p>
+                        <div class="text-sm text-slate-500 font-mono bg-slate-800 rounded-lg p-3">
+                            <span class="text-green-400">// Remembers:</span> "Don't use sleep()"<br>
+                            <span class="text-green-400">// Uses:</span> explicit waits
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Week 4 -->
+                <div class="relative p-8 rounded-2xl bg-slate-900 border border-slate-800">
+                    <div class="absolute -top-4 left-8 px-4 py-1 rounded-full bg-green-500/20 border border-green-500/30 text-green-400 text-sm font-medium">
+                        Week 4
+                    </div>
+                    <div class="mt-4 space-y-4">
+                        <div class="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold">Compounding</h3>
+                        <p class="text-slate-400">Your AI knows your preferences, your codebase patterns, your team's conventions. It gets better every day.</p>
+                        <div class="text-sm text-slate-500 font-mono bg-slate-800 rounded-lg p-3">
+                            <span class="text-green-400">47 heuristics</span> learned<br>
+                            <span class="text-green-400">12 anti-patterns</span> avoided
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proof Numbers -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="p-6 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                    <div class="text-3xl font-bold gradient-text">1,210</div>
+                    <div class="text-sm text-slate-400 mt-1">Tests Passing</div>
+                </div>
+                <div class="p-6 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                    <div class="text-3xl font-bold gradient-text">7</div>
+                    <div class="text-sm text-slate-400 mt-1">Storage Backends</div>
+                </div>
+                <div class="p-6 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                    <div class="text-3xl font-bold gradient-text">$0.00</div>
+                    <div class="text-sm text-slate-400 mt-1">To Start</div>
+                </div>
+                <div class="p-6 rounded-xl bg-slate-900 border border-slate-800 text-center">
+                    <div class="text-3xl font-bold gradient-text">MIT</div>
+                    <div class="text-sm text-slate-400 mt-1">Fully Open Source</div>
+                </div>
             </div>
 
             <div class="mt-12 text-center">
-                <p class="text-slate-400 mb-4">Ready to give your agents real memory?</p>
+                <p class="text-slate-400 mb-4">Your AI should not treat you like a stranger every morning.</p>
                 <a href="#quickstart" class="inline-flex items-center space-x-2 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 font-semibold hover:from-blue-500 hover:to-cyan-400 transition-all">
                     <span>Get Started</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
@@ -867,15 +866,95 @@ alma:
         </div>
     </section>
 
+    <!-- Database Setup Section -->
+    <section id="setup" class="py-24 bg-slate-950">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Database Setup</h2>
+                <p class="text-slate-400 text-lg">Three paths. Pick what fits. ALMA auto-creates tables on first run.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6 mb-12">
+                <!-- Path 1: SQLite -->
+                <div class="p-6 rounded-xl bg-slate-900 border border-slate-800">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold">SQLite + FAISS</h3>
+                            <span class="text-xs text-green-400">Zero config</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-4">No database to install. Files stored locally. Perfect for development and personal use.</p>
+                    <div class="text-xs font-mono bg-slate-800 rounded-lg p-3 text-slate-300">
+                        <span class="text-cyan-400">storage:</span> sqlite<br>
+                        <span class="text-cyan-400">storage_dir:</span> .alma<br>
+                        <span class="text-slate-500"># That's it. Done.</span>
+                    </div>
+                    <div class="mt-4 text-xs text-slate-500">Cost: $0.00 forever</div>
+                </div>
+
+                <!-- Path 2: PostgreSQL -->
+                <div class="p-6 rounded-xl bg-slate-900 border border-blue-500/30">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold">PostgreSQL + pgvector</h3>
+                            <span class="text-xs text-blue-400">Production</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-4">Full SQL with vector search. The README has complete CREATE TABLE statements you can copy-paste.</p>
+                    <div class="text-xs font-mono bg-slate-800 rounded-lg p-3 text-slate-300">
+                        <span class="text-cyan-400">storage:</span> postgresql<br>
+                        <span class="text-cyan-400">connection_string:</span><br>
+                        &nbsp;&nbsp;<span class="text-yellow-400">${DATABASE_URL}</span>
+                    </div>
+                    <div class="mt-4 text-xs text-slate-500">Cost: varies by provider</div>
+                </div>
+
+                <!-- Path 3: Supabase -->
+                <div class="p-6 rounded-xl bg-slate-900 border border-slate-800">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold">Supabase Free Tier</h3>
+                            <span class="text-xs text-emerald-400">Cloud hosted</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-4">Free PostgreSQL + pgvector. Create account, run the SQL from README, configure YAML. Done.</p>
+                    <div class="text-xs font-mono bg-slate-800 rounded-lg p-3 text-slate-300">
+                        <span class="text-slate-500"># 1. supabase.com/dashboard</span><br>
+                        <span class="text-slate-500"># 2. Run SQL from README</span><br>
+                        <span class="text-slate-500"># 3. Copy connection string</span>
+                    </div>
+                    <div class="mt-4 text-xs text-slate-500">Cost: $0.00 (free tier)</div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <a href="https://github.com/RBKunnela/ALMA-memory#-database-setup" target="_blank"
+                   class="inline-flex items-center space-x-2 text-blue-400 hover:text-blue-300 transition">
+                    <span>Full SQL schemas and step-by-step guides in the README</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <!-- Storage Backends Section -->
-    <section id="docs" class="py-24 bg-slate-950">
+    <section id="docs" class="py-24 bg-slate-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-3xl sm:text-4xl font-bold mb-4">Deploy Anywhere</h2>
-                <p class="text-slate-400 text-lg">6 vector database backends. From local development to enterprise scale.</p>
+                <p class="text-slate-400 text-lg">7 storage backends. From local development to enterprise scale.</p>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6">
                 <!-- PostgreSQL -->
                 <div class="flex flex-col items-center p-6 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition">
                     <svg class="w-12 h-12 mb-3" viewBox="0 0 24 24" fill="#336791">
@@ -942,6 +1021,17 @@ alma:
                     <span class="text-sm font-medium mt-2">Azure Cosmos</span>
                     <span class="text-xs text-slate-500">Enterprise</span>
                 </div>
+
+                <!-- File -->
+                <div class="flex flex-col items-center p-6 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition">
+                    <div class="w-12 h-12 mb-3 rounded-lg bg-slate-500/20 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-medium mt-2">File</span>
+                    <span class="text-xs text-slate-500">Zero-Dep</span>
+                </div>
             </div>
         </div>
     </section>
@@ -950,10 +1040,10 @@ alma:
     <section class="py-24 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-3xl sm:text-4xl font-bold mb-6">
-                Ready to Build <span class="gradient-text">Smarter Agents?</span>
+                Stop Starting <span class="gradient-text">From Zero</span>
             </h2>
             <p class="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
-                Stop watching your AI make the same mistakes. Give your agents memory that persists, learns, and improves.
+                Every conversation makes the next one better. One pip install. Five minutes. $0.00 to start.
             </p>
 
             <div class="flex flex-wrap justify-center gap-4 mb-12">
@@ -1013,7 +1103,7 @@ alma:
             </div>
 
             <div class="mt-8 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
-                <p>Built for AI agents that get better with every task.</p>
+                <p>One memory layer. Every AI. Never start from zero.</p>
             </div>
         </div>
     </footer>
