@@ -1,0 +1,22 @@
+All 19 scenes verified:
+S1: 3 steps, 6 animated elements
+S2: 6 steps, 6 animated elements
+S3: 6 steps, 25 animated elements
+S4: 5 steps, 12 animated elements
+S5: 4 steps, 11 animated elements
+S6: 4 steps, 7 animated elements
+S7: 5 steps, 6 animated elements
+S8: 4 steps, 6 animated elements
+S9: 5 steps, 15 animated elements
+S10: 6 steps, 20 animated elements
+S11: 6 steps, 7 animated elements
+S12: 5 steps, 12 animated elements
+S13: 4 steps, 24 animated elements
+S14: 4 steps, 14 animated elements
+S15: 6 steps, 7 animated elements
+S16: 5 steps, 10 animated elements
+S17: 4 steps, 6 animated elements
+S18: 4 steps, 7 animated elements
+S19: 5 steps, 8 animated elements
+
+Total: 88 steps across 19 scenes, 196 animated elements

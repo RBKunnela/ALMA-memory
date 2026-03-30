@@ -1,0 +1,10 @@
+Browser Test Notes:
+1. Scene 1 loads but title text is not visible - the words need to be shown on first load or step 1 needs to auto-trigger
+2. The viewport is showing as smaller than 1920x1080 - need to check scaling
+3. The dark background and act label are showing correctly
+4. Progress bar and scene indicator are visible at bottom
+5. Keyboard hint is visible at bottom left
+6. Need to test keyboard navigation (Space/Arrow keys)
+7. All 19 scenes are in the HTML (confirmed by markdown extraction)
+8. Need to fix: Scene 1 should show the title on first step press
+9. The page renders at browser viewport size, not 1920x1080 - need CSS scaling approach

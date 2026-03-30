@@ -1,0 +1,18 @@
+Test Observations Round 2:
+1. GOOD: Scene navigation works (Space, ArrowRight, Enter all advance)
+2. GOOD: Scene 1 title animation works - words appear one by one
+3. GOOD: Scene 2 timeline draws and eras appear
+4. ISSUE: The 1920x1080 viewport is larger than the browser window, causing content to be cut off on the right
+   - Need to add CSS scaling to fit the browser viewport
+   - The 5th era (2020s AI Agents) and text overlay are cut off
+5. ISSUE: The "Quit" word is missing from step 1 - only "I Almost" shows. Need to check the step assignment
+   - Actually looking again, step 1 has "I", "Almost", "Quit" - the "Quit" may be on the next line
+6. GOOD: Progress bar updates correctly
+7. GOOD: Scene indicator shows correct scene number
+8. GOOD: Act label updates
+
+Key fixes needed:
+- Add viewport scaling CSS so 1920x1080 content fits any browser window
+- Center the title text properly
+- Fix timeline positioning so all 5 eras fit
+- The text overlay on scene 2 is cut off at right edge
