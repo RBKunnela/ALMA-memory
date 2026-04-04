@@ -42,7 +42,7 @@ ALMA explicitly tracks what NOT to do:
 
 ```python
 alma.add_anti_pattern(
-    agent="helena",
+    agent="qa_tester",
     pattern="Using sleep() for async waits",
     why_bad="Causes flaky tests and slow execution",
     better_alternative="Use explicit waits with conditions"

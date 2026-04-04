@@ -70,7 +70,7 @@ python -m alma.mcp --config .alma/config.yaml --http --port 8765
   "name": "alma_retrieve",
   "arguments": {
     "task": "Test the login form validation",
-    "agent": "helena",
+    "agent": "qa_tester",
     "top_k": 5
   }
 }
@@ -82,7 +82,7 @@ python -m alma.mcp --config .alma/config.yaml --http --port 8765
 {
   "name": "alma_learn",
   "arguments": {
-    "agent": "helena",
+    "agent": "qa_tester",
     "task": "Test login form",
     "outcome": "success",
     "strategy_used": "Tested empty fields, invalid email, valid submission"
@@ -103,7 +103,7 @@ python -m alma.mcp --config .alma/config.yaml --http --port 8765
       "tests_failed": 0
     },
     "metadata": {
-      "agent": "victor",
+      "agent": "backend_dev",
       "started_at": "2024-01-15T10:00:00Z"
     }
   }

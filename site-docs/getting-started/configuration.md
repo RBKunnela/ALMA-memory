@@ -14,7 +14,7 @@ alma:
   embedding_dim: 384        # Embedding dimensions
 
   agents:
-    helena:
+    qa_tester:
       domain: coding
       can_learn:
         - testing_strategies
@@ -185,7 +185,7 @@ alma:
     deployment_name: text-embedding-3-small
 
   agents:
-    helena:
+    qa_tester:
       domain: coding
       can_learn:
         - testing_strategies
@@ -196,7 +196,7 @@ alma:
       min_occurrences_for_heuristic: 3
       share_with: [qa_lead]
 
-    victor:
+    backend_dev:
       domain: coding
       can_learn:
         - api_patterns
@@ -212,7 +212,7 @@ alma:
         - architecture_decisions
         - best_practices
         - security_patterns
-      share_with: [helena, victor]
+      share_with: [qa_tester, backend_dev]
 ```
 
 ## Next Steps
