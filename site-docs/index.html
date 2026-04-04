@@ -298,7 +298,7 @@ alma = ALMA.from_config(".alma/config.yaml")
 # Get memories before task
 memories = alma.retrieve(
     task="Test login form",
-    agent="helena"
+    agent="qa_tester"
 )
 
 # Agent now knows: "Don't use sleep()"
@@ -336,7 +336,7 @@ result = agent.run_with_context(memories)</code></pre>
                         </svg>
                     </div>
                     <div>
-                        <p>I was building AI agents for automated testing. <strong class="text-white">Helena</strong> for frontend QA, <strong class="text-white">Victor</strong> for backend verification. They worked great... until they didn't.</p>
+                        <p>I was building AI agents for automated testing. <strong class="text-white">QA tester</strong> for frontend QA, <strong class="text-white">Backend developer</strong> for backend verification. They worked great... until they didn't.</p>
                     </div>
                 </div>
 
@@ -345,11 +345,11 @@ result = agent.run_with_context(memories)</code></pre>
                     <ul class="space-y-3">
                         <li class="flex items-start gap-3">
                             <span class="text-red-400 mt-1">x</span>
-                            <span>Helena would use <code class="px-2 py-1 rounded bg-slate-700 text-cyan-400 text-sm">sleep(5000)</code> for waits, causing flaky tests</span>
+                            <span>QA tester would use <code class="px-2 py-1 rounded bg-slate-700 text-cyan-400 text-sm">sleep(5000)</code> for waits, causing flaky tests</span>
                         </li>
                         <li class="flex items-start gap-3">
                             <span class="text-red-400 mt-1">x</span>
-                            <span>Victor would forget that the API uses JWT with 24-hour expiry</span>
+                            <span>Backend developer would forget that the API uses JWT with 24-hour expiry</span>
                         </li>
                         <li class="flex items-start gap-3">
                             <span class="text-red-400 mt-1">x</span>
@@ -369,7 +369,7 @@ result = agent.run_with_context(memories)</code></pre>
                         </svg>
                     </div>
                     <div>
-                        <p>I tried <strong class="text-white">Mem0</strong>. It stores memories, but no way to scope what an agent can learn. Helena could "learn" database queries she'd never use. I looked at <strong class="text-white">LangChain Memory</strong>. It's for conversation context, not long-term learning. Different problem.</p>
+                        <p>I tried <strong class="text-white">Mem0</strong>. It stores memories, but no way to scope what an agent can learn. QA tester could "learn" database queries she'd never use. I looked at <strong class="text-white">LangChain Memory</strong>. It's for conversation context, not long-term learning. Different problem.</p>
                     </div>
                 </div>
 
@@ -476,7 +476,7 @@ result = agent.run_with_context(memories)</code></pre>
                         </svg>
                     </div>
                     <h3 class="text-lg font-semibold mb-2">Scoped Learning</h3>
-                    <p class="text-slate-400 text-sm mb-4">Define what each agent can and cannot learn. Helena learns testing, not database queries.</p>
+                    <p class="text-slate-400 text-sm mb-4">Define what each agent can and cannot learn. QA tester learns testing, not database queries.</p>
                     <div class="text-xs font-mono bg-slate-900 rounded p-3 text-slate-300">
                         <span class="text-cyan-400">can_learn:</span> [testing, selectors]<br>
                         <span class="text-red-400">cannot_learn:</span> [backend_logic]
@@ -750,7 +750,7 @@ alma = ALMA.from_config(".alma/config.yaml")
 # Before task: Get relevant memories
 memories = alma.retrieve(
     task="Test the login form validation",
-    agent="helena",
+    agent="qa_tester",
     top_k=5
 )
 
@@ -768,7 +768,7 @@ result = run_agent(prompt)
 
 # After task: Learn from the outcome
 alma.learn(
-    agent="helena",
+    agent="qa_tester",
     task="Test login form",
     outcome="success",
     strategy_used="Tested empty fields, invalid email, valid submission"
@@ -776,7 +776,7 @@ alma.learn(
 
 # Track anti-patterns (what NOT to do)
 alma.add_anti_pattern(
-    agent="helena",
+    agent="qa_tester",
     pattern="Using sleep() for async waits",
     why_bad="Causes flaky tests, wastes time",
     better_alternative="Use explicit waits with conditions"
@@ -795,7 +795,7 @@ const alma = new ALMA({
 // Before task: Retrieve relevant memories
 const memories = await alma.retrieve({
   query: 'authentication flow testing',
-  agent: 'helena',
+  agent: 'qa_tester',
   topK: 5
 });
 
@@ -813,7 +813,7 @@ const result = await runAgent(prompt);
 
 // After task: Learn from outcome
 await alma.learn({
-  agent: 'helena',
+  agent: 'qa_tester',
   task: 'Test login form',
   outcome: 'success',
   strategyUsed: 'Tested empty fields, invalid email, valid submission'
@@ -827,7 +827,7 @@ await alma.addPreference({
 });
 
 await alma.addKnowledge({
-  agent: 'helena',
+  agent: 'qa_tester',
   domain: 'authentication',
   fact: 'API uses JWT with 24h expiry'
 });</code></pre>
@@ -853,7 +853,7 @@ alma:
   storage_dir: .alma
 
   agents:
-    helena:
+    qa_tester:
       domain: coding
       can_learn:
         - testing_strategies

@@ -1,8 +1,9 @@
 # ALMA - Agent Learning Memory Architecture
 
 <div style="text-align: center; margin: 2rem 0;">
-  <h2 style="font-size: 1.5rem; color: #666;">Persistent memory for AI agents that learn and improve over time</h2>
-  <p><strong>No fine-tuning. No model changes. Just smarter prompts.</strong></p>
+  <h2 style="font-size: 1.5rem; color: #666;">Your AI forgets everything. ALMA fixes that.</h2>
+  <p><strong>One memory layer. Every AI. Never start from zero.</strong></p>
+  <p><code>pip install alma-memory</code> — 5 minutes to persistent memory. Free forever on SQLite.</p>
 </div>
 
 <div class="grid cards" markdown>
@@ -25,11 +26,11 @@
 
     Define exactly what each agent can and cannot learn. Prevent domain confusion.
 
--   :material-webhook:{ .lg .middle } __Event System__
+-   :material-database:{ .lg .middle } __7 Storage Backends__
 
     ---
 
-    React to memory changes with webhooks and callbacks in real-time.
+    SQLite, PostgreSQL, Qdrant, Pinecone, Chroma, Azure Cosmos DB. Your data, your infrastructure.
 
 </div>
 
@@ -51,6 +52,14 @@ ALMA isn't just another memory framework. Here's what sets it apart:
 [See full Mem0 comparison](comparison/mem0-vs-alma.md){ .md-button }
 [See full LangChain comparison](comparison/langchain-memory-vs-alma.md){ .md-button }
 
+## How It Works
+
+![How ALMA Works — The Learning Cycle](assets/diagrams/alma-how-it-works.jpeg)
+
+Every time your agent runs, ALMA retrieves what worked before and learns from new outcomes. No manual prompt engineering. No copy-pasting from past conversations. The memory compounds automatically.
+
+---
+
 ## Quick Start
 
 === "Python"
@@ -68,7 +77,7 @@ ALMA isn't just another memory framework. Here's what sets it apart:
     # Before task: Get relevant memories
     memories = alma.retrieve(
         task="Test the login form validation",
-        agent="helena",
+        agent="qa_tester",
         top_k=5
     )
 
@@ -83,7 +92,7 @@ ALMA isn't just another memory framework. Here's what sets it apart:
 
     # After task: Learn from outcome
     alma.learn(
-        agent="helena",
+        agent="qa_tester",
         task="Test login form",
         outcome="success",
         strategy_used="Tested empty fields, invalid email, valid submission",
@@ -135,9 +144,11 @@ ALMA isn't just another memory framework. Here's what sets it apart:
     }
     ```
 
-    16 MCP tools available: `alma_retrieve`, `alma_learn`, `alma_checkpoint`, and more.
+    22 MCP tools available: `alma_retrieve`, `alma_learn`, `alma_checkpoint`, and more.
 
 ## Five Memory Types
+
+![Five Memory Types](assets/diagrams/alma-memory-types.jpeg)
 
 | Type | What It Stores | Example |
 |------|----------------|---------|
@@ -160,17 +171,24 @@ Deploy anywhere with your preferred database:
 | **Chroma** | Lightweight local | Yes |
 | **Azure Cosmos DB** | Enterprise | Yes (DiskANN) |
 
-## v0.6.0 - Workflow Context Layer
+## v0.8.0 — RAG Integration Layer
 
-The latest release adds multi-agent workflow support:
+The latest release adds:
 
-- **Checkpoint & Resume** - Save and restore workflow state
-- **State Reducers** - Merge outputs from parallel agents
-- **Artifact Linking** - Track code, tests, and documents per workflow
-- **Scoped Retrieval** - Filter memories by workflow context
-- **8 New MCP Tools** - Full workflow support in Claude Code
+- **RAG Bridge** — Accept chunks from any RAG framework and enhance with memory signals
+- **Hybrid Search** — Vector + keyword with Reciprocal Rank Fusion
+- **Feedback Loop** — Track and auto-tune retrieval weights
+- **IR Metrics** — MRR, NDCG, Recall, Precision, MAP
+- **Cross-Encoder Reranking** — Pluggable reranking pipeline
+- **Memory Consolidation** — LLM-powered deduplication across memory types
 
 [View Changelog](about/changelog.md){ .md-button .md-button--primary }
+
+## Architecture
+
+![ALMA Architecture](assets/diagrams/alma-architecture.jpeg)
+
+---
 
 ## Get Started
 
@@ -216,6 +234,7 @@ The latest release adds multi-agent workflow support:
   <p><strong>Built for AI agents that get better with every task.</strong></p>
   <p>
     <a href="https://pypi.org/project/alma-memory/">PyPI</a> ·
+    <a href="https://www.npmjs.com/package/@rbkunnela/alma-memory">npm</a> ·
     <a href="https://github.com/RBKunnela/ALMA-memory">GitHub</a> ·
     <a href="https://github.com/RBKunnela/ALMA-memory/issues">Issues</a>
   </p>

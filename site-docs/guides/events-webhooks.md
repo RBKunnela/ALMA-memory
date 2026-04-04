@@ -155,7 +155,7 @@ WebhookConfig(
   "event_type": "CREATED",
   "memory_id": "550e8400-e29b-41d4-a716-446655440000",
   "memory_type": "heuristic",
-  "agent": "helena",
+  "agent": "qa_tester",
   "project_id": "my-project",
   "timestamp": "2026-01-28T12:00:00Z",
   "data": {

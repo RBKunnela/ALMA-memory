@@ -31,7 +31,7 @@ Retrieve relevant memories for a task.
 ```python
 memories = alma.retrieve(
     task="Test the login form",
-    agent="helena",
+    agent="qa_tester",
     top_k=5,
     user_id="user-123",      # Optional: for user preferences
     include_shared=True       # Include memories from shared agents
@@ -52,7 +52,7 @@ Record a task outcome for learning.
 
 ```python
 alma.learn(
-    agent="helena",
+    agent="qa_tester",
     task="Test login form",
     outcome="success",  # or "failure"
     strategy_used="Tested empty fields, then invalid formats",
@@ -82,7 +82,7 @@ Add domain knowledge.
 
 ```python
 alma.add_knowledge(
-    agent="victor",
+    agent="backend_dev",
     domain="authentication",
     fact="API uses JWT with 24h expiry",
     source="documentation"
@@ -95,7 +95,7 @@ Record an anti-pattern.
 
 ```python
 alma.add_anti_pattern(
-    agent="helena",
+    agent="qa_tester",
     pattern="Using sleep() for async waits",
     why_bad="Causes flaky tests",
     better_alternative="Use explicit waits"
@@ -108,7 +108,7 @@ Prune old or low-confidence memories.
 
 ```python
 result = alma.forget(
-    agent="helena",        # Optional: specific agent
+    agent="qa_tester",        # Optional: specific agent
     older_than_days=90,    # Remove outcomes older than this
     below_confidence=0.3   # Remove heuristics below this confidence
 )
@@ -121,7 +121,7 @@ Get memory statistics.
 
 ```python
 stats = alma.stats()  # All agents
-stats = alma.stats("helena")  # Specific agent
+stats = alma.stats("qa_tester")  # Specific agent
 
 # Returns MemoryStats with counts per type
 ```
@@ -136,7 +136,7 @@ Save workflow state.
 alma.checkpoint(
     workflow_id="deploy-v2",
     state={"step": "testing", "passed": 42},
-    metadata={"agent": "victor"}
+    metadata={"agent": "backend_dev"}
 )
 ```
 
@@ -193,7 +193,7 @@ Retrieve with scope filter.
 memories = alma.retrieve_scoped(
     query="authentication patterns",
     scope="workflow_only",  # workflow_only, agent_only, project_wide
-    agent="victor"
+    agent="backend_dev"
 )
 ```
 

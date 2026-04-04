@@ -43,13 +43,13 @@ from alma.testing import MockStorage, create_test_heuristic
 storage = MockStorage()
 
 # Save memories
-heuristic = create_test_heuristic(agent="helena")
+heuristic = create_test_heuristic(agent="qa_tester")
 storage.save_heuristic(heuristic)
 
 # Query memories
 results = storage.get_heuristics(
     project_id="test-project",
-    agent="helena",
+    agent="qa_tester",
     top_k=5
 )
 
@@ -175,7 +175,7 @@ heuristic = create_test_heuristic()
 # Override specific fields
 heuristic = create_test_heuristic(
     id="my-id",
-    agent="helena",
+    agent="qa_tester",
     project_id="my-project",
     condition="when testing forms",
     strategy="use incremental validation",
@@ -308,17 +308,17 @@ def storage():
 
 def test_agent_retrieves_own_memories(storage):
     # Setup: Create memories for specific agent
-    h1 = create_test_heuristic(agent="helena", confidence=0.9)
-    h2 = create_test_heuristic(agent="victor", confidence=0.8)
+    h1 = create_test_heuristic(agent="qa_tester", confidence=0.9)
+    h2 = create_test_heuristic(agent="backend_dev", confidence=0.8)
     storage.save_heuristic(h1)
     storage.save_heuristic(h2)
 
-    # Act: Retrieve only helena's memories
-    results = storage.get_heuristics("test-project", agent="helena")
+    # Act: Retrieve only qa_tester's memories
+    results = storage.get_heuristics("test-project", agent="qa_tester")
 
     # Assert
     assert len(results) == 1
-    assert results[0].agent == "helena"
+    assert results[0].agent == "qa_tester"
 
 def test_confidence_filtering(storage):
     # Setup
@@ -437,13 +437,13 @@ def test_batch_embeddings():
 ```python
 def test_memory_statistics(storage):
     # Setup various memory types
-    storage.save_heuristic(create_test_heuristic(agent="helena"))
-    storage.save_heuristic(create_test_heuristic(agent="helena"))
-    storage.save_outcome(create_test_outcome(agent="helena"))
-    storage.save_domain_knowledge(create_test_knowledge(agent="helena"))
+    storage.save_heuristic(create_test_heuristic(agent="qa_tester"))
+    storage.save_heuristic(create_test_heuristic(agent="qa_tester"))
+    storage.save_outcome(create_test_outcome(agent="qa_tester"))
+    storage.save_domain_knowledge(create_test_knowledge(agent="qa_tester"))
 
     # Get stats
-    stats = storage.get_stats("test-project", agent="helena")
+    stats = storage.get_stats("test-project", agent="qa_tester")
 
     assert stats["heuristics"] == 2
     assert stats["outcomes"] == 1
@@ -548,9 +548,9 @@ def populated_storage(storage):
         create_test_knowledge,
     )
 
-    storage.save_heuristic(create_test_heuristic(agent="helena"))
-    storage.save_outcome(create_test_outcome(agent="helena"))
-    storage.save_domain_knowledge(create_test_knowledge(agent="helena"))
+    storage.save_heuristic(create_test_heuristic(agent="qa_tester"))
+    storage.save_outcome(create_test_outcome(agent="qa_tester"))
+    storage.save_domain_knowledge(create_test_knowledge(agent="qa_tester"))
 
     return storage
 ```

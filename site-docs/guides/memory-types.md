@@ -19,7 +19,7 @@ Heuristics are learned strategies that have proven successful. They're formed au
 ```python
 # Heuristics are created automatically from repeated successful outcomes
 alma.learn(
-    agent="helena",
+    agent="qa_tester",
     task="Test login form",
     outcome="success",
     strategy_used="Tested empty fields first, then invalid formats"
@@ -32,7 +32,7 @@ alma.learn(
 **Configuration:**
 ```yaml
 agents:
-  helena:
+  qa_tester:
     min_occurrences_for_heuristic: 3  # Require 3 successes
 ```
 
@@ -42,7 +42,7 @@ Raw records of task completions. Used to form heuristics and track agent perform
 
 ```python
 alma.learn(
-    agent="helena",
+    agent="qa_tester",
     task="Test checkout flow",
     outcome="success",  # or "failure"
     strategy_used="Used guest checkout path",
@@ -77,7 +77,7 @@ Factual information about the project, APIs, or domain.
 
 ```python
 alma.add_knowledge(
-    agent="victor",
+    agent="backend_dev",
     domain="authentication",
     fact="The API uses OAuth 2.0 with PKCE for mobile clients",
     source="documentation"  # or "code_analysis", "user_stated"
@@ -90,7 +90,7 @@ Explicit records of what NOT to do, with explanations and alternatives.
 
 ```python
 alma.add_anti_pattern(
-    agent="helena",
+    agent="qa_tester",
     pattern="Using sleep() for async waits",
     why_bad="Causes flaky tests, wastes execution time",
     better_alternative="Use explicit waits with element conditions"
@@ -104,7 +104,7 @@ When retrieving, ALMA returns all relevant memory types:
 ```python
 memories = alma.retrieve(
     task="Test the payment form",
-    agent="helena",
+    agent="qa_tester",
     top_k=5
 )
 

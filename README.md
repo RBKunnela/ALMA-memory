@@ -30,16 +30,7 @@ Every time you start a new Claude session, a new ChatGPT conversation, or spin u
 
 ALMA sits between your AI and a database you control. Before every task, it retrieves what the agent learned from past runs. After every task, it stores the outcome. Over time, the system builds a growing knowledge base that makes every future conversation smarter than the last.
 
-```
-BEFORE TASK                        DURING TASK                      AFTER TASK
-+----------------------------+     +-------------------------+     +---------------------------+
-| Retrieve relevant memories |     | Agent executes with     |     | Learn from outcome        |
-| - Past strategies          | --> | injected knowledge      | --> | - Success? New heuristic  |
-| - Anti-patterns            |     | from memory             |     | - Failure? Anti-pattern   |
-| - Domain knowledge         |     |                         |     | - Always: Knowledge grows |
-+----------------------------+     +-------------------------+     +---------------------------+
-                         Every conversation makes the next one better.
-```
+![How ALMA Works — The Learning Cycle](docs/diagrams/alma-how-it-works.jpeg)
 
 **It's not a service. It's a library.** You install it, connect it to your own database (even a local SQLite file), and your AI agents start remembering.
 
@@ -148,7 +139,7 @@ alma = ALMA.from_config(".alma/config.yaml")
 # Before task: Get relevant memories
 memories = alma.retrieve(
     task="Test the login form validation",
-    agent="helena",
+    agent="qa_tester",
     top_k=5
 )
 
@@ -163,24 +154,26 @@ Test the login form validation
 
 # After task: Learn from the outcome
 alma.learn(
-    agent="helena",
+    agent="qa_tester",
     task="Test login form",
     outcome="success",
     strategy_used="Tested empty fields, invalid email, valid submission",
 )
 
-# Next time: Helena remembers what worked
+# Next time: the QA tester remembers what worked
 ```
 
 ### 3. That's it
 
-Every time Helena runs, she retrieves what worked before and learns from new outcomes. No manual prompt engineering. No copy-pasting from past conversations. The memory compounds automatically.
+Every time your QA agent runs, it retrieves what worked before and learns from new outcomes. No manual prompt engineering. No copy-pasting from past conversations. The memory compounds automatically.
 
 ---
 
 ## Five Memory Types
 
 ALMA doesn't just store text. It categorizes knowledge into five types that serve different purposes:
+
+![Five Memory Types](docs/diagrams/alma-memory-types.jpeg)
 
 | Type | What It Stores | Example |
 |---|---|---|
@@ -197,6 +190,8 @@ Anti-patterns are the feature no other memory system has. When your AI makes a m
 ## Multi-Agent Memory Sharing
 
 Agents don't have to learn everything from scratch. Junior agents can inherit knowledge from senior agents:
+
+![Multi-Agent Memory Sharing](docs/diagrams/alma-multi-agent.jpeg)
 
 ```yaml
 agents:
@@ -342,57 +337,7 @@ Supports webhooks with retry logic, HMAC signature verification, and 5 event typ
 
 ## Architecture
 
-```
-+-------------------------------------------------------------------------+
-|                          ALMA v0.8.0                                    |
-+-------------------------------------------------------------------------+
-|  HARNESS LAYER                                                          |
-|  +-----------+  +-----------+  +-----------+  +----------------+        |
-|  | Setting   |  | Context   |  |  Agent    |  | MemorySchema   |        |
-|  +-----------+  +-----------+  +-----------+  +----------------+        |
-+-------------------------------------------------------------------------+
-|  EXTENSION MODULES                                                      |
-|  +-------------+  +---------------+  +------------------+               |
-|  | Progress    |  | Session       |  | Domain Memory    |               |
-|  | Tracking    |  | Handoff       |  | Factory          |               |
-|  +-------------+  +---------------+  +------------------+               |
-|  +-------------+  +---------------+  +------------------+               |
-|  | Auto        |  | Confidence    |  | Memory           |               |
-|  | Learner     |  | Engine        |  | Consolidation    |               |
-|  +-------------+  +---------------+  +------------------+               |
-|  +-------------+  +---------------+                                     |
-|  | Event       |  | TypeScript    |                                     |
-|  | System      |  | SDK           |                                     |
-|  +-------------+  +---------------+                                     |
-+-------------------------------------------------------------------------+
-|  CORE LAYER                                                             |
-|  +-------------+  +-------------+  +-------------+  +------------+      |
-|  | Retrieval   |  |  Learning   |  |  Caching    |  | Forgetting |      |
-|  |  Engine     |  |  Protocol   |  |   Layer     |  | Mechanism  |      |
-|  +-------------+  +-------------+  +-------------+  +------------+      |
-+-------------------------------------------------------------------------+
-|  STORAGE LAYER                                                          |
-|  +---------------+  +------------------+  +---------------+             |
-|  | SQLite+FAISS  |  | PostgreSQL+pgvec |  | Azure Cosmos  |             |
-|  +---------------+  +------------------+  +---------------+             |
-|  +---------------+  +------------------+  +---------------+             |
-|  |    Qdrant     |  |    Pinecone      |  |    Chroma     |             |
-|  +---------------+  +------------------+  +---------------+             |
-+-------------------------------------------------------------------------+
-|  GRAPH LAYER                                                            |
-|  +---------------+  +------------------+  +---------------+             |
-|  |    Neo4j      |  |    Memgraph      |  |     Kuzu      |             |
-|  +---------------+  +------------------+  +---------------+             |
-|  +---------------+                                                      |
-|  |   In-Memory   |                                                      |
-|  +---------------+                                                      |
-+-------------------------------------------------------------------------+
-|  INTEGRATION LAYER                                                      |
-|  +-------------------------------------------------------------------+  |
-|  |                         MCP Server                                 |  |
-|  +-------------------------------------------------------------------+  |
-+-------------------------------------------------------------------------+
-```
+![ALMA Architecture](docs/diagrams/alma-architecture.jpeg)
 
 ---
 
@@ -409,7 +354,7 @@ alma:
   embedding_dim: 384
 
   agents:
-    helena:
+    qa_tester:
       domain: coding
       can_learn:
         - testing_strategies
@@ -419,7 +364,7 @@ alma:
       min_occurrences_for_heuristic: 3
       share_with: [qa_lead]
 
-    victor:
+    backend_dev:
       domain: coding
       can_learn:
         - api_patterns
@@ -510,6 +455,38 @@ For full backend configuration (PostgreSQL, Qdrant, Pinecone, Chroma, Azure, emb
 </details>
 
 See [CHANGELOG.md](CHANGELOG.md) for the complete history.
+
+---
+
+## Architectural Decision Records
+
+ALMA documents every major design decision with the reasoning behind it. If you're extending ALMA, contributing, or building on top of it, these records explain *why* things work the way they do — not just *what* the code does.
+
+| Decision | What It Covers | Why It Matters to You |
+|---|---|---|
+| [**AIDR-001**](docs/architecture/aidr/AIDR-001-storage-backend-abstraction.md) | Storage backend abstraction (ABC pattern) | Understand why all 7 backends share one interface, and how to add your own |
+| [**AIDR-002**](docs/architecture/aidr/AIDR-002-memory-type-taxonomy.md) | 5 memory types and their lifecycles | Know when to use heuristics vs. anti-patterns, and how to extend the taxonomy |
+| [**AIDR-003**](docs/architecture/aidr/AIDR-003-cross-agent-scope-model.md) | Cross-agent scope model | Understand `can_learn` / `share_with` / `inherit_from` boundaries |
+| [**AIDR-004**](docs/architecture/aidr/AIDR-004-mcp-tool-architecture.md) | MCP tool categories (22 tools, 5 modules) | Know where to add new tools and why they're organized this way |
+| [**AIDR-005**](docs/architecture/aidr/AIDR-005-trust-scoring-integration.md) | Trust-weighted scoring in retrieval | Understand how agent trust levels affect which memories surface |
+
+These records are reviewed quarterly and updated whenever the covered area changes significantly.
+
+---
+
+## Quality Framework
+
+ALMA uses semantic validation to catch a specific class of bugs that normal testing misses: **tests that pass while memory correctness is broken.**
+
+For a memory library, this is critical. A test that asserts "storage was called" but doesn't verify "the correct data was stored and can be retrieved" gives false confidence. ALMA's development workflow includes adversarial review questions that challenge every new test:
+
+- Does this test verify the **stored value** is correct, or just that storage was called?
+- Could this test pass while retrieved memory is actually wrong or corrupted?
+- Are scope boundaries (`can_learn`, `share_with`) actually enforced at runtime, or just documented?
+
+This framework is documented in `.claude/rules/svg-enforcement.md` and runs as an advisory layer during code review. It's not a replacement for testing — it's a check that tests are testing the right things.
+
+**Current test suite:** 1,682 passing tests across 87 files (unit, integration, e2e, performance).
 
 ---
 

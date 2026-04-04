@@ -2,12 +2,12 @@
 
 ## The Problem
 
-I was building AI agents for automated testing - Helena for frontend QA, Victor for backend verification. They worked great... until they didn't.
+I was building AI agents for automated testing -- a QA tester agent for frontend validation, a backend developer agent for API verification. They worked great... until they didn't.
 
 **The same mistakes kept happening:**
 
-- Helena would use `sleep(5000)` for waits, causing flaky tests
-- Victor would forget that the API uses JWT with 24-hour expiry
+- The QA tester would use `sleep(5000)` for waits, causing flaky tests
+- The backend developer would forget that the API uses JWT with 24-hour expiry
 - Both agents would repeat failed strategies session after session
 
 Every conversation started fresh. No memory. No learning. Just an expensive LLM making the same mistakes I'd already corrected.
@@ -19,7 +19,7 @@ I tried **Mem0**. It stores memories, but:
 - No way to scope what an agent can learn
 - No anti-pattern tracking ("don't do this")
 - No multi-agent knowledge sharing
-- Helena could "learn" database queries she'd never use
+- The QA tester could "learn" database queries it would never use
 
 I looked at **LangChain Memory**. It's for conversation context, not long-term learning. Different problem.
 
@@ -27,7 +27,7 @@ I looked at **LangChain Memory**. It's for conversation context, not long-term l
 
 I needed:
 
-1. **Scoped learning** - Helena learns testing, not backend logic
+1. **Scoped learning** - The QA tester learns testing, not backend logic
 2. **Anti-patterns** - Remember what NOT to do
 3. **Multi-agent sharing** - Senior agents share knowledge with juniors
 4. **Workflow context** - Resume complex tasks after failures
@@ -59,11 +59,11 @@ The core insight: AI agents don't need to modify their weights to "learn." They 
 
 ### Scoped Learning
 
-Helena can only learn what she needs:
+The QA tester agent can only learn what it needs:
 
 ```yaml
 agents:
-  helena:
+  qa_tester:
     can_learn:
       - testing_strategies
       - selector_patterns
@@ -78,7 +78,7 @@ When something fails, record WHY and WHAT TO DO INSTEAD:
 
 ```python
 alma.add_anti_pattern(
-    agent="helena",
+    agent="qa_tester",
     pattern="Using sleep() for async waits",
     why_bad="Causes flaky tests, wastes time",
     better_alternative="Use explicit waits with conditions"
@@ -112,7 +112,7 @@ alma.resume(workflow_id="deploy-v2")
 
 ## The Result
 
-Helena and Victor now:
+The agents now:
 
 - Remember what worked across sessions
 - Avoid strategies that failed before
