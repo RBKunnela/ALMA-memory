@@ -66,13 +66,13 @@ ALMA is benchmarked against [LongMemEval](https://xiaowu0162.github.io/long-mem-
 
 | System | R@5 | R@10 | MRR | Notes |
 |--------|-----|------|-----|-------|
-| **ALMA v0.9.0** | **0.940** | **0.980** | **0.848** | Pure similarity mode, all-MiniLM-L6-v2, 100q validated |
+| **ALMA v0.9.0** | **0.964** | **0.980** | **0.872** | Pure similarity mode, all-MiniLM-L6-v2, full 500q |
 | Hindsight | 0.914 | — | — | With Gemini-3 Pro |
 | Zep/Graphiti | 0.638 | — | — | Temporal knowledge graph |
 | Mem0 | 0.490 | — | — | Market leader by adoption |
 | MemPalace (raw ChromaDB) | ~0.30* | — | — | *Headline 96.6% was debunked (see [analysis](docs/research/ALMA-vs-MemPalace-DEFINITIVE-ANALYSIS.md)) |
 
-**R@5 = 0.940** means the correct answer is in the top 5 results 94% of the time. R@10 = 0.980 means it's almost always in the top 10. Multi-session questions hit **R@5 = 1.000**. No API keys needed — runs entirely local with all-MiniLM-L6-v2 embeddings.
+**R@5 = 0.964** means the correct answer is in the top 5 results 96.4% of the time. R@10 = 0.980 means it's almost always in the top 10. Knowledge-update questions hit **R@5 = 1.000** and multi-session hits **R@5 = 0.992**. No API keys needed — runs entirely local with all-MiniLM-L6-v2 embeddings.
 
 > **Reproduce it yourself in 5 minutes:**
 > ```bash
@@ -121,7 +121,7 @@ Token-efficient context loading: L0 Identity (~100 tokens) + L1 Essential Story 
 | **Entity Detection** | Auto-detect people and projects from text via regex heuristics |
 | **Temporal Graph Edges** | Relationships with `valid_from`/`valid_to` — facts can expire over time |
 | **Query Sanitizer** | Prevents system prompt contamination in search queries (recovers R@10 from 1% to 80%+) |
-| **LongMemEval Benchmark** | Reproducible benchmark runner — R@5 = 0.940 on LongMemEval standard test |
+| **LongMemEval Benchmark** | Reproducible benchmark runner — R@5 = 0.964 on full 500-question LongMemEval |
 
 ---
 
