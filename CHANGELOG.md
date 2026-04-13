@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0] - 2026-04-13
+
+### Added
+
+- **Ingestion Package** (`alma/ingestion/`) — Port of MemPalace's file/conversation mining. Supports 6 chat formats: Claude Code JSONL, ChatGPT JSON, Claude.ai JSON, OpenAI Codex JSONL, Slack JSON, plain text. Includes automatic memory type extraction (decisions, preferences, milestones, problems, emotional context) via regex heuristics.
+- **4-Layer MemoryStack** (`alma/context/`) — Token-efficient context loading inspired by MemPalace layers.py. L0 Identity (~100 tok), L1 Essential Story (~800 tok), L2 On-Demand, L3 Deep Search. Wake-up cost under 900 tokens.
+- **Entity Detector** (`alma/extraction/entity_detector.py`) — Regex-based person/project detection from text. Two-pass approach: signal extraction then scoring/classification. Returns ALMA Entity objects for graph integration.
+- **Temporal Graph Edges** — `valid_from`/`valid_to` fields on `Relationship` dataclass + `get_relationships_as_of()` query for point-in-time relationship traversal.
+- **Query Sanitizer** (`alma/retrieval/query_sanitizer.py`) — Prevents system prompt contamination in search queries. 4-step extraction pipeline recovers actual query intent when AI agents prepend system prompts (prevents R@10 degradation from 89.8% to 1.0%).
+- **BENCHMARK and SIMILARITY retrieval modes** — Pure cosine similarity scoring for benchmarks and raw retrieval without multi-signal weighting.
+- **LongMemEval Benchmark Runner** (`benchmarks/`) — Full benchmark infrastructure for reproducible evaluation against the LongMemEval dataset (500 questions, ICLR 2025). No LLM API keys required.
+- **Hybrid Search in Benchmarks** — Vector + BM25 via Reciprocal Rank Fusion for improved named-entity retrieval.
+- **Exhaustive Retrieval Quality Tests** — 222 new tests across 10 categories validating end-to-end retrieval correctness.
+
+### Fixed
+
+- **Critical: `retrieve_with_scope` scope_filter passthrough** — Scope filter was computed but never forwarded to storage backends. Queries with workflow context now correctly filter by tenant/workflow/run/node scope.
+- **Critical: FAISS similarity scores discarded** — Storage layer threw away distance scores, causing random ranking. Scores now propagated end-to-end from FAISS through scorer to final results.
+- **Critical: SQL ORDER BY destroying FAISS order** — Storage re-sorted by confidence/timestamp instead of similarity. Fixed with Python-side reordering via `_reorder_by_faiss()`.
+- **Critical: Scorer receiving fake similarity=1.0** — Engine now extracts `_faiss_similarity` from metadata and passes real cosine similarity scores to scorer. Baseline R@5 improved from 0.236 to 0.800.
+
+### Tests
+
+- 222 new retrieval quality tests across 10 categories
+- LongMemEval benchmark infrastructure with automated metrics (R@K, NDCG@K, MRR)
+- Total test count: 1,682 passing, 181 skipped, 0 failing
+
+---
+
 ## [0.8.0] - 2026-02-18
 
 ### Added - RAG Integration Layer
