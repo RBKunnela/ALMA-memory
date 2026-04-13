@@ -70,6 +70,7 @@ class ALMABenchmarkBackend:
         self,
         embedding_provider: str = "local",
         tmp_dir: Optional[str] = None,
+        hybrid: bool = False,
     ):
         """
         Initialize the benchmark backend.
@@ -78,8 +79,10 @@ class ALMABenchmarkBackend:
             embedding_provider: Embedding provider for ALMA's retrieval engine.
                                 "local" uses sentence-transformers (all-MiniLM-L6-v2).
             tmp_dir: Base directory for temporary databases. If None, uses tempfile.
+            hybrid: If True, use hybrid search (vector + BM25 via RRF).
         """
         self.embedding_provider = embedding_provider
+        self.hybrid = hybrid
         self._tmp_dir = tmp_dir or tempfile.mkdtemp(prefix="alma_bench_")
         self._question_count = 0
 
@@ -130,6 +133,8 @@ class ALMABenchmarkBackend:
             Tuple of (ranked_session_ids, retrieval_time_ms)
         """
         from alma.retrieval.engine import RetrievalEngine
+        from alma.retrieval.hybrid import HybridSearchConfig, HybridSearchEngine
+        from alma.retrieval.scoring import ScoringWeights
         from alma.storage.sqlite_local import SQLiteStorage
         from alma.types import DomainKnowledge, MemoryScope
 
@@ -145,11 +150,21 @@ class ALMABenchmarkBackend:
             embedding_dim=embedding_dim,
         )
 
-        # Create retrieval engine sharing the embedder
+        # Create retrieval engine with pure similarity scoring
+        # For benchmarks, recency/success/confidence are noise — all memories
+        # were ingested at the same time with the same confidence.
+        benchmark_weights = ScoringWeights(
+            similarity=1.0,
+            recency=0.0,
+            success_rate=0.0,
+            confidence=0.0,
+        )
         engine = RetrievalEngine(
             storage=storage,
             embedding_provider=self.embedding_provider,
             enable_cache=False,  # No caching needed for benchmark
+            scoring_weights=benchmark_weights,
+            min_score_threshold=0.0,  # No threshold — return everything
         )
         # Inject shared embedder to avoid reloading the model
         engine._embedder = embedder
@@ -157,6 +172,10 @@ class ALMABenchmarkBackend:
         # Ingest sessions as DomainKnowledge
         project_id = "longmemeval"
         agent = "benchmark"
+
+        # Track texts and session IDs for hybrid search
+        session_texts: List[str] = []
+        session_ids: List[str] = []
 
         for session in question.haystack:
             if mode == "full":
@@ -166,6 +185,9 @@ class ALMABenchmarkBackend:
 
             if not text.strip():
                 continue
+
+            session_texts.append(text)
+            session_ids.append(session.session_id)
 
             # Generate embedding for this session
             embedding = embedder.encode(text)
@@ -208,10 +230,45 @@ class ALMABenchmarkBackend:
 
         # Extract session IDs from retrieved domain knowledge
         ranked_session_ids = []
-        for dk in result.domain_knowledge:
-            sess_id = dk.metadata.get("session_id", "")
-            if sess_id and sess_id not in ranked_session_ids:
-                ranked_session_ids.append(sess_id)
+
+        if self.hybrid and session_texts:
+            # Hybrid search: fuse vector results with BM25 keyword results
+            # Build vector results as (index, score) tuples
+            vector_results: List[Tuple[int, float]] = []
+            for dk in result.domain_knowledge:
+                sess_id = dk.metadata.get("session_id", "")
+                if sess_id in session_ids:
+                    idx = session_ids.index(sess_id)
+                    # Use similarity from embedding; approximate with 1.0
+                    # since exact scores aren't exposed on DomainKnowledge
+                    vector_results.append((idx, 1.0 / (len(vector_results) + 1)))
+
+            # Run BM25 keyword search
+            hybrid_engine = HybridSearchEngine(
+                config=HybridSearchConfig(
+                    vector_weight=0.5,
+                    text_weight=0.5,
+                ),
+            )
+            hybrid_engine.index_corpus(session_texts)
+            text_results = hybrid_engine.text_search(question.question, top_k=top_k)
+
+            # Fuse results
+            fused = hybrid_engine.fuse(
+                vector_results=vector_results,
+                text_results=text_results,
+            )
+
+            for hr in fused:
+                if hr.index < len(session_ids):
+                    sess_id = session_ids[hr.index]
+                    if sess_id not in ranked_session_ids:
+                        ranked_session_ids.append(sess_id)
+        else:
+            for dk in result.domain_knowledge:
+                sess_id = dk.metadata.get("session_id", "")
+                if sess_id and sess_id not in ranked_session_ids:
+                    ranked_session_ids.append(sess_id)
 
         # Clean up DB file to save disk space
         try:
@@ -242,6 +299,7 @@ def run_benchmark(
     top_k: int = 50,
     output_file: Optional[str] = None,
     embedding_provider: str = "local",
+    hybrid: bool = False,
 ) -> BenchmarkMetrics:
     """
     Run the LongMemEval benchmark against ALMA.
@@ -254,6 +312,7 @@ def run_benchmark(
         top_k: Retrieval depth (default 50)
         output_file: Optional path to save per-question JSONL results
         embedding_provider: ALMA embedding provider ("local" or "mock")
+        hybrid: If True, use hybrid search (vector + BM25 via RRF)
 
     Returns:
         BenchmarkMetrics with R@K, NDCG@K, MRR scores
@@ -268,11 +327,13 @@ def run_benchmark(
     print(f"  Mode:        {mode}")
     print(f"  Top-K:       {top_k}")
     print(f"  Embeddings:  {embedding_provider}")
+    print(f"  Hybrid:      {hybrid}")
     print(f"{'-' * 64}\n")
 
     # Initialize ALMA backend
     backend = ALMABenchmarkBackend(
         embedding_provider=embedding_provider,
+        hybrid=hybrid,
     )
 
     # Run benchmark
@@ -460,6 +521,12 @@ Examples:
         choices=["local", "mock"],
         help="Embedding provider (local = sentence-transformers, mock = random)",
     )
+    parser.add_argument(
+        "--hybrid",
+        action="store_true",
+        default=False,
+        help="Use hybrid search (vector + BM25 via RRF) instead of pure vector",
+    )
 
     args = parser.parse_args()
 
@@ -472,6 +539,7 @@ Examples:
             top_k=args.top_k,
             output_file=args.output,
             embedding_provider=args.embedding,
+            hybrid=args.hybrid,
         )
     except KeyboardInterrupt:
         print("\n  Benchmark interrupted by user.")
