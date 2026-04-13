@@ -18,6 +18,7 @@ from alma.types import (
     DomainKnowledge,
     Heuristic,
     Outcome,
+    ScopeFilter,
     UserPreference,
 )
 
@@ -160,6 +161,7 @@ class FileBasedStorage(StorageBackend):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         min_confidence: float = 0.0,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[Heuristic]:
         """Get heuristics (no vector search - returns all matching filters)."""
         data = self._read_json(self._files["heuristics"])
@@ -187,6 +189,7 @@ class FileBasedStorage(StorageBackend):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         success_only: bool = False,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[Outcome]:
         """Get outcomes (no vector search)."""
         data = self._read_json(self._files["outcomes"])
@@ -232,6 +235,7 @@ class FileBasedStorage(StorageBackend):
         domain: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[DomainKnowledge]:
         """Get domain knowledge (no vector search)."""
         data = self._read_json(self._files["domain_knowledge"])
@@ -256,6 +260,7 @@ class FileBasedStorage(StorageBackend):
         agent: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[AntiPattern]:
         """Get anti-patterns (no vector search)."""
         data = self._read_json(self._files["anti_patterns"])
