@@ -571,6 +571,34 @@ class SQLiteStorage(StorageBackend):
                 for i in top_indices
             ]
 
+    @staticmethod
+    def _reorder_by_faiss(
+        results: list,
+        candidate_ids: Optional[List[str]],
+        id_attr: str = "id",
+    ) -> list:
+        """Re-sort results to match FAISS distance ordering when vector search was used.
+
+        When FAISS provides candidate_ids (ordered by similarity), SQL queries
+        destroy that ordering with their own ORDER BY clause. This method
+        restores the FAISS ordering after SQL fetch.
+
+        Args:
+            results: List of dataclass objects from SQL query.
+            candidate_ids: Ordered list of IDs from FAISS (best match first),
+                or None if vector search was not used.
+            id_attr: Name of the ID attribute on result objects.
+
+        Returns:
+            Results re-sorted by FAISS similarity order, or unchanged if
+            candidate_ids is None.
+        """
+        if candidate_ids is None:
+            return results
+        id_order = {id_val: i for i, id_val in enumerate(candidate_ids)}
+        results.sort(key=lambda x: id_order.get(getattr(x, id_attr), float("inf")))
+        return results
+
     # ==================== WRITE OPERATIONS ====================
 
     def save_heuristic(self, heuristic: Heuristic) -> str:
@@ -900,13 +928,17 @@ class SQLiteStorage(StorageBackend):
             if scope_filter:
                 query, params = self._apply_scope_filter(query, params, scope_filter)
 
-            query += " ORDER BY confidence DESC LIMIT ?"
-            params.append(top_k)
+            if candidate_ids is None:
+                query += " ORDER BY confidence DESC"
+            query += " LIMIT ?"
+            params.append(top_k if candidate_ids is None else top_k * 2)
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-        return [self._row_to_heuristic(row) for row in rows]
+        results = [self._row_to_heuristic(row) for row in rows]
+        results = self._reorder_by_faiss(results, candidate_ids)
+        return results[:top_k]
 
     def get_outcomes(
         self,
@@ -952,13 +984,17 @@ class SQLiteStorage(StorageBackend):
             if scope_filter:
                 query, params = self._apply_scope_filter(query, params, scope_filter)
 
-            query += " ORDER BY timestamp DESC LIMIT ?"
-            params.append(top_k)
+            if candidate_ids is None:
+                query += " ORDER BY timestamp DESC"
+            query += " LIMIT ?"
+            params.append(top_k if candidate_ids is None else top_k * 2)
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-        return [self._row_to_outcome(row) for row in rows]
+        results = [self._row_to_outcome(row) for row in rows]
+        results = self._reorder_by_faiss(results, candidate_ids)
+        return results[:top_k]
 
     def get_user_preferences(
         self,
@@ -1021,13 +1057,17 @@ class SQLiteStorage(StorageBackend):
             if scope_filter:
                 query, params = self._apply_scope_filter(query, params, scope_filter)
 
-            query += " ORDER BY confidence DESC LIMIT ?"
-            params.append(top_k)
+            if candidate_ids is None:
+                query += " ORDER BY confidence DESC"
+            query += " LIMIT ?"
+            params.append(top_k if candidate_ids is None else top_k * 2)
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-        return [self._row_to_domain_knowledge(row) for row in rows]
+        results = [self._row_to_domain_knowledge(row) for row in rows]
+        results = self._reorder_by_faiss(results, candidate_ids)
+        return results[:top_k]
 
     def get_anti_patterns(
         self,
@@ -1064,13 +1104,17 @@ class SQLiteStorage(StorageBackend):
             if scope_filter:
                 query, params = self._apply_scope_filter(query, params, scope_filter)
 
-            query += " ORDER BY occurrence_count DESC LIMIT ?"
-            params.append(top_k)
+            if candidate_ids is None:
+                query += " ORDER BY occurrence_count DESC"
+            query += " LIMIT ?"
+            params.append(top_k if candidate_ids is None else top_k * 2)
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-        return [self._row_to_anti_pattern(row) for row in rows]
+        results = [self._row_to_anti_pattern(row) for row in rows]
+        results = self._reorder_by_faiss(results, candidate_ids)
+        return results[:top_k]
 
     # ==================== MULTI-AGENT MEMORY SHARING ====================
 
@@ -1105,13 +1149,18 @@ class SQLiteStorage(StorageBackend):
                 query += f" AND id IN ({id_placeholders})"
                 params.extend(candidate_ids)
 
-            query += " ORDER BY confidence DESC LIMIT ?"
-            params.append(top_k * len(agents))
+            effective_top_k = top_k * len(agents)
+            if candidate_ids is None:
+                query += " ORDER BY confidence DESC"
+            query += " LIMIT ?"
+            params.append(effective_top_k if candidate_ids is None else effective_top_k * 2)
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-        return [self._row_to_heuristic(row) for row in rows]
+        results = [self._row_to_heuristic(row) for row in rows]
+        results = self._reorder_by_faiss(results, candidate_ids)
+        return results[:top_k * len(agents)]
 
     def get_outcomes_for_agents(
         self,
@@ -1152,13 +1201,18 @@ class SQLiteStorage(StorageBackend):
                 query += f" AND id IN ({id_placeholders})"
                 params.extend(candidate_ids)
 
-            query += " ORDER BY timestamp DESC LIMIT ?"
-            params.append(top_k * len(agents))
+            effective_top_k = top_k * len(agents)
+            if candidate_ids is None:
+                query += " ORDER BY timestamp DESC"
+            query += " LIMIT ?"
+            params.append(effective_top_k if candidate_ids is None else effective_top_k * 2)
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-        return [self._row_to_outcome(row) for row in rows]
+        results = [self._row_to_outcome(row) for row in rows]
+        results = self._reorder_by_faiss(results, candidate_ids)
+        return results[:top_k * len(agents)]
 
     def get_domain_knowledge_for_agents(
         self,
@@ -1195,13 +1249,18 @@ class SQLiteStorage(StorageBackend):
                 query += f" AND id IN ({id_placeholders})"
                 params.extend(candidate_ids)
 
-            query += " ORDER BY confidence DESC LIMIT ?"
-            params.append(top_k * len(agents))
+            effective_top_k = top_k * len(agents)
+            if candidate_ids is None:
+                query += " ORDER BY confidence DESC"
+            query += " LIMIT ?"
+            params.append(effective_top_k if candidate_ids is None else effective_top_k * 2)
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-        return [self._row_to_domain_knowledge(row) for row in rows]
+        results = [self._row_to_domain_knowledge(row) for row in rows]
+        results = self._reorder_by_faiss(results, candidate_ids)
+        return results[:top_k * len(agents)]
 
     def get_anti_patterns_for_agents(
         self,
@@ -1233,13 +1292,18 @@ class SQLiteStorage(StorageBackend):
                 query += f" AND id IN ({id_placeholders})"
                 params.extend(candidate_ids)
 
-            query += " ORDER BY occurrence_count DESC LIMIT ?"
-            params.append(top_k * len(agents))
+            effective_top_k = top_k * len(agents)
+            if candidate_ids is None:
+                query += " ORDER BY occurrence_count DESC"
+            query += " LIMIT ?"
+            params.append(effective_top_k if candidate_ids is None else effective_top_k * 2)
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-        return [self._row_to_anti_pattern(row) for row in rows]
+        results = [self._row_to_anti_pattern(row) for row in rows]
+        results = self._reorder_by_faiss(results, candidate_ids)
+        return results[:top_k * len(agents)]
 
     # ==================== UPDATE OPERATIONS ====================
 
@@ -1957,13 +2021,17 @@ class SQLiteStorage(StorageBackend):
                     query += " AND run_id = ?"
                     params.append(scope_filter.run_id)
 
-            query += " ORDER BY created_at DESC LIMIT ?"
-            params.append(top_k)
+            if candidate_ids is None:
+                query += " ORDER BY created_at DESC"
+            query += " LIMIT ?"
+            params.append(top_k if candidate_ids is None else top_k * 2)
 
             cursor.execute(query, params)
             rows = cursor.fetchall()
 
-        return [self._row_to_workflow_outcome(row) for row in rows]
+        results = [self._row_to_workflow_outcome(row) for row in rows]
+        results = self._reorder_by_faiss(results, candidate_ids)
+        return results[:top_k]
 
     def _row_to_workflow_outcome(self, row: sqlite3.Row) -> "WorkflowOutcome":
         """Convert database row to WorkflowOutcome."""
