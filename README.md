@@ -229,21 +229,33 @@ alma.learn(agent="developer", task="Fix login bug",
 
 ---
 
-## Ingest Existing Knowledge
+## Bootstrap From Existing Knowledge
 
-Feed ALMA from chat exports or project files:
+Already have conversations, project files, or chat exports? ALMA doesn't just dump them into a vector database like RAG. It **reads, classifies, and structures** them into the 5 memory types:
+
+- Decisions you made → **DomainKnowledge** (retrievable facts)
+- Preferences you stated → **UserPreference** (constraints agents respect)
+- Things that worked → **Outcomes** (success records with strategies)
+- Problems you hit → **AntiPatterns** (mistakes agents won't repeat)
+- Raw content → **DomainKnowledge** (searchable context)
 
 ```python
 from alma.ingestion import ingest_directory, ingest_conversations
 
-# Ingest project files
+# Ingest project files — auto-classifies into memory types
 result = ingest_directory("/path/to/project", agent="dev", project_id="myapp")
+# result.domain_knowledge: 47 facts extracted
+# result.user_preferences: 12 preferences found
+# result.anti_patterns: 3 problems identified
+# result.outcomes: 8 milestones recorded
 
-# Ingest chat exports (Claude Code, ChatGPT, Slack, Codex, plain text)
+# Ingest chat exports (6 formats supported)
 result = ingest_conversations("/path/to/chats", agent="dev", project_id="myapp")
 ```
 
-Supports 6 chat formats: Claude Code JSONL, ChatGPT JSON, Claude.ai JSON, Codex JSONL, Slack JSON, plain text.
+**This is not RAG.** RAG retrieves text chunks by similarity. ALMA retrieves *classified, scored, typed memories* that improve over time. The ingestion step is how you bootstrap — after that, ALMA learns from real outcomes.
+
+Supported formats: Claude Code JSONL, ChatGPT JSON, Claude.ai JSON, Codex JSONL, Slack JSON, plain text.
 
 ---
 
