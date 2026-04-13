@@ -23,7 +23,15 @@ class TestRetrievalMode:
 
     def test_all_modes_exist(self):
         """All expected modes should be defined."""
-        expected = {"broad", "precise", "diagnostic", "learning", "recall"}
+        expected = {
+            "broad",
+            "precise",
+            "diagnostic",
+            "learning",
+            "recall",
+            "benchmark",
+            "similarity",
+        }
         actual = {mode.value for mode in RetrievalMode}
         assert actual == expected
 
