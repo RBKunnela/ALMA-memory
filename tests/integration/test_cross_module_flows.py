@@ -22,7 +22,7 @@ from alma.testing.factories import (
     create_test_outcome,
 )
 from alma.testing.mocks import MockEmbedder, MockStorage
-from alma.types import Heuristic, MemoryScope, ScopeFilter
+from alma.types import Heuristic, ScopeFilter
 
 
 class TestStorageConsolidationFlow:
@@ -61,7 +61,7 @@ class TestStorageConsolidationFlow:
 
         # Retrieve and verify storage
         retrieved = storage.get_heuristics(
-            project_id="test_project",
+            project_id="test-project",
             agent="qa",
             top_k=10,
         )
@@ -78,8 +78,8 @@ class TestStorageConsolidationFlow:
 
         # Storage must support filtering
         filtered = storage.get_heuristics(
-            project_id="test_project",
-            agent="test_agent",
+            project_id="test-project",
+            agent="test-agent",
             min_confidence=0.5,
         )
         assert isinstance(filtered, list)
@@ -97,7 +97,7 @@ class TestRetrievalScoringFlow:
         for i in range(10):
             h = create_test_heuristic(
                 title=f"Strategy {i}",
-                agent="test_agent",
+                agent="test-agent",
                 success_rate=0.5 + (i * 0.05),
             )
             storage.save_heuristic(h)
@@ -108,8 +108,8 @@ class TestRetrievalScoringFlow:
         """Verify retrieval and scoring work together."""
         # Retrieve items
         items = storage_with_data.get_heuristics(
-            project_id="test_project",
-            agent="test_agent",
+            project_id="test-project",
+            agent="test-agent",
             top_k=5,
         )
 
@@ -126,7 +126,7 @@ class TestRetrievalScoringFlow:
 
         # Generate embedding
         text = "Use design patterns for clarity"
-        embedding = embedder.embed_text(text)
+        embedding = embedder.encode(text)
 
         assert isinstance(embedding, list)
         assert len(embedding) > 0
@@ -161,8 +161,8 @@ class TestWorkflowOutcomeFlow:
         storage = MockStorage()
 
         outcome = create_test_outcome(
-            action="test_action",
-            result=True,
+            task_type="test_action",
+            success=True,
         )
 
         # Store outcome
@@ -171,8 +171,8 @@ class TestWorkflowOutcomeFlow:
 
         # Retrieve outcomes
         outcomes = storage.get_outcomes(
-            project_id="test_project",
-            agent="test_agent",
+            project_id="test-project",
+            agent="test-agent",
             top_k=10,
         )
         assert isinstance(outcomes, list)
@@ -190,14 +190,14 @@ class TestMultiModuleContractValidation:
         storage.save_heuristic(h)
 
         items = storage.get_heuristics(
-            project_id="test_project",
-            agent="test_agent",
+            project_id="test-project",
+            agent="test-agent",
         )
 
         for item in items:
             # Required by consolidation
-            assert hasattr(item, "title")
-            assert hasattr(item, "success_rate")
+            assert hasattr(item, "condition")
+            assert hasattr(item, "success_count")
 
             # Required by retrieval
             assert hasattr(item, "confidence")
@@ -209,14 +209,14 @@ class TestMultiModuleContractValidation:
 
         # Cache must not affect retrieval contract
         items1 = storage.get_heuristics(
-            project_id="test_project",
-            agent="test_agent",
+            project_id="test-project",
+            agent="test-agent",
             top_k=5,
         )
 
         items2 = storage.get_heuristics(
-            project_id="test_project",
-            agent="test_agent",
+            project_id="test-project",
+            agent="test-agent",
             top_k=5,
         )
 
@@ -235,13 +235,11 @@ class TestMultiModuleContractValidation:
         storage.save_heuristic(h2)
 
         # Should be able to filter by scope
-        scope_filter = {"scope": MemoryScope.PROJECT}
-
         items = storage.get_heuristics(
-            project_id="test_project",
-            agent="test_agent",
+            project_id="test-project",
+            agent="test-agent",
             top_k=10,
-            scope_filter=scope_filter,
+            scope_filter=ScopeFilter(),
         )
 
         assert isinstance(items, list)
@@ -261,8 +259,8 @@ class TestRegressionDetectionFlow:
 
         # New API (additional parameters)
         items = storage.get_heuristics(
-            project_id="test_project",
-            agent="test_agent",
+            project_id="test-project",
+            agent="test-agent",
             top_k=5,
             min_confidence=0.3,  # New parameter
             scope_filter=ScopeFilter(tenant_id="test_tenant"),  # Typed scope filter
@@ -279,8 +277,8 @@ class TestRegressionDetectionFlow:
 
         # Standard retrieval should work
         items = storage.get_heuristics(
-            project_id="test_project",
-            agent="test_agent",
+            project_id="test-project",
+            agent="test-agent",
         )
 
         assert len(items) > 0
