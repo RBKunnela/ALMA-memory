@@ -5,7 +5,6 @@ import math
 from alma.rag.metrics import RetrievalMetrics
 from alma.rag.metrics_types import MetricsHistory, MetricsResult, RelevanceJudgment
 
-
 # ── Reciprocal Rank ──────────────────────────────────────────────────
 
 

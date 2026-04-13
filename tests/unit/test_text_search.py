@@ -16,7 +16,6 @@ from alma.retrieval.text_search import (
     TextSearchProvider,
 )
 
-
 # ---------------------------------------------------------------------------
 # TextSearchProvider ABC
 # ---------------------------------------------------------------------------
@@ -303,7 +302,7 @@ class TestSimpleTFIDFEdgeCases:
         results = provider.search("hello world")
         # Both duplicate docs should appear with equal scores
         assert len(results) >= 2
-        scores = {idx: score for idx, score in results}
+        scores = dict(results)
         assert abs(scores[0] - scores[1]) < 1e-10
 
     def test_whitespace_only_query(self):

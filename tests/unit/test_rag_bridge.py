@@ -1,7 +1,7 @@
 """Tests for the RAGBridge -- full enhancement flow."""
 
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from alma.rag.bridge import RAGBridge
 from alma.rag.types import RAGChunk, RAGContext
@@ -105,7 +105,11 @@ class TestRAGBridge:
 
         bridge = RAGBridge(alma=alma)
         chunks = [
-            RAGChunk(id="c1", text="use JWT with refresh token rotation for auth setup", score=0.9),
+            RAGChunk(
+                id="c1",
+                text="use JWT with refresh token rotation for auth setup",
+                score=0.9,
+            ),
         ]
 
         result = bridge.enhance(

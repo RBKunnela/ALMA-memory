@@ -7,7 +7,9 @@ from alma.rag.types import RAGChunk
 from alma.types import AntiPattern, DomainKnowledge, Heuristic, MemorySlice, Outcome
 
 
-def _make_heuristic(id_: str, condition: str, strategy: str, confidence: float = 0.8) -> Heuristic:
+def _make_heuristic(
+    id_: str, condition: str, strategy: str, confidence: float = 0.8
+) -> Heuristic:
     return Heuristic(
         id=id_,
         agent="test",
@@ -79,16 +81,26 @@ class TestMemoryEnhancerChunks:
     def test_boost_on_matching_heuristic(self):
         enhancer = MemoryEnhancer()
         chunks = [
-            RAGChunk(id="c1", text="use retry with exponential backoff for API calls", score=0.5),
+            RAGChunk(
+                id="c1",
+                text="use retry with exponential backoff for API calls",
+                score=0.5,
+            ),
             RAGChunk(id="c2", text="unrelated database migration topic", score=0.5),
         ]
         memory = MemorySlice(
             heuristics=[
-                _make_heuristic("h1", "API error handling", "use retry with exponential backoff"),
+                _make_heuristic(
+                    "h1", "API error handling", "use retry with exponential backoff"
+                ),
             ],
             outcomes=[
-                _make_outcome("o1", "handle API retry with exponential backoff", "retry", True),
-                _make_outcome("o2", "handle API retry with exponential backoff", "retry", True),
+                _make_outcome(
+                    "o1", "handle API retry with exponential backoff", "retry", True
+                ),
+                _make_outcome(
+                    "o2", "handle API retry with exponential backoff", "retry", True
+                ),
             ],
         )
         result = enhancer.enhance_chunks(chunks, memory)
@@ -102,7 +114,9 @@ class TestMemoryEnhancerChunks:
     def test_penalty_on_anti_pattern(self):
         enhancer = MemoryEnhancer()
         chunks = [
-            RAGChunk(id="c1", text="use fixed sleep waits for async operations", score=0.8),
+            RAGChunk(
+                id="c1", text="use fixed sleep waits for async operations", score=0.8
+            ),
         ]
         memory = MemorySlice(
             anti_patterns=[
@@ -148,7 +162,10 @@ class TestMemoryEnhancerAugmentation:
     def test_token_budget_truncation(self):
         enhancer = MemoryEnhancer()
         memory = MemorySlice(
-            heuristics=[_make_heuristic(f"h{i}", f"condition {i}", f"strategy {i}") for i in range(20)],
+            heuristics=[
+                _make_heuristic(f"h{i}", f"condition {i}", f"strategy {i}")
+                for i in range(20)
+            ],
         )
         text = enhancer.generate_augmentation(memory, max_tokens=10)
         # ~10 tokens * 4 chars = 40 chars max + truncation marker

@@ -12,9 +12,9 @@ IMPROVEMENTS:
 - Supports multiple consolidation approaches simultaneously
 """
 
-from abc import ABC, abstractmethod
-from typing import List, Dict, Optional, Any
 import logging
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 
 from alma.types import Heuristic, Outcome
 
@@ -162,8 +162,7 @@ class ConsolidationStrategyFactory:
         if strategy_name not in cls._strategies:
             available = list(cls._strategies.keys())
             raise ValueError(
-                f"Unknown strategy: {strategy_name}. "
-                f"Available: {available}"
+                f"Unknown strategy: {strategy_name}. Available: {available}"
             )
 
         strategy_class = cls._strategies[strategy_name]

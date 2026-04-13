@@ -15,13 +15,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from alma.types import ScopeFilter
 from alma.workflow.artifacts import ArtifactRef, ArtifactType, link_artifact
 from alma.workflow.checkpoint import (
     DEFAULT_MAX_STATE_SIZE,
     Checkpoint,
     CheckpointManager,
 )
-from alma.types import ScopeFilter
 from alma.workflow.context import RetrievalScope, WorkflowContext
 from alma.workflow.outcomes import WorkflowOutcome, WorkflowResult
 
@@ -182,9 +182,7 @@ class TestWorkflowContext:
             tenant_id="t1", workflow_id="wf1", run_id="r1", node_id="n1"
         )
         filters = ctx.get_scope_filter(RetrievalScope.RUN)
-        assert filters == ScopeFilter(
-            tenant_id="t1", workflow_id="wf1", run_id="r1"
-        )
+        assert filters == ScopeFilter(tenant_id="t1", workflow_id="wf1", run_id="r1")
 
     def test_get_scope_filter_node(self):
         """Test node scope filter."""

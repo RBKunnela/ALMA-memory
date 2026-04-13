@@ -8,9 +8,6 @@ file ingestion, and conversation ingestion.
 """
 
 import json
-import os
-import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -31,7 +28,6 @@ from alma.ingestion import (
 )
 from alma.types import AntiPattern, DomainKnowledge, Outcome, UserPreference
 
-
 # =========================================================================
 # Test data fixtures
 # =========================================================================
@@ -42,9 +38,7 @@ CLAUDE_CODE_JSONL = "\n".join(
         json.dumps(
             {
                 "type": "human",
-                "message": {
-                    "content": "How do I fix the login bug?"
-                },
+                "message": {"content": "How do I fix the login bug?"},
             }
         ),
         json.dumps(
@@ -63,9 +57,7 @@ CLAUDE_CODE_JSONL = "\n".join(
         json.dumps(
             {
                 "type": "human",
-                "message": {
-                    "content": "Can you show me the fix?"
-                },
+                "message": {"content": "Can you show me the fix?"},
             }
         ),
         json.dumps(
@@ -186,9 +178,7 @@ CHATGPT_JSON = json.dumps(
                 "message": {
                     "author": {"role": "assistant"},
                     "content": {
-                        "parts": [
-                            "Here is a simple logging decorator example."
-                        ]
+                        "parts": ["Here is a simple logging decorator example."]
                     },
                 },
                 "children": [],
@@ -778,9 +768,7 @@ class TestAlmaTypeMapping:
             "and the trade-off is worth it."
         )
         result = ingest_file(str(p), project_id="test", agent="test")
-        decisions = [
-            dk for dk in result.domain_knowledge if dk.domain == "decisions"
-        ]
+        decisions = [dk for dk in result.domain_knowledge if dk.domain == "decisions"]
         if decisions:
             assert decisions[0].source.startswith("ingested:")
             assert decisions[0].project_id == "test"
@@ -835,8 +823,6 @@ class TestAlmaTypeMapping:
             "and wonderful to see it all come together."
         )
         result = ingest_file(str(p), project_id="test", agent="test")
-        emotional = [
-            dk for dk in result.domain_knowledge if dk.domain == "emotional"
-        ]
+        emotional = [dk for dk in result.domain_knowledge if dk.domain == "emotional"]
         if emotional:
             assert emotional[0].source.startswith("ingested:")

@@ -87,15 +87,24 @@ class MockStorage(StorageBackend):
         if scope_filter is None:
             return True
         metadata = getattr(item, "metadata", None) or {}
-        if scope_filter.workflow_id and metadata.get("workflow_id") != scope_filter.workflow_id:
+        if (
+            scope_filter.workflow_id
+            and metadata.get("workflow_id") != scope_filter.workflow_id
+        ):
             return False
         if scope_filter.run_id and metadata.get("run_id") != scope_filter.run_id:
             return False
-        if scope_filter.tenant_id and metadata.get("tenant_id") != scope_filter.tenant_id:
+        if (
+            scope_filter.tenant_id
+            and metadata.get("tenant_id") != scope_filter.tenant_id
+        ):
             return False
         if scope_filter.node_id and metadata.get("node_id") != scope_filter.node_id:
             return False
-        if scope_filter.branch_id and metadata.get("branch_id") != scope_filter.branch_id:
+        if (
+            scope_filter.branch_id
+            and metadata.get("branch_id") != scope_filter.branch_id
+        ):
             return False
         return True
 
