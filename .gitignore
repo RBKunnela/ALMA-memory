@@ -113,6 +113,9 @@ PRPs/
 scripts/
 .benchmarks/
 
+# Benchmark datasets (too large for GitHub)
+benchmarks/data/
+
 # AI Coding Tool Configurations (AIOS & IDE - NOT PUBLIC)
 # These are development/IDE-specific files not needed for ALMA users
 .aios-core/
