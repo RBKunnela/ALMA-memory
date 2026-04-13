@@ -32,9 +32,11 @@ def create_test_heuristic(
     project_id: str = "test-project",
     condition: str = "test condition",
     strategy: str = "test strategy",
+    title: Optional[str] = None,
     confidence: float = 0.85,
     occurrence_count: int = 10,
     success_count: int = 8,
+    success_rate: Optional[float] = None,
     last_validated: Optional[datetime] = None,
     created_at: Optional[datetime] = None,
     embedding: Optional[List[float]] = None,
@@ -59,6 +61,8 @@ def create_test_heuristic(
         confidence: Confidence score (0.0-1.0)
         occurrence_count: Number of times this heuristic has been observed
         success_count: Number of successful applications
+        success_rate: Optional success rate (0.0-1.0); when provided, success_count
+            is computed as int(occurrence_count * success_rate)
         last_validated: Last validation timestamp
         created_at: Creation timestamp
         embedding: Optional embedding vector
@@ -67,6 +71,10 @@ def create_test_heuristic(
     Returns:
         A fully populated Heuristic instance
     """
+    if title is not None and condition == "test condition":
+        condition = title
+    if success_rate is not None:
+        success_count = int(occurrence_count * success_rate)
     now = datetime.now(timezone.utc)
     return Heuristic(
         id=id or str(uuid.uuid4()),
