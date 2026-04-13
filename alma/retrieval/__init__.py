@@ -51,6 +51,7 @@ from alma.retrieval.progressive import (
     ProgressiveRetrieval,
     ProgressiveSlice,
 )
+from alma.retrieval.query_sanitizer import sanitize_query
 from alma.retrieval.reranking import (
     CrossEncoderReranker,
     NoOpReranker,
@@ -90,6 +91,8 @@ from alma.retrieval.verification import (
 __all__ = [
     # Engine
     "RetrievalEngine",
+    # Query Sanitizer
+    "sanitize_query",
     # Modes
     "RetrievalMode",
     "ModeConfig",
