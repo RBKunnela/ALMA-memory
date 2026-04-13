@@ -85,6 +85,33 @@ class RetrievalEngine:
         else:
             self.cache = NullCache()
 
+    @staticmethod
+    def _extract_faiss_similarities(items: list) -> Optional[List[float]]:
+        """Extract FAISS similarity scores from item metadata if present.
+
+        The SQLiteStorage backend injects '_faiss_similarity' into metadata
+        when vector search was used. This method extracts those scores so
+        the scorer can use actual similarity values instead of defaulting
+        to 1.0 for all items.
+
+        Args:
+            items: List of memory objects (Heuristic, Outcome, etc.)
+
+        Returns:
+            List of similarity scores if any item has them, None otherwise.
+        """
+        similarities = []
+        has_any = False
+        for item in items:
+            meta = getattr(item, "metadata", None) or {}
+            score = meta.get("_faiss_similarity")
+            if score is not None:
+                similarities.append(float(score))
+                has_any = True
+            else:
+                similarities.append(1.0)
+        return similarities if has_any else None
+
     def retrieve(
         self,
         query: str,
@@ -225,8 +252,8 @@ class RetrievalEngine:
                     project_id=project_id,
                     agents=agents_to_query,
                     embedding=query_embedding,
-                top_k=top_k * 2,
-            )
+                    top_k=top_k * 2,
+                )
 
             # Mark shared memories with origin tracking
             raw_heuristics = self._mark_shared_memories(raw_heuristics, agent)
@@ -268,11 +295,23 @@ class RetrievalEngine:
                 scope_filter=scope_filter,
             )
 
-        # Score and rank each type
-        scored_heuristics = self.scorer.score_heuristics(raw_heuristics)
-        scored_outcomes = self.scorer.score_outcomes(raw_outcomes)
-        scored_knowledge = self.scorer.score_domain_knowledge(raw_domain_knowledge)
-        scored_anti_patterns = self.scorer.score_anti_patterns(raw_anti_patterns)
+        # Score and rank each type, passing FAISS similarity scores from metadata
+        scored_heuristics = self.scorer.score_heuristics(
+            raw_heuristics,
+            similarities=self._extract_faiss_similarities(raw_heuristics),
+        )
+        scored_outcomes = self.scorer.score_outcomes(
+            raw_outcomes,
+            similarities=self._extract_faiss_similarities(raw_outcomes),
+        )
+        scored_knowledge = self.scorer.score_domain_knowledge(
+            raw_domain_knowledge,
+            similarities=self._extract_faiss_similarities(raw_domain_knowledge),
+        )
+        scored_anti_patterns = self.scorer.score_anti_patterns(
+            raw_anti_patterns,
+            similarities=self._extract_faiss_similarities(raw_anti_patterns),
+        )
 
         # Apply threshold and limit
         final_heuristics = self._extract_top_k(scored_heuristics, top_k)
@@ -474,11 +513,23 @@ class RetrievalEngine:
                         top_k=retrieval_k * 2,
                     )
 
-            # Score items
-            scored_heuristics = self.scorer.score_heuristics(raw_heuristics)
-            scored_outcomes = self.scorer.score_outcomes(raw_outcomes)
-            scored_knowledge = self.scorer.score_domain_knowledge(raw_domain_knowledge)
-            scored_anti_patterns = self.scorer.score_anti_patterns(raw_anti_patterns)
+            # Score items (pass FAISS similarity scores when available)
+            scored_heuristics = self.scorer.score_heuristics(
+                raw_heuristics,
+                similarities=self._extract_faiss_similarities(raw_heuristics),
+            )
+            scored_outcomes = self.scorer.score_outcomes(
+                raw_outcomes,
+                similarities=self._extract_faiss_similarities(raw_outcomes),
+            )
+            scored_knowledge = self.scorer.score_domain_knowledge(
+                raw_domain_knowledge,
+                similarities=self._extract_faiss_similarities(raw_domain_knowledge),
+            )
+            scored_anti_patterns = self.scorer.score_anti_patterns(
+                raw_anti_patterns,
+                similarities=self._extract_faiss_similarities(raw_anti_patterns),
+            )
 
             # Apply mode-specific processing
             if config.prioritize_failures:
