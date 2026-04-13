@@ -48,6 +48,10 @@ class Relationship:
     properties: Dict[str, Any] = field(default_factory=dict)
     confidence: float = 1.0
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    valid_from: Optional[datetime] = None  # When this relationship became true
+    valid_to: Optional[datetime] = (
+        None  # When this relationship stopped being true (None = still valid)
+    )
 
 
 @dataclass
@@ -527,6 +531,32 @@ class InMemoryGraphStore(GraphStore):
                     continue
                 results.append(rel)
         return results
+
+    def get_relationships_as_of(
+        self,
+        entity_id: str,
+        as_of: datetime,
+    ) -> List[Relationship]:
+        """
+        Get relationships valid at a specific point in time.
+
+        Filters relationships where valid_from <= as_of and
+        (valid_to is None or valid_to >= as_of).
+
+        Args:
+            entity_id: The entity ID to get relationships for.
+            as_of: The point in time to query.
+
+        Returns:
+            List of relationships valid at the given time.
+        """
+        all_rels = self.get_relationships(entity_id)
+        return [
+            rel
+            for rel in all_rels
+            if (rel.valid_from is None or rel.valid_from <= as_of)
+            and (rel.valid_to is None or rel.valid_to >= as_of)
+        ]
 
     def traverse(
         self,
