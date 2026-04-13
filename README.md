@@ -58,6 +58,47 @@ Week 1, basic retrieval works. Week 4, patterns emerge across sessions. Week 12,
 
 ---
 
+## Benchmark Results
+
+ALMA is benchmarked against [LongMemEval](https://xiaowu0162.github.io/long-mem-eval/) (ICLR 2025), the standard benchmark for AI agent memory systems. 500 questions testing retrieval across ~53 conversation sessions per question.
+
+![ALMA Benchmark Results](docs/diagrams/alma-benchmark-results.png)
+
+| System | R@5 | R@10 | MRR | Notes |
+|--------|-----|------|-----|-------|
+| **ALMA v0.9.0** | **0.940** | **0.980** | **0.848** | Pure similarity mode, all-MiniLM-L6-v2, 100q validated |
+| Hindsight | 0.914 | — | — | With Gemini-3 Pro |
+| Zep/Graphiti | 0.638 | — | — | Temporal knowledge graph |
+| Mem0 | 0.490 | — | — | Market leader by adoption |
+| MemPalace (raw ChromaDB) | ~0.30* | — | — | *Headline 96.6% was debunked (see [analysis](docs/research/ALMA-vs-MemPalace-DEFINITIVE-ANALYSIS.md)) |
+
+**R@5 = 0.940** means the correct answer is in the top 5 results 94% of the time. R@10 = 0.980 means it's almost always in the top 10. Multi-session questions hit **R@5 = 1.000**. No API keys needed — runs entirely local with all-MiniLM-L6-v2 embeddings.
+
+> **Reproduce it yourself in 5 minutes:**
+> ```bash
+> pip install alma-memory[local] sentence-transformers
+> curl -fsSL -o /tmp/longmemeval.json https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/main/longmemeval_s_cleaned.json
+> python -m benchmarks.longmemeval.runner --data /tmp/longmemeval.json --limit 50
+> ```
+
+---
+
+## Architecture
+
+![ALMA Retrieval Pipeline](docs/diagrams/alma-retrieval-pipeline.png)
+
+ALMA's retrieval pipeline: Query sanitization prevents prompt contamination. FAISS vector search finds candidates. Multi-factor scoring ranks by similarity + recency + success rate + confidence. Hybrid mode adds BM25 keyword search with Reciprocal Rank Fusion.
+
+![ALMA Learning Loop](docs/diagrams/alma-learning-loop.png)
+
+The learning loop: Task outcomes feed back into heuristics (after 3+ similar results) and anti-patterns (after 2+ failures). Memories decay over time — unused knowledge fades, reinforced knowledge strengthens.
+
+![ALMA 4-Layer MemoryStack](docs/diagrams/alma-memory-stack.png)
+
+Token-efficient context loading: L0 Identity (~100 tokens) + L1 Essential Story (~800 tokens) are always loaded. L2 On-Demand and L3 Deep Search activate when needed. Wake-up cost: ~900 tokens.
+
+---
+
 ## What ALMA Can Do
 
 | Capability | Description |
@@ -75,6 +116,12 @@ Week 1, basic retrieval works. Week 4, patterns emerge across sessions. Week 12,
 | **Domain Factory** | 6 pre-built schemas: coding, research, sales, support, content, general |
 | **TypeScript SDK** | Full-featured JavaScript/TypeScript client library |
 | **Scoped Learning** | Agents only learn within defined domains — prevents knowledge contamination |
+| **File/Chat Ingestion** | Ingest project files and chat exports (Claude Code, ChatGPT, Slack, Codex, plain text) — 6 formats supported |
+| **4-Layer MemoryStack** | Token-efficient context loading: Identity → Essential Story → On-Demand → Deep Search |
+| **Entity Detection** | Auto-detect people and projects from text via regex heuristics |
+| **Temporal Graph Edges** | Relationships with `valid_from`/`valid_to` — facts can expire over time |
+| **Query Sanitizer** | Prevents system prompt contamination in search queries (recovers R@10 from 1% to 80%+) |
+| **LongMemEval Benchmark** | Reproducible benchmark runner — R@5 = 0.940 on LongMemEval standard test |
 
 ---
 
