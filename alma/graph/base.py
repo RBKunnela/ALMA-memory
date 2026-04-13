@@ -6,6 +6,7 @@ enabling pluggable graph storage implementations.
 """
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import List, Optional
 
 from alma.graph.store import Entity, Relationship
@@ -113,6 +114,31 @@ class GraphBackend(ABC):
             List of matching entities, ordered by relevance.
         """
         pass
+
+    def get_relationships_as_of(
+        self, entity_id: str, as_of: datetime
+    ) -> List[Relationship]:
+        """
+        Get relationships valid at a specific point in time.
+
+        Filters relationships where:
+        - valid_from is None or valid_from <= as_of
+        - valid_to is None or valid_to >= as_of
+
+        Args:
+            entity_id: The entity ID to get relationships for.
+            as_of: The point in time to query.
+
+        Returns:
+            List of relationships that were valid at the given time.
+        """
+        all_rels = self.get_relationships(entity_id)
+        return [
+            rel
+            for rel in all_rels
+            if (rel.valid_from is None or rel.valid_from <= as_of)
+            and (rel.valid_to is None or rel.valid_to >= as_of)
+        ]
 
     @abstractmethod
     def delete_entity(self, entity_id: str) -> bool:

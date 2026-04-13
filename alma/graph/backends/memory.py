@@ -5,6 +5,7 @@ In-memory implementation of the GraphBackend interface for testing and developme
 """
 
 import logging
+from datetime import datetime
 from typing import Dict, List, Optional, Set
 
 from alma.graph.base import GraphBackend
@@ -175,6 +176,30 @@ class InMemoryBackend(GraphBackend):
         self._relationships.clear()
         self._outgoing.clear()
         self._incoming.clear()
+
+    def get_relationships_as_of(
+        self, entity_id: str, as_of: datetime
+    ) -> List[Relationship]:
+        """
+        Get relationships valid at a specific point in time.
+
+        Filters relationships where valid_from <= as_of and
+        (valid_to is None or valid_to >= as_of).
+
+        Args:
+            entity_id: The entity ID to get relationships for.
+            as_of: The point in time to query.
+
+        Returns:
+            List of relationships valid at the given time.
+        """
+        all_rels = self.get_relationships(entity_id)
+        return [
+            rel
+            for rel in all_rels
+            if (rel.valid_from is None or rel.valid_from <= as_of)
+            and (rel.valid_to is None or rel.valid_to >= as_of)
+        ]
 
     # Additional methods for compatibility with existing GraphStore API
 
