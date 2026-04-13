@@ -775,15 +775,62 @@ You can also use Azure Key Vault references: `${KEYVAULT:secret-name}`.
 
 ---
 
+## Bootstrap From Existing Knowledge (v0.9.0+)
+
+Already have chat exports or project files? ALMA can ingest and classify them into the 5 memory types automatically:
+
+```python
+from alma.ingestion import ingest_directory, ingest_conversations
+
+# Ingest project files — auto-classifies into memory types
+result = ingest_directory("/path/to/project", agent="dev", project_id="myapp")
+
+# Ingest chat exports (6 formats: Claude Code, ChatGPT, Slack, Codex, Claude.ai, plain text)
+result = ingest_conversations("/path/to/chats", agent="dev", project_id="myapp")
+
+print(f"Domain knowledge: {len(result.domain_knowledge)}")
+print(f"User preferences: {len(result.user_preferences)}")
+print(f"Anti-patterns: {len(result.anti_patterns)}")
+print(f"Outcomes: {len(result.outcomes)}")
+```
+
+This is not RAG — ALMA reads, classifies, and structures content into typed memories that improve over time.
+
+---
+
+## Token-Efficient Context Loading (v0.9.0+)
+
+Use the 4-layer MemoryStack to load only what you need:
+
+```python
+from alma.context import MemoryStack
+
+stack = MemoryStack(alma)
+
+# Session start: load identity + essential memories (~900 tokens)
+context = stack.wake_up()
+
+# During conversation: recall specific topics
+result = stack.recall("authentication patterns")
+
+# Format for prompt injection with token budget
+prompt = stack.to_prompt(max_tokens=2000)
+```
+
+---
+
 ## Next Steps
 
 Once ALMA is running:
 
 1. **Read the [README](README.md)** for feature overview and code examples
 2. **Explore the [Documentation](https://alma-memory.pages.dev)** for the full API reference
-3. **Try the MCP tools** — connect ALMA to Claude Code and let Claude manage memories automatically
-4. **Define your agents** — scope learning domains to keep memory clean and relevant
-5. **Set up webhooks** — react to memory changes in real-time
+3. **Run the benchmark** — verify ALMA works on your machine: `python -m benchmarks.longmemeval.runner --limit 20`
+4. **Ingest existing knowledge** — feed ALMA from chat exports or project files
+5. **Try the MCP tools** — connect ALMA to Claude Code and let Claude manage memories automatically
+6. **Define your agents** — scope learning domains to keep memory clean and relevant
+7. **Set up webhooks** — react to memory changes in real-time
+8. **Read the [Benchmark Report](docs/benchmarks/BENCHMARK-REPORT.md)** — understand how ALMA achieves R@5=0.964
 
 ---
 
