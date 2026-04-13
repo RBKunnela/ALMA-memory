@@ -12,9 +12,9 @@ IMPROVEMENTS:
 - Enables runtime strategy switching
 """
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Type
-import logging
 
 from alma.types import MemorySlice
 
@@ -67,8 +67,7 @@ class ScorerFactory:
         if strategy_name not in cls._strategies:
             available = list(cls._strategies.keys())
             raise ValueError(
-                f"Unknown strategy: {strategy_name}. "
-                f"Available: {available}"
+                f"Unknown strategy: {strategy_name}. Available: {available}"
             )
 
         strategy_class = cls._strategies[strategy_name]
@@ -84,7 +83,8 @@ class ScorerFactory:
 def _register_strategies() -> None:
     """Register built-in scoring strategies."""
     try:
-        from alma.retrieval.scoring import MemoryScorer
+        from alma.retrieval.scoring import MemoryScorer  # noqa: F401
+
         # Adapt existing scorer as a strategy
         # (Can be expanded to create dedicated strategy classes)
         logger.info("Built-in scoring strategies available")

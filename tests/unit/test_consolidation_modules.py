@@ -51,7 +51,6 @@ from alma.consolidation.validation import (
 )
 from alma.types import Heuristic, Outcome
 
-
 # ═══════════════════════════════════════════════════════════════════
 # EXCEPTIONS
 # ═══════════════════════════════════════════════════════════════════
@@ -99,7 +98,9 @@ class TestValidateLLMResponse:
 
     def test_missing_required_field_raises(self):
         raw = '{"condition": "x", "strategy": "y"}'
-        with pytest.raises(InvalidLLMResponse, match="Missing required field.*confidence"):
+        with pytest.raises(
+            InvalidLLMResponse, match="Missing required field.*confidence"
+        ):
             validate_llm_response(raw, HEURISTIC_RESPONSE_SCHEMA)
 
     def test_wrong_type_raises(self):
@@ -432,16 +433,28 @@ class TestLLMConsolidationStrategy:
         now = datetime.now(timezone.utc)
         items = [
             Heuristic(
-                id="h1", agent="a", project_id="p",
-                condition="c1", strategy="s1", confidence=0.9,
-                occurrence_count=5, success_count=4,
-                last_validated=now, created_at=now,
+                id="h1",
+                agent="a",
+                project_id="p",
+                condition="c1",
+                strategy="s1",
+                confidence=0.9,
+                occurrence_count=5,
+                success_count=4,
+                last_validated=now,
+                created_at=now,
             ),
             Heuristic(
-                id="h2", agent="a", project_id="p",
-                condition="c2", strategy="s2", confidence=0.8,
-                occurrence_count=3, success_count=2,
-                last_validated=now, created_at=now,
+                id="h2",
+                agent="a",
+                project_id="p",
+                condition="c2",
+                strategy="s2",
+                confidence=0.8,
+                occurrence_count=3,
+                success_count=2,
+                last_validated=now,
+                created_at=now,
             ),
         ]
         strategy = LLMConsolidationStrategy()
@@ -468,31 +481,39 @@ class TestHeuristicConsolidationStrategy:
 
     def test_consolidate_empty(self):
         strategy = HeuristicConsolidationStrategy()
-        result = strategy.consolidate(
-            items=[], agent="a", project_id="p"
-        )
+        result = strategy.consolidate(items=[], agent="a", project_id="p")
         assert result["consolidated"] == []
 
     def test_deduplicates_by_text(self):
         now = datetime.now(timezone.utc)
         items = [
             Heuristic(
-                id="h1", agent="a", project_id="p",
-                condition="form test", strategy="validate",
-                confidence=0.9, occurrence_count=5, success_count=4,
-                last_validated=now, created_at=now,
+                id="h1",
+                agent="a",
+                project_id="p",
+                condition="form test",
+                strategy="validate",
+                confidence=0.9,
+                occurrence_count=5,
+                success_count=4,
+                last_validated=now,
+                created_at=now,
             ),
             Heuristic(
-                id="h2", agent="a", project_id="p",
-                condition="form test", strategy="validate",
-                confidence=0.8, occurrence_count=3, success_count=2,
-                last_validated=now, created_at=now,
+                id="h2",
+                agent="a",
+                project_id="p",
+                condition="form test",
+                strategy="validate",
+                confidence=0.8,
+                occurrence_count=3,
+                success_count=2,
+                last_validated=now,
+                created_at=now,
             ),
         ]
         strategy = HeuristicConsolidationStrategy()
-        result = strategy.consolidate(
-            items=items, agent="a", project_id="p"
-        )
+        result = strategy.consolidate(items=items, agent="a", project_id="p")
         # Both have same "title" (condition), so one deduped
         assert result["skipped"] == 1
         assert len(result["consolidated"]) == 1
@@ -502,22 +523,32 @@ class TestHeuristicConsolidationStrategy:
         now = datetime.now(timezone.utc)
         items = [
             Heuristic(
-                id="h1", agent="a", project_id="p",
-                condition="unique condition alpha", strategy="s1",
-                confidence=0.9, occurrence_count=1, success_count=1,
-                last_validated=now, created_at=now,
+                id="h1",
+                agent="a",
+                project_id="p",
+                condition="unique condition alpha",
+                strategy="s1",
+                confidence=0.9,
+                occurrence_count=1,
+                success_count=1,
+                last_validated=now,
+                created_at=now,
             ),
             Heuristic(
-                id="h2", agent="a", project_id="p",
-                condition="unique condition beta", strategy="s2",
-                confidence=0.8, occurrence_count=1, success_count=1,
-                last_validated=now, created_at=now,
+                id="h2",
+                agent="a",
+                project_id="p",
+                condition="unique condition beta",
+                strategy="s2",
+                confidence=0.8,
+                occurrence_count=1,
+                success_count=1,
+                last_validated=now,
+                created_at=now,
             ),
         ]
         strategy = HeuristicConsolidationStrategy()
-        result = strategy.consolidate(
-            items=items, agent="a", project_id="p"
-        )
+        result = strategy.consolidate(items=items, agent="a", project_id="p")
         assert result["skipped"] == 0
         assert len(result["consolidated"]) == 2
 
@@ -599,10 +630,16 @@ class TestDeduplicationEngine:
     def test_single_item(self, engine):
         now = datetime.now(timezone.utc)
         h = Heuristic(
-            id="h1", agent="a", project_id="p",
-            condition="form test", strategy="validate",
-            confidence=0.9, occurrence_count=5, success_count=4,
-            last_validated=now, created_at=now,
+            id="h1",
+            agent="a",
+            project_id="p",
+            condition="form test",
+            strategy="validate",
+            confidence=0.9,
+            occurrence_count=5,
+            success_count=4,
+            last_validated=now,
+            created_at=now,
         )
         result = engine.deduplicate([h])
         assert len(result.deduplicated) == 1
@@ -613,18 +650,28 @@ class TestDeduplicationEngine:
         now = datetime.now(timezone.utc)
         items = [
             Heuristic(
-                id="h1", agent="a", project_id="p",
+                id="h1",
+                agent="a",
+                project_id="p",
                 condition="form testing with validation rules",
-                strategy="validate inputs", confidence=0.9,
-                occurrence_count=5, success_count=4,
-                last_validated=now, created_at=now,
+                strategy="validate inputs",
+                confidence=0.9,
+                occurrence_count=5,
+                success_count=4,
+                last_validated=now,
+                created_at=now,
             ),
             Heuristic(
-                id="h2", agent="a", project_id="p",
+                id="h2",
+                agent="a",
+                project_id="p",
                 condition="form testing with validation rules",
-                strategy="validate inputs", confidence=0.8,
-                occurrence_count=3, success_count=2,
-                last_validated=now, created_at=now,
+                strategy="validate inputs",
+                confidence=0.8,
+                occurrence_count=3,
+                success_count=2,
+                last_validated=now,
+                created_at=now,
             ),
         ]
         result = engine.deduplicate(items)
@@ -637,18 +684,28 @@ class TestDeduplicationEngine:
         now = datetime.now(timezone.utc)
         items = [
             Heuristic(
-                id="h1", agent="a", project_id="p",
+                id="h1",
+                agent="a",
+                project_id="p",
                 condition="form testing validation",
-                strategy="validate", confidence=0.9,
-                occurrence_count=5, success_count=4,
-                last_validated=now, created_at=now,
+                strategy="validate",
+                confidence=0.9,
+                occurrence_count=5,
+                success_count=4,
+                last_validated=now,
+                created_at=now,
             ),
             Heuristic(
-                id="h2", agent="a", project_id="p",
+                id="h2",
+                agent="a",
+                project_id="p",
                 condition="database migration rollback",
-                strategy="backup first", confidence=0.8,
-                occurrence_count=3, success_count=2,
-                last_validated=now, created_at=now,
+                strategy="backup first",
+                confidence=0.8,
+                occurrence_count=3,
+                success_count=2,
+                last_validated=now,
+                created_at=now,
             ),
         ]
         result = engine.deduplicate(items)
@@ -660,16 +717,28 @@ class TestDeduplicationEngine:
         now = datetime.now(timezone.utc)
         items = [
             Heuristic(
-                id="h1", agent="a", project_id="p",
-                condition="exact same text", strategy="same strategy",
-                confidence=0.7, occurrence_count=1, success_count=1,
-                last_validated=now, created_at=now,
+                id="h1",
+                agent="a",
+                project_id="p",
+                condition="exact same text",
+                strategy="same strategy",
+                confidence=0.7,
+                occurrence_count=1,
+                success_count=1,
+                last_validated=now,
+                created_at=now,
             ),
             Heuristic(
-                id="h2", agent="a", project_id="p",
-                condition="exact same text", strategy="same strategy",
-                confidence=0.95, occurrence_count=5, success_count=5,
-                last_validated=now, created_at=now,
+                id="h2",
+                agent="a",
+                project_id="p",
+                condition="exact same text",
+                strategy="same strategy",
+                confidence=0.95,
+                occurrence_count=5,
+                success_count=5,
+                last_validated=now,
+                created_at=now,
             ),
         ]
         result = engine.deduplicate(items)
@@ -680,18 +749,28 @@ class TestDeduplicationEngine:
         # Two items with moderate text overlap
         items = [
             Heuristic(
-                id="h1", agent="a", project_id="p",
+                id="h1",
+                agent="a",
+                project_id="p",
                 condition="validate form inputs correctly",
-                strategy="s", confidence=0.9,
-                occurrence_count=1, success_count=1,
-                last_validated=now, created_at=now,
+                strategy="s",
+                confidence=0.9,
+                occurrence_count=1,
+                success_count=1,
+                last_validated=now,
+                created_at=now,
             ),
             Heuristic(
-                id="h2", agent="a", project_id="p",
+                id="h2",
+                agent="a",
+                project_id="p",
                 condition="validate user form data inputs",
-                strategy="s", confidence=0.9,
-                occurrence_count=1, success_count=1,
-                last_validated=now, created_at=now,
+                strategy="s",
+                confidence=0.9,
+                occurrence_count=1,
+                success_count=1,
+                last_validated=now,
+                created_at=now,
             ),
         ]
         # Low threshold: should group them
@@ -708,15 +787,23 @@ class TestDeduplicationEngine:
         now = datetime.now(timezone.utc)
         items = [
             Outcome(
-                id="o1", agent="a", project_id="p",
-                task_type="api", task_description="test api endpoint",
-                success=True, strategy_used="get request",
+                id="o1",
+                agent="a",
+                project_id="p",
+                task_type="api",
+                task_description="test api endpoint",
+                success=True,
+                strategy_used="get request",
                 timestamp=now,
             ),
             Outcome(
-                id="o2", agent="a", project_id="p",
-                task_type="api", task_description="test api endpoint",
-                success=False, strategy_used="post request",
+                id="o2",
+                agent="a",
+                project_id="p",
+                task_type="api",
+                task_description="test api endpoint",
+                success=False,
+                strategy_used="post request",
                 timestamp=now,
             ),
         ]
@@ -729,10 +816,16 @@ class TestDeduplicationEngine:
     def test_calculate_similarity_identical(self, engine):
         now = datetime.now(timezone.utc)
         h = Heuristic(
-            id="h1", agent="a", project_id="p",
-            condition="same text", strategy="s", confidence=0.9,
-            occurrence_count=1, success_count=1,
-            last_validated=now, created_at=now,
+            id="h1",
+            agent="a",
+            project_id="p",
+            condition="same text",
+            strategy="s",
+            confidence=0.9,
+            occurrence_count=1,
+            success_count=1,
+            last_validated=now,
+            created_at=now,
         )
         sim = engine._calculate_similarity(h, h)
         assert sim == 1.0
@@ -741,16 +834,28 @@ class TestDeduplicationEngine:
         """Items with zero word overlap have 0.0 similarity."""
         now = datetime.now(timezone.utc)
         h1 = Heuristic(
-            id="h1", agent="a", project_id="p",
-            condition="alpha beta gamma", strategy="",
-            confidence=0.9, occurrence_count=1, success_count=1,
-            last_validated=now, created_at=now,
+            id="h1",
+            agent="a",
+            project_id="p",
+            condition="alpha beta gamma",
+            strategy="",
+            confidence=0.9,
+            occurrence_count=1,
+            success_count=1,
+            last_validated=now,
+            created_at=now,
         )
         h2 = Heuristic(
-            id="h2", agent="a", project_id="p",
-            condition="delta epsilon zeta", strategy="",
-            confidence=0.9, occurrence_count=1, success_count=1,
-            last_validated=now, created_at=now,
+            id="h2",
+            agent="a",
+            project_id="p",
+            condition="delta epsilon zeta",
+            strategy="",
+            confidence=0.9,
+            occurrence_count=1,
+            success_count=1,
+            last_validated=now,
+            created_at=now,
         )
         sim = engine._calculate_similarity(h1, h2)
         assert sim == 0.0

@@ -12,8 +12,8 @@ IMPROVEMENTS:
 - Centralizes backend configuration
 """
 
-from typing import Dict, Optional, Any, Type
 import logging
+from typing import Any, Dict, Optional, Type
 
 from alma.storage.base import StorageBackend
 
@@ -54,8 +54,7 @@ class StorageFactory:
         if backend_type not in cls._backends:
             available = list(cls._backends.keys())
             raise ValueError(
-                f"Unknown backend type: {backend_type}. "
-                f"Available: {available}"
+                f"Unknown backend type: {backend_type}. Available: {available}"
             )
 
         backend_class = cls._backends[backend_type]
@@ -86,42 +85,49 @@ def _register_backends() -> None:
     """Register all available storage backends."""
     try:
         from alma.storage.sqlite_local import SQLiteStorage
+
         StorageFactory.register("sqlite", SQLiteStorage)
     except ImportError:
         pass
 
     try:
         from alma.storage.postgresql import PostgreSQLStorage
+
         StorageFactory.register("postgresql", PostgreSQLStorage)
     except ImportError:
         pass
 
     try:
         from alma.storage.azure_cosmos import AzureCosmosStorage
+
         StorageFactory.register("azure_cosmos", AzureCosmosStorage)
     except ImportError:
         pass
 
     try:
         from alma.storage.chroma import ChromaStorage
+
         StorageFactory.register("chroma", ChromaStorage)
     except ImportError:
         pass
 
     try:
         from alma.storage.qdrant import QdrantStorage
+
         StorageFactory.register("qdrant", QdrantStorage)
     except ImportError:
         pass
 
     try:
         from alma.storage.pinecone import PineconeStorage
+
         StorageFactory.register("pinecone", PineconeStorage)
     except ImportError:
         pass
 
     try:
         from alma.storage.file_based import FileBasedStorage
+
         StorageFactory.register("file", FileBasedStorage)
     except ImportError:
         pass

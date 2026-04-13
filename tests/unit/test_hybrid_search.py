@@ -1,6 +1,6 @@
 """Tests for hybrid search (BM25/TFIDF + Vector with RRF fusion)."""
 
-from alma.retrieval.hybrid import HybridResult, HybridSearchConfig, HybridSearchEngine
+from alma.retrieval.hybrid import HybridSearchConfig, HybridSearchEngine
 from alma.retrieval.text_search import SimpleTFIDFProvider
 
 
@@ -158,9 +158,7 @@ class TestHybridSearchEngineIntegration:
     """Integration tests for the full hybrid search flow."""
 
     def test_index_and_search(self):
-        engine = HybridSearchEngine(
-            config=HybridSearchConfig(text_provider="tfidf")
-        )
+        engine = HybridSearchEngine(config=HybridSearchConfig(text_provider="tfidf"))
         corpus = [
             "deploy auth service using kubernetes",
             "database backup and restore procedures",
@@ -176,9 +174,7 @@ class TestHybridSearchEngineIntegration:
         assert 0 in top_indices or 3 in top_indices
 
     def test_full_hybrid_flow(self):
-        engine = HybridSearchEngine(
-            config=HybridSearchConfig(text_provider="tfidf")
-        )
+        engine = HybridSearchEngine(config=HybridSearchConfig(text_provider="tfidf"))
         corpus = [
             "use retry with exponential backoff for API calls",
             "validate form inputs before submission",

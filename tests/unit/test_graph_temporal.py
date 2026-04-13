@@ -129,9 +129,7 @@ class TestRelationshipTemporalFields:
 class TestInMemoryGraphStoreTemporalFiltering:
     """Tests for get_relationships_as_of on InMemoryGraphStore."""
 
-    def test_no_temporal_fields_always_matches(
-        self, entity_alice, entity_bob, now
-    ):
+    def test_no_temporal_fields_always_matches(self, entity_alice, entity_bob, now):
         """Relationships with no temporal fields match any as_of date."""
         store = InMemoryGraphStore()
         store.add_entity(entity_alice)
@@ -149,9 +147,7 @@ class TestInMemoryGraphStoreTemporalFiltering:
         assert len(result) == 1
         assert result[0].id == "r1"
 
-    def test_valid_from_before_as_of(
-        self, entity_alice, entity_project, now
-    ):
+    def test_valid_from_before_as_of(self, entity_alice, entity_project, now):
         """Relationship with valid_from before as_of should be included."""
         store = InMemoryGraphStore()
         store.add_entity(entity_alice)
@@ -169,9 +165,7 @@ class TestInMemoryGraphStoreTemporalFiltering:
         result = store.get_relationships_as_of(entity_alice.id, now)
         assert len(result) == 1
 
-    def test_valid_from_after_as_of_excluded(
-        self, entity_alice, entity_project, now
-    ):
+    def test_valid_from_after_as_of_excluded(self, entity_alice, entity_project, now):
         """Relationship with valid_from after as_of should be excluded."""
         store = InMemoryGraphStore()
         store.add_entity(entity_alice)
@@ -189,9 +183,7 @@ class TestInMemoryGraphStoreTemporalFiltering:
         result = store.get_relationships_as_of(entity_alice.id, now)
         assert len(result) == 0
 
-    def test_expired_relationship_excluded(
-        self, entity_alice, entity_bob, now
-    ):
+    def test_expired_relationship_excluded(self, entity_alice, entity_bob, now):
         """Relationship with valid_to before as_of should be excluded."""
         store = InMemoryGraphStore()
         store.add_entity(entity_alice)
@@ -253,9 +245,7 @@ class TestInMemoryGraphStoreTemporalFiltering:
         assert len(result) == 1
         assert result[0].id == "r1"
 
-    def test_query_past_date(
-        self, entity_alice, entity_bob, now
-    ):
+    def test_query_past_date(self, entity_alice, entity_bob, now):
         """Querying a past date should find relationships valid at that time."""
         store = InMemoryGraphStore()
         store.add_entity(entity_alice)
@@ -286,9 +276,7 @@ class TestInMemoryGraphStoreTemporalFiltering:
 class TestInMemoryBackendTemporalFiltering:
     """Tests for get_relationships_as_of on InMemoryBackend."""
 
-    def test_backend_temporal_filter(
-        self, entity_alice, entity_bob, now
-    ):
+    def test_backend_temporal_filter(self, entity_alice, entity_bob, now):
         """Backend should support temporal filtering."""
         backend = InMemoryBackend()
         backend.add_entity(entity_alice)
@@ -317,9 +305,7 @@ class TestInMemoryBackendTemporalFiltering:
         assert len(result) == 1
         assert result[0].id == "r1"
 
-    def test_backend_no_temporal_fields_match_all(
-        self, entity_alice, entity_bob, now
-    ):
+    def test_backend_no_temporal_fields_match_all(self, entity_alice, entity_bob, now):
         """Relationships with no temporal fields should always match."""
         backend = InMemoryBackend()
         backend.add_entity(entity_alice)
@@ -336,9 +322,7 @@ class TestInMemoryBackendTemporalFiltering:
         result = backend.get_relationships_as_of(entity_alice.id, now)
         assert len(result) == 1
 
-    def test_backend_exact_boundary(
-        self, entity_alice, entity_bob, now
-    ):
+    def test_backend_exact_boundary(self, entity_alice, entity_bob, now):
         """Relationship valid_from/valid_to equal to as_of should be included."""
         backend = InMemoryBackend()
         backend.add_entity(entity_alice)

@@ -13,16 +13,16 @@ IMPROVEMENTS:
 - Documents expected module interactions
 """
 
+from typing import List
+
 import pytest
-from typing import List, Optional
 
 from alma.testing.factories import (
     create_test_heuristic,
     create_test_outcome,
-    create_test_project,
 )
-from alma.testing.mocks import MockStorage, MockEmbedder
-from alma.types import Heuristic, Outcome, MemoryScope, ScopeFilter
+from alma.testing.mocks import MockEmbedder, MockStorage
+from alma.types import Heuristic, MemoryScope, ScopeFilter
 
 
 class TestStorageConsolidationFlow:
@@ -51,14 +51,10 @@ class TestStorageConsolidationFlow:
             ),
         ]
 
-    def test_store_and_consolidate_heuristics(
-        self, storage, heuristics
-    ):
+    def test_store_and_consolidate_heuristics(self, storage, heuristics):
         """Test saving heuristics then consolidating similar ones."""
         # Store heuristics
-        heuristic_ids = [
-            storage.save_heuristic(h) for h in heuristics
-        ]
+        heuristic_ids = [storage.save_heuristic(h) for h in heuristics]
 
         assert len(heuristic_ids) == 3
         assert all(isinstance(id, str) for id in heuristic_ids)
@@ -75,10 +71,7 @@ class TestStorageConsolidationFlow:
     def test_storage_consolidation_contract(self, storage):
         """Verify storage backend contract for consolidation."""
         # Storage must support batch saves
-        heuristics = [
-            create_test_heuristic(title=f"Heuristic {i}")
-            for i in range(5)
-        ]
+        heuristics = [create_test_heuristic(title=f"Heuristic {i}") for i in range(5)]
 
         ids = storage.save_heuristics(heuristics)
         assert len(ids) == len(heuristics)

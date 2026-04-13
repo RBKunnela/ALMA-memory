@@ -3,7 +3,7 @@
 Verifies that when an embedder is provided, saved objects have non-None embeddings.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from alma.learning.protocols import LearningProtocol
 from alma.retrieval.embeddings import MockEmbedder
@@ -147,8 +147,9 @@ class TestAntiPatternEmbedding:
         protocol, storage = _make_protocol(with_embedder=True)
 
         # Set up storage to return enough failures to trigger anti-pattern
-        from alma.types import Outcome
         from datetime import datetime, timezone
+
+        from alma.types import Outcome
 
         failures = [
             Outcome(
@@ -188,8 +189,9 @@ class TestHeuristicEmbedding:
     def test_heuristic_has_embedding(self):
         protocol, storage = _make_protocol(with_embedder=True)
 
-        from alma.types import Outcome
         from datetime import datetime, timezone
+
+        from alma.types import Outcome
 
         # Set up enough successful outcomes to trigger heuristic creation
         successes = [

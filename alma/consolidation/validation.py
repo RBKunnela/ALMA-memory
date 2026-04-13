@@ -14,7 +14,6 @@ from typing import Any, Dict
 
 from alma.consolidation.exceptions import InvalidLLMResponse
 
-
 # Schema for heuristic merge responses
 HEURISTIC_RESPONSE_SCHEMA = {
     "required": ["condition", "strategy", "confidence"],

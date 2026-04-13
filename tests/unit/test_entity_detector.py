@@ -184,9 +184,7 @@ class TestMixedContent:
         """Entities should be sorted by confidence descending."""
         entities = detect_entities(mixed_text)
         if len(entities) >= 2:
-            confidences = [
-                e.properties.get("confidence", 0) for e in entities
-            ]
+            confidences = [e.properties.get("confidence", 0) for e in entities]
             assert confidences == sorted(confidences, reverse=True)
 
 

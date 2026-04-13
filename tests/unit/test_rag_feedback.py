@@ -120,15 +120,17 @@ class TestGetEffectiveness:
             agent="agent",
             project_id="proj-1",
             domain=FEEDBACK_DOMAIN,
-            fact=json.dumps({
-                "type": "retrieval_feedback",
-                "retrieval_record_id": "rr_001",
-                "outcome_id": "out_001",
-                "success": success,
-                "memory_ids": memory_ids,
-                "helpful_memory_ids": [],
-                "unhelpful_memory_ids": [],
-            }),
+            fact=json.dumps(
+                {
+                    "type": "retrieval_feedback",
+                    "retrieval_record_id": "rr_001",
+                    "outcome_id": "out_001",
+                    "success": success,
+                    "memory_ids": memory_ids,
+                    "helpful_memory_ids": [],
+                    "unhelpful_memory_ids": [],
+                }
+            ),
             source=FEEDBACK_SOURCE,
         )
 
@@ -202,15 +204,17 @@ class TestComputeWeightAdjustments:
                     agent="agent",
                     project_id="proj-1",
                     domain=FEEDBACK_DOMAIN,
-                    fact=json.dumps({
-                        "type": "retrieval_feedback",
-                        "retrieval_record_id": "rr",
-                        "outcome_id": "out",
-                        "success": i % 2 == 0,
-                        "memory_ids": ["h_neutral"],
-                        "helpful_memory_ids": [],
-                        "unhelpful_memory_ids": [],
-                    }),
+                    fact=json.dumps(
+                        {
+                            "type": "retrieval_feedback",
+                            "retrieval_record_id": "rr",
+                            "outcome_id": "out",
+                            "success": i % 2 == 0,
+                            "memory_ids": ["h_neutral"],
+                            "helpful_memory_ids": [],
+                            "unhelpful_memory_ids": [],
+                        }
+                    ),
                     source=FEEDBACK_SOURCE,
                 )
             )
@@ -268,8 +272,7 @@ class TestFullFeedbackLoop:
 
         # Step 3: Set up storage to return the feedback we just created
         all_saved = [
-            call[0][0]
-            for call in storage.save_domain_knowledge.call_args_list
+            call[0][0] for call in storage.save_domain_knowledge.call_args_list
         ]
         feedback_dks = [dk for dk in all_saved if dk.source == FEEDBACK_SOURCE]
         storage.get_domain_knowledge.return_value = feedback_dks

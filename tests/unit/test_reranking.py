@@ -47,7 +47,11 @@ class TestCrossEncoderReranker:
 
         # Whether the library is installed or not, it should work
         items = ["a", "b", "c"]
-        texts = ["document about auth", "document about testing", "document about deploy"]
+        texts = [
+            "document about auth",
+            "document about testing",
+            "document about deploy",
+        ]
 
         results = reranker.rerank("auth", items, texts)
         assert len(results) >= 1

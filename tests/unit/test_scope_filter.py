@@ -174,9 +174,7 @@ class TestMockStorageScopeFilter:
         storage.save_heuristic(h3)
 
         sf = ScopeFilter(workflow_id="wf-001")
-        results = storage.get_heuristics(
-            project_id="test-project", scope_filter=sf
-        )
+        results = storage.get_heuristics(project_id="test-project", scope_filter=sf)
 
         assert len(results) == 1
         assert results[0].id == "h-1"
@@ -209,9 +207,7 @@ class TestMockStorageScopeFilter:
         storage.save_outcome(o2)
 
         sf = ScopeFilter(workflow_id="wf-001")
-        results = storage.get_outcomes(
-            project_id="test-project", scope_filter=sf
-        )
+        results = storage.get_outcomes(project_id="test-project", scope_filter=sf)
 
         assert len(results) == 1
         assert results[0].id == "o-1"
@@ -232,9 +228,7 @@ class TestMockStorageScopeFilter:
         storage.save_heuristic(h2)
 
         sf = ScopeFilter(workflow_id="wf-001", run_id="run-A")
-        results = storage.get_heuristics(
-            project_id="test-project", scope_filter=sf
-        )
+        results = storage.get_heuristics(project_id="test-project", scope_filter=sf)
 
         assert len(results) == 1
         assert results[0].id == "h-1"
@@ -250,8 +244,6 @@ class TestMockStorageScopeFilter:
         storage.save_heuristic(h1)
 
         sf = ScopeFilter(workflow_id="wf-001")
-        results = storage.get_heuristics(
-            project_id="test-project", scope_filter=sf
-        )
+        results = storage.get_heuristics(project_id="test-project", scope_filter=sf)
 
         assert len(results) == 0

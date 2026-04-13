@@ -15,30 +15,26 @@ Coverage target: 62% → 80%+
 
 import json
 import os
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import patch
 
+import pytest
+
+from alma.consolidation.config import ConsolidationConfig, get_llm_api_key
 from alma.consolidation.exceptions import (
     ConsolidationError,
-    LLMError,
     InvalidLLMResponse,
+    LLMError,
     ValidationError,
 )
-from alma.consolidation.validation import (
-    validate_llm_response,
-    validate_heuristic_response,
-    validate_domain_knowledge_response,
-    validate_anti_pattern_response,
-    HEURISTIC_RESPONSE_SCHEMA,
-)
-from alma.consolidation.config import ConsolidationConfig, get_llm_api_key
 from alma.consolidation.rate_limit import (
     RateLimiter,
-    init_rate_limiter,
-    get_cache_info,
     clear_cache,
+    get_cache_info,
+    init_rate_limiter,
 )
-
+from alma.consolidation.validation import (
+    validate_heuristic_response,
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FIX 1.1: LLM RESPONSE VALIDATION TESTS
@@ -378,7 +374,7 @@ class TestStrategyDocumentation:
         """Each strategy provides confidence scores."""
         strategies = ["lru", "semantic", "hybrid"]
 
-        for strategy in strategies:
+        for _strategy in strategies:
             # In real implementation, each strategy returns confidence
             confidence = 0.85  # Mock confidence
             assert 0.0 <= confidence <= 1.0
@@ -394,9 +390,7 @@ class TestConsolidationIntegration:
 
     def test_config_and_validation_integration(self):
         """Config loads API key and validation uses it."""
-        with patch.dict(
-            os.environ, {"LLM_API_KEY": "test-key-valid-enough"}
-        ):
+        with patch.dict(os.environ, {"LLM_API_KEY": "test-key-valid-enough"}):
             config = ConsolidationConfig.from_environment()
 
             # Validate a response

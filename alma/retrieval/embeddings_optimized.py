@@ -14,10 +14,9 @@ BENCHMARKS:
 - Speedup:         2.6x faster
 """
 
-from typing import List, Optional, Dict, Tuple
-import logging
-from functools import lru_cache
 import hashlib
+import logging
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -230,7 +229,7 @@ class EmbeddingOptimizer:
         enable_cache: bool = True,
     ):
         """Initialize optimizer with model."""
-        instance = cls()
+        cls()
         cls._processor = BatchedEmbeddingProcessor(
             embedding_model=embedding_model,
             batch_size=batch_size,
@@ -241,7 +240,7 @@ class EmbeddingOptimizer:
     @classmethod
     def embed(cls, texts: List[str]) -> List[List[float]]:
         """Embed texts using optimized processor."""
-        instance = cls()
+        cls()
         if cls._processor is None:
             raise RuntimeError("EmbeddingOptimizer not initialized")
         return cls._processor.embed_texts(texts)

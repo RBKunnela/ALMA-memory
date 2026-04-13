@@ -16,17 +16,13 @@ Categories:
 """
 
 import math
-import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, patch
+from typing import List, Optional
 
 import pytest
 
 from alma.retrieval.engine import RetrievalEngine
 from alma.retrieval.modes import (
-    MODE_CONFIGS,
-    ModeConfig,
     RetrievalMode,
     get_mode_config,
 )
@@ -46,10 +42,10 @@ from alma.testing.factories import (
 from alma.testing.mocks import MockEmbedder, MockStorage
 from alma.types import DomainKnowledge, Heuristic, MemorySlice
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_knowledge(
     idx: int,
@@ -98,7 +94,7 @@ def _make_heuristic(
 
 def _cosine_similarity(a: List[float], b: List[float]) -> float:
     """Compute cosine similarity between two vectors."""
-    dot = sum(x * y for x, y in zip(a, b))
+    dot = sum(x * y for x, y in zip(a, b, strict=False))
     norm_a = math.sqrt(sum(x * x for x in a))
     norm_b = math.sqrt(sum(x * x for x in b))
     if norm_a == 0 or norm_b == 0:
@@ -136,6 +132,7 @@ def _make_blended_vector(
 # Category 1: Similarity Score Propagation
 # ---------------------------------------------------------------------------
 
+
 class TestSimilarityScorePropagation:
     """Verify similarity scores survive the full scoring pipeline."""
 
@@ -147,10 +144,7 @@ class TestSimilarityScorePropagation:
                 similarity=1.0, recency=0.0, success_rate=0.0, confidence=0.0
             )
         )
-        items = [
-            _make_knowledge(i, f"fact {i}", confidence=0.5)
-            for i in range(10)
-        ]
+        items = [_make_knowledge(i, f"fact {i}", confidence=0.5) for i in range(10)]
         # Similarities: item 3 is most similar, item 7 is least similar
         sims = [0.5] * 10
         sims[3] = 0.99  # most similar
@@ -183,7 +177,7 @@ class TestSimilarityScorePropagation:
         for i in range(len(scored) - 1):
             assert scored[i].similarity_score >= scored[i + 1].similarity_score, (
                 f"Position {i} sim={scored[i].similarity_score} should >= "
-                f"position {i+1} sim={scored[i+1].similarity_score}"
+                f"position {i + 1} sim={scored[i + 1].similarity_score}"
             )
 
     def test_scored_item_carries_all_component_scores(self):
@@ -217,7 +211,7 @@ class TestSimilarityScorePropagation:
         """[INTEGRATION] MockStorage+Scorer — store 10 items with known
         embeddings, query with a vector similar to item #3, verify ranking."""
         storage = MockStorage()
-        embedder = MockEmbedder(dimension=16)
+        MockEmbedder(dimension=16)
 
         # Create items with distinct unit vectors
         items = []
@@ -258,6 +252,7 @@ class TestSimilarityScorePropagation:
 # Category 2: Ranking Correctness (R@5 — THE CRITICAL TEST)
 # ---------------------------------------------------------------------------
 
+
 class TestRankingCorrectness:
     """Verify that known-correct items appear in top-5 results."""
 
@@ -292,10 +287,7 @@ class TestRankingCorrectness:
         for target_idx, label in query_targets:
             query_vec = _make_unit_vector(dim, target_idx % dim)
 
-            sims = [
-                _cosine_similarity(query_vec, it.embedding)
-                for it in items
-            ]
+            sims = [_cosine_similarity(query_vec, it.embedding) for it in items]
             scored = scorer_pure_similarity.score_domain_knowledge(
                 items, similarities=sims
             )
@@ -305,8 +297,7 @@ class TestRankingCorrectness:
             # should be in top 5
             expected_id = f"dk_{target_idx:03d}"
             assert expected_id in top_5_ids, (
-                f"R@5 FAIL for '{label}': {expected_id} not in top 5 "
-                f"({top_5_ids})"
+                f"R@5 FAIL for '{label}': {expected_id} not in top 5 ({top_5_ids})"
             )
 
     def test_identical_query_returns_exact_match_first(self, scorer_pure_similarity):
@@ -340,12 +331,16 @@ class TestRankingCorrectness:
         # Items 0-4: high similarity (aligned with dim 0), low confidence
         for i in range(5):
             vec = _make_blended_vector(dim, 0, noise_level=0.1 * i)
-            items.append(_make_knowledge(i, f"high-sim {i}", confidence=0.3, embedding=vec))
+            items.append(
+                _make_knowledge(i, f"high-sim {i}", confidence=0.3, embedding=vec)
+            )
 
         # Items 5-14: low similarity (different dims), high confidence
         for i in range(5, 15):
             vec = _make_unit_vector(dim, i % dim)
-            items.append(_make_knowledge(i, f"low-sim {i}", confidence=1.0, embedding=vec))
+            items.append(
+                _make_knowledge(i, f"low-sim {i}", confidence=1.0, embedding=vec)
+            )
 
         sims = [_cosine_similarity(query_vec, it.embedding) for it in items]
         scored = scorer_pure_similarity.score_domain_knowledge(items, similarities=sims)
@@ -398,23 +393,45 @@ class TestRankingCorrectness:
 # Category 3: Scoring Weights Effect
 # ---------------------------------------------------------------------------
 
+
 class TestScoringWeightsEffect:
     """Verify scoring weights change result ordering as expected."""
 
     @pytest.fixture
     def mixed_items(self):
         """Items with diverse confidence, recency, and success rates."""
-        now = datetime.now(timezone.utc)
+        datetime.now(timezone.utc)
         return [
             # High confidence, old, moderate success
-            _make_heuristic(0, "cond0", "strat0", confidence=0.95,
-                            success_count=6, occurrence_count=10, days_ago=60),
+            _make_heuristic(
+                0,
+                "cond0",
+                "strat0",
+                confidence=0.95,
+                success_count=6,
+                occurrence_count=10,
+                days_ago=60,
+            ),
             # Low confidence, recent, high success
-            _make_heuristic(1, "cond1", "strat1", confidence=0.3,
-                            success_count=9, occurrence_count=10, days_ago=1),
+            _make_heuristic(
+                1,
+                "cond1",
+                "strat1",
+                confidence=0.3,
+                success_count=9,
+                occurrence_count=10,
+                days_ago=1,
+            ),
             # Medium confidence, medium recency, medium success
-            _make_heuristic(2, "cond2", "strat2", confidence=0.6,
-                            success_count=5, occurrence_count=10, days_ago=15),
+            _make_heuristic(
+                2,
+                "cond2",
+                "strat2",
+                confidence=0.6,
+                success_count=5,
+                occurrence_count=10,
+                days_ago=15,
+            ),
         ]
 
     def test_default_weights_balanced_ranking(self, mixed_items):
@@ -429,7 +446,7 @@ class TestScoringWeightsEffect:
         assert len(scored) == 3
         # Scores should differ (different recency/success/confidence)
         scores = [s.score for s in scored]
-        assert len(set(round(s, 6) for s in scores)) > 1, (
+        assert len({round(s, 6) for s in scores}) > 1, (
             "With different recency/success/confidence, scores should differ"
         )
 
@@ -468,8 +485,7 @@ class TestScoringWeightsEffect:
 
         # Item 1 is most recent (1 day ago), item 0 is oldest (60 days)
         assert scored[0].item.id == "heur_001", (
-            f"Pure recency: item 1 (1 day ago) should be first, "
-            f"got {scored[0].item.id}"
+            f"Pure recency: item 1 (1 day ago) should be first, got {scored[0].item.id}"
         )
         assert scored[-1].item.id == "heur_000", (
             f"Pure recency: item 0 (60 days ago) should be last, "
@@ -500,16 +516,17 @@ class TestScoringWeightsEffect:
     def test_weight_normalization(self):
         """[UNIT] ScoringWeights — unnormalized weights should be auto-normalized
         to sum to 1.0."""
-        w = ScoringWeights(similarity=2.0, recency=2.0, success_rate=2.0, confidence=2.0)
-        total = w.similarity + w.recency + w.success_rate + w.confidence
-        assert abs(total - 1.0) < 0.01, (
-            f"Weights should normalize to 1.0, got {total}"
+        w = ScoringWeights(
+            similarity=2.0, recency=2.0, success_rate=2.0, confidence=2.0
         )
+        total = w.similarity + w.recency + w.success_rate + w.confidence
+        assert abs(total - 1.0) < 0.01, f"Weights should normalize to 1.0, got {total}"
 
 
 # ---------------------------------------------------------------------------
 # Category 4: Mode-Aware Retrieval
 # ---------------------------------------------------------------------------
+
 
 class TestModeAwareRetrieval:
     """Verify retrieval modes affect behavior correctly."""
@@ -596,6 +613,7 @@ class TestModeAwareRetrieval:
 # ---------------------------------------------------------------------------
 # Category 5: Edge Cases
 # ---------------------------------------------------------------------------
+
 
 class TestEdgeCases:
     """Edge cases that must not crash or produce wrong rankings."""
@@ -708,6 +726,7 @@ class TestEdgeCases:
 # Category 6: End-to-End Retrieval Flow
 # ---------------------------------------------------------------------------
 
+
 class TestEndToEndRetrievalFlow:
     """Test the full pipeline from storage through engine to results."""
 
@@ -790,7 +809,7 @@ class TestEndToEndRetrievalFlow:
         This mimics the LongMemEval benchmark scenario at small scale.
         """
         storage = MockStorage()
-        embedder = MockEmbedder(dimension=16)
+        MockEmbedder(dimension=16)
 
         # Store 20 sessions with distinct embeddings
         sessions = []
@@ -819,8 +838,7 @@ class TestEndToEndRetrievalFlow:
 
         top_5_ids = [s.item.id for s in scored[:5]]
         assert "dk_007" in top_5_ids, (
-            f"Session #7 should be in top 5 for aligned query. "
-            f"Top 5: {top_5_ids}"
+            f"Session #7 should be in top 5 for aligned query. Top 5: {top_5_ids}"
         )
 
     def test_retrieval_engine_scorer_weights_restored_after_mode(self):
@@ -856,6 +874,7 @@ class TestEndToEndRetrievalFlow:
 # Category 7: Query Sanitizer Integration
 # ---------------------------------------------------------------------------
 
+
 class TestQuerySanitizerIntegration:
     """Verify query sanitizer handles contaminated queries."""
 
@@ -880,8 +899,10 @@ class TestQuerySanitizerIntegration:
         assert result["method"] in ("question_extraction", "tail_sentence")
         assert len(result["clean_query"]) < len(contaminated)
         # The extracted text should contain the question content
-        assert "authentication" in result["clean_query"].lower() or \
-               "api" in result["clean_query"].lower()
+        assert (
+            "authentication" in result["clean_query"].lower()
+            or "api" in result["clean_query"].lower()
+        )
 
     def test_very_long_query_does_not_crash(self):
         """[UNIT] sanitize_query — 10,000 char query should not crash."""
@@ -933,6 +954,7 @@ class TestQuerySanitizerIntegration:
 # Category 8: Failure Boost & Exact Match Boost (engine internals)
 # ---------------------------------------------------------------------------
 
+
 class TestEngineInternals:
     """Test internal engine methods that affect ranking quality."""
 
@@ -944,23 +966,25 @@ class TestEngineInternals:
             storage=storage, embedding_provider="mock", enable_cache=False
         )
 
-        success_outcome = create_test_outcome(
-            id="out_success", success=True
-        )
-        fail_outcome = create_test_outcome(
-            id="out_fail", success=False
-        )
+        success_outcome = create_test_outcome(id="out_success", success=True)
+        fail_outcome = create_test_outcome(id="out_fail", success=False)
 
         # Create ScoredItems
         scored_success = ScoredItem(
-            item=success_outcome, score=0.8,
-            similarity_score=0.8, recency_score=0.5,
-            success_score=1.0, confidence_score=0.5,
+            item=success_outcome,
+            score=0.8,
+            similarity_score=0.8,
+            recency_score=0.5,
+            success_score=1.0,
+            confidence_score=0.5,
         )
         scored_fail = ScoredItem(
-            item=fail_outcome, score=0.6,
-            similarity_score=0.6, recency_score=0.5,
-            success_score=0.3, confidence_score=0.5,
+            item=fail_outcome,
+            score=0.6,
+            similarity_score=0.6,
+            recency_score=0.5,
+            success_score=0.3,
+            confidence_score=0.5,
         )
 
         boosted = engine._boost_failures([scored_success, scored_fail])
@@ -983,14 +1007,20 @@ class TestEngineInternals:
 
         dk = _make_knowledge(0, "fact")
         high_sim = ScoredItem(
-            item=dk, score=0.5,
-            similarity_score=0.95, recency_score=0.5,
-            success_score=0.5, confidence_score=0.5,
+            item=dk,
+            score=0.5,
+            similarity_score=0.95,
+            recency_score=0.5,
+            success_score=0.5,
+            confidence_score=0.5,
         )
         low_sim = ScoredItem(
-            item=_make_knowledge(1, "fact2"), score=0.5,
-            similarity_score=0.3, recency_score=0.5,
-            success_score=0.5, confidence_score=0.5,
+            item=_make_knowledge(1, "fact2"),
+            score=0.5,
+            similarity_score=0.3,
+            recency_score=0.5,
+            success_score=0.5,
+            confidence_score=0.5,
         )
 
         boosted = engine._apply_exact_match_boost([high_sim, low_sim], 2.0)
@@ -1008,16 +1038,20 @@ class TestEngineInternals:
         AND limit to top_k."""
         storage = MockStorage()
         engine = RetrievalEngine(
-            storage=storage, embedding_provider="mock",
-            enable_cache=False, min_score_threshold=0.5,
+            storage=storage,
+            embedding_provider="mock",
+            enable_cache=False,
+            min_score_threshold=0.5,
         )
 
         scored = [
             ScoredItem(
                 item=_make_knowledge(i, f"fact {i}"),
                 score=0.1 * (i + 1),
-                similarity_score=0.5, recency_score=0.5,
-                success_score=0.5, confidence_score=0.5,
+                similarity_score=0.5,
+                recency_score=0.5,
+                success_score=0.5,
+                confidence_score=0.5,
             )
             for i in range(10)
         ]
@@ -1026,7 +1060,7 @@ class TestEngineInternals:
         result = engine._extract_top_k(scored, top_k=3)
 
         # Only items with score >= 0.5 should be included
-        for item in result:
+        for _item in result:
             pass  # items are unwrapped, can't check score directly
         assert len(result) <= 3
 
@@ -1034,6 +1068,7 @@ class TestEngineInternals:
 # ---------------------------------------------------------------------------
 # Category 9: Recency Decay Correctness
 # ---------------------------------------------------------------------------
+
 
 class TestRecencyDecay:
     """Verify recency scoring uses correct exponential decay."""
@@ -1074,6 +1109,7 @@ class TestRecencyDecay:
 # Category 10: Anti-Pattern Scoring
 # ---------------------------------------------------------------------------
 
+
 class TestAntiPatternScoring:
     """Verify anti-pattern scoring respects occurrence count."""
 
@@ -1085,12 +1121,8 @@ class TestAntiPatternScoring:
                 similarity=0.0, recency=0.0, success_rate=1.0, confidence=0.0
             )
         )
-        low_occ = create_test_anti_pattern(
-            id="ap_low", occurrence_count=1
-        )
-        high_occ = create_test_anti_pattern(
-            id="ap_high", occurrence_count=10
-        )
+        low_occ = create_test_anti_pattern(id="ap_low", occurrence_count=1)
+        high_occ = create_test_anti_pattern(id="ap_high", occurrence_count=10)
 
         scored = scorer.score_anti_patterns(
             [low_occ, high_occ], similarities=[0.5, 0.5]
@@ -1111,9 +1143,7 @@ class TestAntiPatternScoring:
         ap_10 = create_test_anti_pattern(id="ap_10", occurrence_count=10)
         ap_100 = create_test_anti_pattern(id="ap_100", occurrence_count=100)
 
-        scored = scorer.score_anti_patterns(
-            [ap_10, ap_100], similarities=[0.5, 0.5]
-        )
+        scored = scorer.score_anti_patterns([ap_10, ap_100], similarities=[0.5, 0.5])
 
         # Both should have success_score = 1.0 (capped at 10/10)
         scores = {s.item.id: s.success_score for s in scored}

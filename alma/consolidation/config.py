@@ -9,7 +9,6 @@ This fixes the security issue where API keys could be hardcoded in config files.
 
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 from alma.consolidation.exceptions import ValidationError
 
@@ -68,9 +67,7 @@ class ConsolidationConfig:
             rate_limit_period=int(
                 os.environ.get("CONSOLIDATION_RATE_LIMIT_PERIOD", "60")
             ),
-            cache_maxsize=int(
-                os.environ.get("CONSOLIDATION_CACHE_MAXSIZE", "1000")
-            ),
+            cache_maxsize=int(os.environ.get("CONSOLIDATION_CACHE_MAXSIZE", "1000")),
             similarity_threshold=float(
                 os.environ.get("CONSOLIDATION_SIMILARITY_THRESHOLD", "0.85")
             ),

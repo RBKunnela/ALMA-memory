@@ -8,9 +8,9 @@ IMPROVEMENTS:
 - Reduces complexity of consolidation/pipeline.py
 """
 
-from typing import List, Tuple, Optional
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
+from typing import List
 
 from alma.types import Heuristic, Outcome
 
@@ -46,8 +46,7 @@ class DeduplicationEngine:
         """
         self.similarity_threshold = similarity_threshold
         logger.info(
-            f"DeduplicationEngine initialized with "
-            f"threshold={similarity_threshold}"
+            f"DeduplicationEngine initialized with threshold={similarity_threshold}"
         )
 
     def deduplicate(
@@ -127,10 +126,7 @@ class DeduplicationEngine:
                     best_group = group
 
             # Add to best group if similarity threshold met
-            if (
-                best_group is not None
-                and best_similarity >= self.similarity_threshold
-            ):
+            if best_group is not None and best_similarity >= self.similarity_threshold:
                 best_group.append(item)
             else:
                 # Create new group
