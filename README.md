@@ -21,28 +21,53 @@
 
 ---
 
-## The Problem
+## "But Claude Code Already Has Memory..."
 
-Every time you start a new Claude session, ChatGPT conversation, or spin up any AI agent — it starts from zero. Your preferences, the solutions it found, the mistakes it made — all gone. You repeat yourself hundreds of times a year.
+Yes. Claude Code, OpenClaw, ChatGPT, and Gemini all have built-in memory now. So why would you need ALMA?
 
-## The Solution
+Because their memory is a **notepad**. ALMA is a **learning system**.
 
-ALMA sits between your AI and a database you control. Before every task, it retrieves what the agent learned. After every task, it stores the outcome. Over time, your AI gets smarter — automatically.
+| | Built-in Memory (Claude, ChatGPT, OpenClaw) | ALMA |
+|---|---|---|
+| **What it stores** | Facts and preferences — "user likes dark mode" | **Outcomes** — what strategies worked, failed, and why |
+| **Does it learn?** | No. It remembers what you told it. | **Yes.** After 3+ similar outcomes, it auto-creates reusable strategies. |
+| **Does it warn you?** | No. | **Yes.** Anti-patterns track what NOT to do, with `why_bad` + `better_alternative`. |
+| **Cross-platform?** | No. Claude doesn't know what ChatGPT learned. | **Yes.** One memory layer shared across every AI tool. |
+| **Multi-agent?** | No. Each session is isolated. | **Yes.** Junior agents inherit from senior agents. |
+| **Scoring?** | Basic relevance or "most recent" | **4-factor:** similarity + recency + success rate + confidence |
+| **Lifecycle?** | Grows until you delete things | **Automatic:** decay, compression, consolidation, archival |
+| **Your data?** | Stored on their servers | **Your database.** SQLite, PostgreSQL, Qdrant — you choose. |
+| **Benchmark?** | Not benchmarked | **R@5 = 0.964** on LongMemEval (500 questions) |
+
+**The key insight:** Built-in memory makes your AI *remember*. ALMA makes your AI *learn*.
+
+An agent with Claude's memory knows "user prefers TypeScript." An agent with ALMA knows "when deploying to production, blue-green deployment worked 8 out of 10 times, rolling updates caused 2 incidents — avoid rolling updates for this service, here's why."
+
+### How ALMA Works With Built-in Memory (Not Against It)
+
+ALMA doesn't replace Claude Code's memory or OpenClaw's memory — it sits underneath as a deeper layer. Use built-in memory for quick preferences. Use ALMA for:
+
+- **Strategy tracking** — which approaches worked for which problems
+- **Failure prevention** — anti-patterns that stop your agent from repeating mistakes
+- **Team knowledge** — sharing lessons across multiple agents and platforms
+- **Workflow continuity** — checkpoints and state that survive across sessions
+- **Measurable retrieval** — benchmarked at R@5=0.964, not "trust me it works"
 
 ```python
 from alma import ALMA
 
 alma = ALMA.from_config(".alma/config.yaml")
 
-# Before task: What did we learn last time?
+# Before task: What strategies worked for this type of problem?
 memories = alma.retrieve(task="Deploy auth service", agent="backend-dev")
+# Returns: heuristics, past outcomes, anti-patterns, domain knowledge
 
-# After task: Remember what happened
+# After task: Record what happened so next time is better
 alma.learn(agent="backend-dev", task="Deploy auth service",
            outcome="success", strategy_used="Blue-green deployment")
 ```
 
-**That's it.** Next time the backend agent deploys, it already knows blue-green works.
+**That's it.** Next time the backend agent deploys — on Claude, ChatGPT, or any platform — it already knows blue-green works and rolling updates don't.
 
 ---
 
