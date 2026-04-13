@@ -804,8 +804,8 @@ class ALMA:
         # Build scope filter from context
         scope_filter = context.get_scope_filter(scope)
 
-        # For now, scope_filter is passed to the retrieval as metadata
-        # Future: pass to storage.get_* methods for proper filtering
+        # Pass scope_filter to retrieval so storage backends apply
+        # workflow-scoped filtering at the query level
         result = self.retrieval.retrieve(
             query=task,
             agent=agent,
@@ -813,6 +813,7 @@ class ALMA:
             user_id=user_id,
             top_k=top_k,
             scope=self.scopes.get(agent),
+            scope_filter=scope_filter,
         )
 
         # Add scope context to result metadata

@@ -19,9 +19,10 @@ from alma.retrieval.modes import (
     get_mode_reason,
     infer_mode_from_query,
 )
+from alma.retrieval.query_sanitizer import sanitize_query
 from alma.retrieval.scoring import MemoryScorer, ScoredItem, ScoringWeights
 from alma.storage.base import StorageBackend
-from alma.types import MemoryScope, MemorySlice
+from alma.types import MemoryScope, MemorySlice, ScopeFilter
 
 logger = logging.getLogger(__name__)
 structured_logger = get_logger(__name__)
@@ -94,6 +95,7 @@ class RetrievalEngine:
         scope: Optional[MemoryScope] = None,
         bypass_cache: bool = False,
         include_shared: bool = True,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> MemorySlice:
         """
         Retrieve relevant memories for a task.
@@ -111,6 +113,7 @@ class RetrievalEngine:
             scope: Agent's learning scope for filtering (enables multi-agent sharing)
             bypass_cache: Skip cache lookup/storage
             include_shared: If True and scope has inherit_from, include shared memories
+            scope_filter: Optional workflow scope filter passed to storage backends
 
         Returns:
             MemorySlice with relevant memories, scored and ranked
@@ -125,6 +128,17 @@ class RetrievalEngine:
                 logger.debug(f"Cache hit for query: {query[:50]}...")
                 return cached
 
+        # Sanitize query to prevent system prompt contamination
+        sanitized = sanitize_query(query)
+        if sanitized["was_sanitized"]:
+            logger.info(
+                "Query sanitized: %d -> %d chars (method=%s)",
+                sanitized["original_length"],
+                sanitized["clean_length"],
+                sanitized["method"],
+            )
+            query = sanitized["clean_query"]
+
         # Generate embedding for query
         query_embedding = self._get_embedding(query)
 
@@ -138,31 +152,79 @@ class RetrievalEngine:
 
         # Retrieve raw items from storage (with vector search)
         if len(agents_to_query) > 1:
-            # Use multi-agent query methods
-            raw_heuristics = self.storage.get_heuristics_for_agents(
-                project_id=project_id,
-                agents=agents_to_query,
-                embedding=query_embedding,
-                top_k=top_k * 2,
-                min_confidence=0.0,
-            )
-            raw_outcomes = self.storage.get_outcomes_for_agents(
-                project_id=project_id,
-                agents=agents_to_query,
-                embedding=query_embedding,
-                top_k=top_k * 2,
-                success_only=False,
-            )
-            raw_domain_knowledge = self.storage.get_domain_knowledge_for_agents(
-                project_id=project_id,
-                agents=agents_to_query,
-                embedding=query_embedding,
-                top_k=top_k * 2,
-            )
-            raw_anti_patterns = self.storage.get_anti_patterns_for_agents(
-                project_id=project_id,
-                agents=agents_to_query,
-                embedding=query_embedding,
+            # Use multi-agent query methods.
+            # When scope_filter is provided, fall back to per-agent single
+            # queries so the filter is applied at the storage layer.
+            if scope_filter:
+                raw_heuristics = []
+                raw_outcomes = []
+                raw_domain_knowledge = []
+                raw_anti_patterns = []
+                per_agent_k = top_k * 2
+                for a in agents_to_query:
+                    raw_heuristics.extend(
+                        self.storage.get_heuristics(
+                            project_id=project_id,
+                            agent=a,
+                            embedding=query_embedding,
+                            top_k=per_agent_k,
+                            min_confidence=0.0,
+                            scope_filter=scope_filter,
+                        )
+                    )
+                    raw_outcomes.extend(
+                        self.storage.get_outcomes(
+                            project_id=project_id,
+                            agent=a,
+                            embedding=query_embedding,
+                            top_k=per_agent_k,
+                            success_only=False,
+                            scope_filter=scope_filter,
+                        )
+                    )
+                    raw_domain_knowledge.extend(
+                        self.storage.get_domain_knowledge(
+                            project_id=project_id,
+                            agent=a,
+                            embedding=query_embedding,
+                            top_k=per_agent_k,
+                            scope_filter=scope_filter,
+                        )
+                    )
+                    raw_anti_patterns.extend(
+                        self.storage.get_anti_patterns(
+                            project_id=project_id,
+                            agent=a,
+                            embedding=query_embedding,
+                            top_k=per_agent_k,
+                            scope_filter=scope_filter,
+                        )
+                    )
+            else:
+                raw_heuristics = self.storage.get_heuristics_for_agents(
+                    project_id=project_id,
+                    agents=agents_to_query,
+                    embedding=query_embedding,
+                    top_k=top_k * 2,
+                    min_confidence=0.0,
+                )
+                raw_outcomes = self.storage.get_outcomes_for_agents(
+                    project_id=project_id,
+                    agents=agents_to_query,
+                    embedding=query_embedding,
+                    top_k=top_k * 2,
+                    success_only=False,
+                )
+                raw_domain_knowledge = self.storage.get_domain_knowledge_for_agents(
+                    project_id=project_id,
+                    agents=agents_to_query,
+                    embedding=query_embedding,
+                    top_k=top_k * 2,
+                )
+                raw_anti_patterns = self.storage.get_anti_patterns_for_agents(
+                    project_id=project_id,
+                    agents=agents_to_query,
+                    embedding=query_embedding,
                 top_k=top_k * 2,
             )
 
@@ -181,6 +243,7 @@ class RetrievalEngine:
                 embedding=query_embedding,
                 top_k=top_k * 2,
                 min_confidence=0.0,
+                scope_filter=scope_filter,
             )
             raw_outcomes = self.storage.get_outcomes(
                 project_id=project_id,
@@ -188,18 +251,21 @@ class RetrievalEngine:
                 embedding=query_embedding,
                 top_k=top_k * 2,
                 success_only=False,
+                scope_filter=scope_filter,
             )
             raw_domain_knowledge = self.storage.get_domain_knowledge(
                 project_id=project_id,
                 agent=agent,
                 embedding=query_embedding,
                 top_k=top_k * 2,
+                scope_filter=scope_filter,
             )
             raw_anti_patterns = self.storage.get_anti_patterns(
                 project_id=project_id,
                 agent=agent,
                 embedding=query_embedding,
                 top_k=top_k * 2,
+                scope_filter=scope_filter,
             )
 
         # Score and rank each type

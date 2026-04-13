@@ -14,6 +14,7 @@ from alma.types import (
     DomainKnowledge,
     Heuristic,
     Outcome,
+    ScopeFilter,
     UserPreference,
 )
 
@@ -74,6 +75,30 @@ class MockStorage(StorageBackend):
 
     # ==================== READ OPERATIONS ====================
 
+    def _matches_scope_filter(
+        self, item: Any, scope_filter: Optional[ScopeFilter]
+    ) -> bool:
+        """Check if an item's metadata matches the scope filter.
+
+        When scope_filter is provided, only items whose metadata contains
+        matching workflow fields are returned.  Items without metadata
+        always pass (they predate workflow scoping).
+        """
+        if scope_filter is None:
+            return True
+        metadata = getattr(item, "metadata", None) or {}
+        if scope_filter.workflow_id and metadata.get("workflow_id") != scope_filter.workflow_id:
+            return False
+        if scope_filter.run_id and metadata.get("run_id") != scope_filter.run_id:
+            return False
+        if scope_filter.tenant_id and metadata.get("tenant_id") != scope_filter.tenant_id:
+            return False
+        if scope_filter.node_id and metadata.get("node_id") != scope_filter.node_id:
+            return False
+        if scope_filter.branch_id and metadata.get("branch_id") != scope_filter.branch_id:
+            return False
+        return True
+
     def get_heuristics(
         self,
         project_id: str,
@@ -81,8 +106,9 @@ class MockStorage(StorageBackend):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         min_confidence: float = 0.0,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[Heuristic]:
-        """Get heuristics, optionally filtered by agent."""
+        """Get heuristics, optionally filtered by agent and scope."""
         results = []
         for h in self._heuristics.values():
             if h.project_id != project_id:
@@ -90,6 +116,8 @@ class MockStorage(StorageBackend):
             if agent and h.agent != agent:
                 continue
             if h.confidence < min_confidence:
+                continue
+            if not self._matches_scope_filter(h, scope_filter):
                 continue
             results.append(h)
 
@@ -105,6 +133,7 @@ class MockStorage(StorageBackend):
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
         success_only: bool = False,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[Outcome]:
         """Get outcomes, optionally filtered."""
         results = []
@@ -116,6 +145,8 @@ class MockStorage(StorageBackend):
             if task_type and o.task_type != task_type:
                 continue
             if success_only and not o.success:
+                continue
+            if not self._matches_scope_filter(o, scope_filter):
                 continue
             results.append(o)
 
@@ -145,6 +176,7 @@ class MockStorage(StorageBackend):
         domain: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[DomainKnowledge]:
         """Get domain knowledge."""
         results = []
@@ -154,6 +186,8 @@ class MockStorage(StorageBackend):
             if agent and dk.agent != agent:
                 continue
             if domain and dk.domain != domain:
+                continue
+            if not self._matches_scope_filter(dk, scope_filter):
                 continue
             results.append(dk)
 
@@ -167,6 +201,7 @@ class MockStorage(StorageBackend):
         agent: Optional[str] = None,
         embedding: Optional[List[float]] = None,
         top_k: int = 5,
+        scope_filter: Optional[ScopeFilter] = None,
     ) -> List[AntiPattern]:
         """Get anti-patterns."""
         results = []
@@ -174,6 +209,8 @@ class MockStorage(StorageBackend):
             if ap.project_id != project_id:
                 continue
             if agent and ap.agent != agent:
+                continue
+            if not self._matches_scope_filter(ap, scope_filter):
                 continue
             results.append(ap)
 
