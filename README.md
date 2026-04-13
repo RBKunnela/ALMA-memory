@@ -316,4 +316,10 @@ If ALMA helps your AI agents get smarter:
 
 **Your AI should not treat you like a stranger every morning.**
 
+---
+
+## License
+
+ALMA-memory is released under the [MIT License](LICENSE). Free to use, modify, and distribute — forever.
+
 *Created by [@RBKunnela](https://github.com/RBKunnela)*
