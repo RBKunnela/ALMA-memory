@@ -27,6 +27,8 @@ class RetrievalMode(Enum):
     DIAGNOSTIC = "diagnostic"
     LEARNING = "learning"
     RECALL = "recall"
+    BENCHMARK = "benchmark"
+    SIMILARITY = "similarity"
 
 
 @dataclass
@@ -131,6 +133,32 @@ MODE_CONFIGS: Dict[RetrievalMode, ModeConfig] = {
         include_anti_patterns=False,
         diversity_factor=0.0,  # No diversity, exact match
         exact_match_boost=3.0,  # Strong boost for exact matches
+    ),
+    RetrievalMode.BENCHMARK: ModeConfig(
+        top_k=50,
+        min_confidence=0.0,  # No threshold — return everything
+        weights={
+            "similarity": 1.0,  # Pure cosine similarity ranking
+            "recency": 0.0,
+            "success_rate": 0.0,
+            "confidence": 0.0,
+        },
+        include_anti_patterns=False,
+        diversity_factor=0.0,  # No diversity filtering
+        exact_match_boost=1.0,  # No artificial boosting
+    ),
+    RetrievalMode.SIMILARITY: ModeConfig(
+        top_k=20,
+        min_confidence=0.0,  # No threshold — pure similarity ranking
+        weights={
+            "similarity": 1.0,  # Pure cosine similarity ranking
+            "recency": 0.0,
+            "success_rate": 0.0,
+            "confidence": 0.0,
+        },
+        include_anti_patterns=False,
+        diversity_factor=0.0,  # No diversity filtering
+        exact_match_boost=1.0,  # No artificial boosting
     ),
 }
 
@@ -295,6 +323,12 @@ def get_mode_reason(query: str, mode: RetrievalMode) -> str:
         if matched:
             return f"Query contains pattern terms: {', '.join(matched[:3])}"
         return "Query appears to be looking for patterns or similarities"
+
+    if mode == RetrievalMode.BENCHMARK:
+        return "Benchmark mode: pure cosine similarity ranking, no auxiliary signals"
+
+    if mode == RetrievalMode.SIMILARITY:
+        return "Similarity mode: pure cosine similarity ranking"
 
     return "Default mode for implementation/execution queries"
 
