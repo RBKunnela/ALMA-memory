@@ -178,7 +178,7 @@ def load_from_file(path: str) -> LongMemEvalDataset:
         )
 
     print(f"  Loading dataset from {file_path.name}...")
-    with open(file_path) as f:
+    with open(file_path, encoding="utf-8") as f:
         raw_data = json.load(f)
 
     questions = [_parse_entry(entry) for entry in raw_data]
