@@ -268,7 +268,7 @@ def run_benchmark(
     print(f"  Mode:        {mode}")
     print(f"  Top-K:       {top_k}")
     print(f"  Embeddings:  {embedding_provider}")
-    print(f"{'─' * 64}\n")
+    print(f"{'-' * 64}\n")
 
     # Initialize ALMA backend
     backend = ALMABenchmarkBackend(
