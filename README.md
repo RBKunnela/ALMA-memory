@@ -1,10 +1,12 @@
 # ALMA - Agent Learning Memory Architecture
 
+[![Website](https://img.shields.io/badge/Website-alma--memory-blue?logo=cloudflare)](https://alma-memory.pages.dev)
 [![PyPI version](https://badge.fury.io/py/alma-memory.svg)](https://pypi.org/project/alma-memory/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml)
 [![LongMemEval R@5](https://img.shields.io/badge/LongMemEval_R%405-0.964-brightgreen)](docs/benchmarks/BENCHMARK-REPORT.md)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/RBKunnela/ALMA-memory/blob/main/benchmarks/colab_benchmark.ipynb)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/aiagentsprp)
 
 <div align="center">
