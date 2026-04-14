@@ -19,7 +19,10 @@ Configuration (config.yaml):
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from alma.types import FeedbackSummary, MemoryType, RetrievalFeedback
 
 from alma.storage.base import StorageBackend
 from alma.storage.constants import AZURE_COSMOS_CONTAINER_NAMES, MemoryType
@@ -1272,3 +1275,50 @@ class AzureCosmosStorage(StorageBackend):
             embedding=doc.get("embedding"),
             metadata=doc.get("metadata", {}),
         )
+
+    # ==================== RETRIEVAL FEEDBACK (v1.0+) ====================
+
+    def save_retrieval_feedback(self, feedback: "RetrievalFeedback") -> str:
+        """Save a retrieval feedback record (in-memory store)."""
+        if not hasattr(self, "_feedback_store"):
+            self._feedback_store: list = []
+        self._feedback_store.append(feedback)
+        return feedback.id
+
+    def get_feedback_summary(
+        self,
+        memory_ids: List[str],
+        memory_type: "MemoryType",
+    ) -> Dict[str, "FeedbackSummary"]:
+        """Get aggregated feedback summaries from in-memory store."""
+        from alma.types import FeedbackSignal, FeedbackSummary
+
+        if not hasattr(self, "_feedback_store"):
+            return {}
+
+        memory_id_set = set(memory_ids)
+        summaries: Dict[str, FeedbackSummary] = {}
+
+        for fb in self._feedback_store:
+            if fb.memory_id not in memory_id_set:
+                continue
+            if fb.memory_type != memory_type:
+                continue
+
+            if fb.memory_id not in summaries:
+                summaries[fb.memory_id] = FeedbackSummary(
+                    memory_id=fb.memory_id,
+                    memory_type=memory_type,
+                )
+
+            summary = summaries[fb.memory_id]
+            if fb.signal == FeedbackSignal.USED:
+                summary.use_count += 1
+            elif fb.signal == FeedbackSignal.IGNORED:
+                summary.ignore_count += 1
+            elif fb.signal == FeedbackSignal.THUMBS_UP:
+                summary.positive_count += 1
+            elif fb.signal == FeedbackSignal.THUMBS_DOWN:
+                summary.negative_count += 1
+
+        return summaries

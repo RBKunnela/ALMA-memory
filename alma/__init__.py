@@ -140,24 +140,6 @@ from alma.progress import (
     WorkItemStatus,
 )
 
-# RAG Integration (v0.8.0)
-from alma.rag import (
-    EnhancedChunk,
-    MemoryEnhancer,
-    MemorySignals,
-    MetricsHistory,
-    MetricsResult,
-    RAGBridge,
-    RAGChunk,
-    RAGContext,
-    RelevanceJudgment,
-    RetrievalEffectiveness,
-    RetrievalFeedback,
-    RetrievalFeedbackTracker,
-    RetrievalMetrics,
-    RetrievalRecord,
-)
-
 # Session Management (Phase 10)
 from alma.session import (
     SessionContext,
@@ -293,21 +275,6 @@ __all__ = [
     "RetrievalError",
     "ExtractionError",
     "RAGError",
-    # RAG Integration
-    "RAGBridge",
-    "RAGChunk",
-    "EnhancedChunk",
-    "MemorySignals",
-    "RAGContext",
-    "MemoryEnhancer",
-    "RetrievalFeedbackTracker",
-    "RetrievalRecord",
-    "RetrievalFeedback",
-    "RetrievalEffectiveness",
-    "RetrievalMetrics",
-    "RelevanceJudgment",
-    "MetricsResult",
-    "MetricsHistory",
     # Observability
     "configure_observability",
     "get_tracer",

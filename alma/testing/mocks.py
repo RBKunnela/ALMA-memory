@@ -5,7 +5,10 @@ Provides mock implementations of ALMA interfaces for testing.
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from alma.types import FeedbackSummary, MemoryType, RetrievalFeedback
 
 from alma.retrieval.embeddings import MockEmbedder
 from alma.storage.base import StorageBackend
@@ -45,6 +48,7 @@ class MockStorage(StorageBackend):
         self._preferences: Dict[str, UserPreference] = {}
         self._domain_knowledge: Dict[str, DomainKnowledge] = {}
         self._anti_patterns: Dict[str, AntiPattern] = {}
+        self._feedback: list = []
 
     # ==================== WRITE OPERATIONS ====================
 
@@ -433,3 +437,50 @@ class MockStorage(StorageBackend):
     def anti_pattern_count(self) -> int:
         """Get total number of stored anti-patterns."""
         return len(self._anti_patterns)
+
+    # ==================== RETRIEVAL FEEDBACK (v1.0+) ====================
+
+    def save_retrieval_feedback(self, feedback: "RetrievalFeedback") -> str:
+        """Save a retrieval feedback record to in-memory list."""
+        self._feedback.append(feedback)
+        return feedback.id
+
+    def get_feedback_summary(
+        self,
+        memory_ids: List[str],
+        memory_type: "MemoryType",
+    ) -> Dict[str, "FeedbackSummary"]:
+        """Get aggregated feedback summaries from in-memory list."""
+        from alma.types import FeedbackSignal, FeedbackSummary
+
+        memory_id_set = set(memory_ids)
+        summaries: Dict[str, "FeedbackSummary"] = {}
+
+        for fb in self._feedback:
+            if fb.memory_id not in memory_id_set:
+                continue
+            if fb.memory_type != memory_type:
+                continue
+
+            if fb.memory_id not in summaries:
+                summaries[fb.memory_id] = FeedbackSummary(
+                    memory_id=fb.memory_id,
+                    memory_type=memory_type,
+                )
+
+            summary = summaries[fb.memory_id]
+            if fb.signal == FeedbackSignal.USED:
+                summary.use_count += 1
+            elif fb.signal == FeedbackSignal.IGNORED:
+                summary.ignore_count += 1
+            elif fb.signal == FeedbackSignal.THUMBS_UP:
+                summary.positive_count += 1
+            elif fb.signal == FeedbackSignal.THUMBS_DOWN:
+                summary.negative_count += 1
+
+        return summaries
+
+    @property
+    def feedback_count(self) -> int:
+        """Get total number of stored feedback records."""
+        return len(self._feedback)

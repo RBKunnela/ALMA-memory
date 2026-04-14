@@ -7,7 +7,10 @@ Supports mode-aware retrieval for different cognitive tasks.
 
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+
+if TYPE_CHECKING:
+    from alma.retrieval.feedback import FeedbackAwareScorer
 
 from alma.observability.logging import get_logger
 from alma.observability.metrics import get_metrics
@@ -51,6 +54,7 @@ class RetrievalEngine:
         scoring_weights: Optional[ScoringWeights] = None,
         recency_half_life_days: float = 30.0,
         min_score_threshold: float = 0.2,
+        feedback_scorer: Optional["FeedbackAwareScorer"] = None,
     ):
         """
         Initialize retrieval engine.
@@ -64,11 +68,15 @@ class RetrievalEngine:
             scoring_weights: Custom weights for similarity/recency/success/confidence
             recency_half_life_days: Days after which recency score halves
             min_score_threshold: Minimum score to include in results
+            feedback_scorer: Optional feedback-aware re-ranker (v1.0+).
+                If provided, retrieved items are re-ranked using accumulated
+                retrieval feedback before final selection.
         """
         self.storage = storage
         self.embedding_provider = embedding_provider
         self.min_score_threshold = min_score_threshold
         self._embedder = None
+        self.feedback_scorer = feedback_scorer
 
         # Initialize scorer
         self.scorer = MemoryScorer(
@@ -312,6 +320,23 @@ class RetrievalEngine:
             raw_anti_patterns,
             similarities=self._extract_faiss_similarities(raw_anti_patterns),
         )
+
+        # Apply feedback-based re-ranking if feedback scorer is configured (v1.0+)
+        if self.feedback_scorer is not None:
+            from alma.types import MemoryType as MT
+
+            scored_heuristics = self.feedback_scorer.apply_feedback(
+                scored_heuristics, MT.HEURISTIC
+            )
+            scored_outcomes = self.feedback_scorer.apply_feedback(
+                scored_outcomes, MT.OUTCOME
+            )
+            scored_knowledge = self.feedback_scorer.apply_feedback(
+                scored_knowledge, MT.DOMAIN_KNOWLEDGE
+            )
+            scored_anti_patterns = self.feedback_scorer.apply_feedback(
+                scored_anti_patterns, MT.ANTI_PATTERN
+            )
 
         # Apply threshold and limit
         final_heuristics = self._extract_top_k(scored_heuristics, top_k)

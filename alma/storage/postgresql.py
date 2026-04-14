@@ -44,6 +44,7 @@ from alma.types import (
 )
 
 if TYPE_CHECKING:
+    from alma.types import FeedbackSummary, RetrievalFeedback
     from alma.workflow import ArtifactRef, Checkpoint, WorkflowOutcome
 
 logger = logging.getLogger(__name__)
@@ -347,6 +348,30 @@ class PostgreSQLStorage(StorageBackend):
                         """)
                     except Exception as e:
                         logger.warning(f"Failed to create HNSW index for {table}: {e}")
+
+            # ==================== RETRIEVAL FEEDBACK TABLE (v1.0+) ====================
+
+            conn.execute(f"""
+                CREATE TABLE IF NOT EXISTS {self.schema}.retrieval_feedback (
+                    id TEXT PRIMARY KEY,
+                    memory_id TEXT NOT NULL,
+                    memory_type TEXT NOT NULL,
+                    query TEXT,
+                    agent TEXT NOT NULL,
+                    project_id TEXT NOT NULL,
+                    signal TEXT NOT NULL,
+                    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    metadata_json JSONB DEFAULT '{{}}'::jsonb
+                )
+            """)
+            conn.execute(f"""
+                CREATE INDEX IF NOT EXISTS idx_feedback_memory
+                ON {self.schema}.retrieval_feedback(memory_id, memory_type)
+            """)
+            conn.execute(f"""
+                CREATE INDEX IF NOT EXISTS idx_feedback_project_agent
+                ON {self.schema}.retrieval_feedback(project_id, agent)
+            """)
 
             conn.commit()
 
@@ -1996,3 +2021,79 @@ class PostgreSQLStorage(StorageBackend):
             created_at=self._parse_datetime(row["created_at"])
             or datetime.now(timezone.utc),
         )
+
+    # ==================== RETRIEVAL FEEDBACK (v1.0+) ====================
+
+    def save_retrieval_feedback(self, feedback: "RetrievalFeedback") -> str:
+        """Save a retrieval feedback record."""
+        with self._get_connection() as conn:
+            conn.execute(
+                f"""
+                INSERT INTO {self.schema}.retrieval_feedback (
+                    id, memory_id, memory_type, query, agent,
+                    project_id, signal, timestamp, metadata_json
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO NOTHING
+                """,
+                (
+                    feedback.id,
+                    feedback.memory_id,
+                    feedback.memory_type.value,
+                    feedback.query,
+                    feedback.agent,
+                    feedback.project_id,
+                    feedback.signal.value,
+                    feedback.timestamp.isoformat(),
+                    json.dumps(feedback.metadata),
+                ),
+            )
+            conn.commit()
+        return feedback.id
+
+    def get_feedback_summary(
+        self,
+        memory_ids: List[str],
+        memory_type: "MemoryType",
+    ) -> Dict[str, "FeedbackSummary"]:
+        """Get aggregated feedback summaries for a set of memories."""
+        from alma.types import FeedbackSignal, FeedbackSummary
+
+        if not memory_ids:
+            return {}
+
+        placeholders = ", ".join(["%s"] * len(memory_ids))
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                f"""
+                SELECT memory_id, signal, COUNT(*) as cnt
+                FROM {self.schema}.retrieval_feedback
+                WHERE memory_id IN ({placeholders}) AND memory_type = %s
+                GROUP BY memory_id, signal
+                """,
+                (*memory_ids, memory_type.value),
+            )
+            rows = cursor.fetchall()
+
+        summaries: Dict[str, FeedbackSummary] = {}
+        for row in rows:
+            mid = row["memory_id"]
+            signal = row["signal"]
+            count = row["cnt"]
+
+            if mid not in summaries:
+                summaries[mid] = FeedbackSummary(
+                    memory_id=mid,
+                    memory_type=memory_type,
+                )
+
+            summary = summaries[mid]
+            if signal == FeedbackSignal.USED.value:
+                summary.use_count = count
+            elif signal == FeedbackSignal.IGNORED.value:
+                summary.ignore_count = count
+            elif signal == FeedbackSignal.THUMBS_UP.value:
+                summary.positive_count = count
+            elif signal == FeedbackSignal.THUMBS_DOWN.value:
+                summary.negative_count = count
+
+        return summaries

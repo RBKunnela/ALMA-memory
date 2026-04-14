@@ -26,6 +26,7 @@ ALMA supports AGtestari workflow integration with:
 import asyncio
 import logging
 import time
+import uuid
 from typing import Any, Dict, List, Optional
 
 from alma.config.loader import ConfigLoader
@@ -38,9 +39,12 @@ from alma.retrieval.engine import RetrievalEngine
 from alma.storage.base import StorageBackend
 from alma.types import (
     DomainKnowledge,
+    FeedbackSignal,
     MemoryScope,
     MemorySlice,
+    MemoryType,
     Outcome,
+    RetrievalFeedback,
     UserPreference,
 )
 from alma.workflow import (
@@ -1188,4 +1192,127 @@ class ALMA:
             self.cleanup_checkpoints,
             run_id=run_id,
             keep_latest=keep_latest,
+        )
+
+    # ==================== RETRIEVAL FEEDBACK (v1.0+) ====================
+
+    def record_feedback(
+        self,
+        memory_id: str,
+        memory_type: MemoryType,
+        signal: FeedbackSignal,
+        agent: str,
+        query: str = "",
+    ) -> str:
+        """
+        Record explicit feedback for a retrieved memory.
+
+        Args:
+            memory_id: ID of the memory being rated.
+            memory_type: Type of the memory.
+            signal: Feedback signal (USED, IGNORED, THUMBS_UP, THUMBS_DOWN).
+            agent: Agent providing the feedback.
+            query: Original retrieval query (for analytics).
+
+        Returns:
+            The feedback record ID.
+        """
+        feedback = RetrievalFeedback(
+            id=str(uuid.uuid4()),
+            memory_id=memory_id,
+            memory_type=memory_type,
+            query=query,
+            agent=agent,
+            project_id=self.project_id,
+            signal=signal,
+        )
+        return self.storage.save_retrieval_feedback(feedback)
+
+    async def async_record_feedback(
+        self,
+        memory_id: str,
+        memory_type: MemoryType,
+        signal: FeedbackSignal,
+        agent: str,
+        query: str = "",
+    ) -> str:
+        """
+        Async version of record_feedback().
+
+        Record explicit feedback for a retrieved memory.
+        """
+        return await asyncio.to_thread(
+            self.record_feedback,
+            memory_id=memory_id,
+            memory_type=memory_type,
+            signal=signal,
+            agent=agent,
+            query=query,
+        )
+
+    def record_usage(
+        self,
+        retrieved_memory_ids: List[str],
+        used_memory_ids: List[str],
+        memory_type: MemoryType,
+        agent: str,
+        query: str = "",
+    ) -> List[str]:
+        """
+        Record which memories from a retrieval were actually used.
+
+        Marks each retrieved memory as USED if its ID appears in
+        ``used_memory_ids``, otherwise marks it as IGNORED.
+
+        Args:
+            retrieved_memory_ids: All memory IDs returned by retrieval.
+            used_memory_ids: Subset that the agent actually used.
+            memory_type: Type of the memories.
+            agent: Agent that performed the retrieval.
+            query: Original retrieval query (for analytics).
+
+        Returns:
+            List of created feedback record IDs.
+        """
+        used_set = set(used_memory_ids)
+        feedback_ids: List[str] = []
+
+        for memory_id in retrieved_memory_ids:
+            signal = (
+                FeedbackSignal.USED if memory_id in used_set else FeedbackSignal.IGNORED
+            )
+            feedback = RetrievalFeedback(
+                id=str(uuid.uuid4()),
+                memory_id=memory_id,
+                memory_type=memory_type,
+                query=query,
+                agent=agent,
+                project_id=self.project_id,
+                signal=signal,
+            )
+            feedback_id = self.storage.save_retrieval_feedback(feedback)
+            feedback_ids.append(feedback_id)
+
+        return feedback_ids
+
+    async def async_record_usage(
+        self,
+        retrieved_memory_ids: List[str],
+        used_memory_ids: List[str],
+        memory_type: MemoryType,
+        agent: str,
+        query: str = "",
+    ) -> List[str]:
+        """
+        Async version of record_usage().
+
+        Record which memories from a retrieval were actually used.
+        """
+        return await asyncio.to_thread(
+            self.record_usage,
+            retrieved_memory_ids=retrieved_memory_ids,
+            used_memory_ids=used_memory_ids,
+            memory_type=memory_type,
+            agent=agent,
+            query=query,
         )

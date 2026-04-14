@@ -9,7 +9,10 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from alma.types import FeedbackSummary, MemoryType, RetrievalFeedback
 
 from alma.storage.base import StorageBackend
 from alma.storage.constants import MemoryType
@@ -617,3 +620,57 @@ class FileBasedStorage(StorageBackend):
             embedding=record.get("embedding"),
             metadata=record.get("metadata", {}),
         )
+
+    # ==================== RETRIEVAL FEEDBACK (v1.0+) ====================
+
+    def save_retrieval_feedback(self, feedback: "RetrievalFeedback") -> str:
+        """Save a retrieval feedback record to JSON file."""
+        file_path = self.storage_dir / "retrieval_feedback.json"
+        data = self._read_json(file_path)
+        record = self._to_dict(feedback)
+        # Convert enum values to strings for serialization
+        record["memory_type"] = feedback.memory_type.value
+        record["signal"] = feedback.signal.value
+        data.append(record)
+        self._write_json(file_path, data)
+        return feedback.id
+
+    def get_feedback_summary(
+        self,
+        memory_ids: List[str],
+        memory_type: "MemoryType",
+    ) -> Dict[str, "FeedbackSummary"]:
+        """Get aggregated feedback summaries from JSON file."""
+        from alma.types import FeedbackSignal, FeedbackSummary
+
+        file_path = self.storage_dir / "retrieval_feedback.json"
+        data = self._read_json(file_path)
+
+        memory_id_set = set(memory_ids)
+        summaries: Dict[str, FeedbackSummary] = {}
+
+        for record in data:
+            mid = record.get("memory_id")
+            if mid not in memory_id_set:
+                continue
+            if record.get("memory_type") != memory_type.value:
+                continue
+
+            if mid not in summaries:
+                summaries[mid] = FeedbackSummary(
+                    memory_id=mid,
+                    memory_type=memory_type,
+                )
+
+            signal = record.get("signal")
+            summary = summaries[mid]
+            if signal == FeedbackSignal.USED.value:
+                summary.use_count += 1
+            elif signal == FeedbackSignal.IGNORED.value:
+                summary.ignore_count += 1
+            elif signal == FeedbackSignal.THUMBS_UP.value:
+                summary.positive_count += 1
+            elif signal == FeedbackSignal.THUMBS_DOWN.value:
+                summary.negative_count += 1
+
+        return summaries
