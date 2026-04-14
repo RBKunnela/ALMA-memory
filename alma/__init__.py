@@ -75,7 +75,6 @@ from alma.exceptions import (
     ConfigurationError,
     EmbeddingError,
     ExtractionError,
-    RAGError,
     RetrievalError,
     ScopeViolationError,
     StorageError,
@@ -274,7 +273,6 @@ __all__ = [
     "EmbeddingError",
     "RetrievalError",
     "ExtractionError",
-    "RAGError",
     # Observability
     "configure_observability",
     "get_tracer",

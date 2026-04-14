@@ -479,6 +479,128 @@ export interface MCPResponse<T = unknown> {
 }
 
 // ============================================================
+// v0.9.0 Retrieval Feedback Types
+// ============================================================
+
+/**
+ * Signal indicating how a retrieved memory was used.
+ */
+export enum FeedbackSignal {
+  USED = 'used',
+  IGNORED = 'ignored',
+  THUMBS_UP = 'thumbs_up',
+  THUMBS_DOWN = 'thumbs_down',
+}
+
+/**
+ * Record of feedback on a retrieved memory.
+ *
+ * Tracks how agents interact with retrieved memories to improve
+ * future retrieval scoring.
+ */
+export interface RetrievalFeedback {
+  /** Unique identifier */
+  id: string;
+  /** Memory that was retrieved */
+  memoryId: string;
+  /** Type of the retrieved memory */
+  memoryType: MemoryType;
+  /** Query that triggered the retrieval */
+  query: string;
+  /** Agent that provided the feedback */
+  agent: string;
+  /** Project this feedback belongs to */
+  projectId: string;
+  /** How the memory was used */
+  signal: FeedbackSignal;
+  /** When this feedback was recorded */
+  timestamp: string;
+  /** Additional metadata */
+  metadata: Record<string, unknown>;
+}
+
+/**
+ * Aggregated feedback statistics for a single memory.
+ *
+ * Summarizes how a memory has been received across all retrievals,
+ * producing a feedbackScore from -1.0 (always negative) to 1.0 (always positive).
+ */
+export interface FeedbackSummary {
+  /** Memory this summary describes */
+  memoryId: string;
+  /** Type of the memory */
+  memoryType: MemoryType;
+  /** Number of times the memory was used */
+  useCount: number;
+  /** Number of times the memory was ignored */
+  ignoreCount: number;
+  /** Number of thumbs-up signals */
+  positiveCount: number;
+  /** Number of thumbs-down signals */
+  negativeCount: number;
+  /** Aggregated feedback score from -1.0 to 1.0 */
+  feedbackScore: number;
+}
+
+/**
+ * Parameters for recording feedback on a retrieved memory.
+ */
+export interface RecordFeedbackParams {
+  /** Memory that was retrieved */
+  memoryId: string;
+  /** Type of the retrieved memory */
+  memoryType: MemoryType;
+  /** Query that triggered the retrieval */
+  query: string;
+  /** Agent providing the feedback */
+  agent: string;
+  /** How the memory was used */
+  signal: FeedbackSignal;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Parameters for recording batch usage feedback.
+ */
+export interface RecordUsageParams {
+  /** Memory IDs that were used */
+  memoryIds: string[];
+  /** Type of the retrieved memories */
+  memoryType: MemoryType;
+  /** Query that triggered the retrieval */
+  query: string;
+  /** Agent providing the feedback */
+  agent: string;
+  /** Additional metadata */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Response from recording feedback.
+ */
+export interface RecordFeedbackResponse {
+  /** Whether the operation succeeded */
+  success: boolean;
+  /** ID of the created feedback record */
+  feedbackId?: string;
+  /** Error message if failed */
+  error?: string;
+}
+
+/**
+ * Response from recording batch usage.
+ */
+export interface RecordUsageResponse {
+  /** Whether the operation succeeded */
+  success: boolean;
+  /** IDs of the created feedback records */
+  feedbackIds?: string[];
+  /** Error message if failed */
+  error?: string;
+}
+
+// ============================================================
 // v0.6.0 Workflow Context Types
 // ============================================================
 

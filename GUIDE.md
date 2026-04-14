@@ -819,6 +819,103 @@ prompt = stack.to_prompt(max_tokens=2000)
 
 ---
 
+## Retrieval Feedback Loop (v1.0+)
+
+ALMA tracks which retrieved memories your agents actually use versus ignore, then adjusts future retrieval scores so useful memories rank higher over time. This is a closed-loop system: retrieve, observe, learn, improve.
+
+### How it works
+
+Every time an agent retrieves memories, some get used and some get ignored. The feedback loop records these signals and blends them into future retrieval scores. Memories that agents consistently use get a score boost; memories that get ignored drift down.
+
+### Setup
+
+Create a `FeedbackTracker` and `FeedbackAwareScorer`:
+
+```python
+from alma.retrieval.feedback import FeedbackTracker, FeedbackAwareScorer
+
+tracker = FeedbackTracker(storage=alma.storage)
+scorer = FeedbackAwareScorer(feedback_tracker=tracker, feedback_weight=0.15)
+```
+
+### Recording usage
+
+After retrieval, record which memories the agent actually used. This is the primary feedback signal:
+
+```python
+from alma.types import MemoryType
+
+# Agent retrieved 3 memories, used 2 of them
+alma.record_usage(
+    retrieved_memory_ids=["m1", "m2", "m3"],
+    used_memory_ids=["m1", "m3"],
+    memory_type=MemoryType.HEURISTIC,
+    agent="dev-agent",
+)
+```
+
+Each retrieved memory is automatically marked as `USED` or `IGNORED` based on whether its ID appears in `used_memory_ids`.
+
+### Explicit feedback
+
+For direct thumbs up/down signals (e.g., from user ratings or agent self-evaluation):
+
+```python
+from alma.types import FeedbackSignal
+
+alma.record_feedback(
+    memory_id="m1",
+    memory_type=MemoryType.HEURISTIC,
+    signal=FeedbackSignal.THUMBS_UP,
+    agent="dev-agent",
+)
+```
+
+Available signals: `USED`, `IGNORED`, `THUMBS_UP`, `THUMBS_DOWN`.
+
+### How scoring works
+
+The `FeedbackAwareScorer` blends feedback into retrieval scores using this formula:
+
+```
+final_score = (1 - weight) * base_score + weight * normalized_feedback
+```
+
+Where `normalized_feedback` maps the accumulated feedback score from `[-1, 1]` to `[0, 1]`. A memory with all positive feedback gets `normalized_feedback = 1.0`; all negative gets `0.0`; no feedback leaves the score unchanged.
+
+The default weight is `0.15` (15% influence). The remaining 85% comes from the base retrieval score (similarity, recency, confidence, success rate).
+
+### Integration with RetrievalEngine
+
+Pass the scorer to `RetrievalEngine` to enable automatic feedback-based re-ranking on every retrieval:
+
+```python
+from alma.retrieval.engine import RetrievalEngine
+
+engine = RetrievalEngine(
+    storage=storage,
+    embedder=embedder,
+    feedback_scorer=scorer,  # Optional — enables feedback re-ranking
+)
+```
+
+When `feedback_scorer` is provided, the engine applies feedback re-ranking to all memory types (heuristics, outcomes, domain knowledge, and anti-patterns) after the base scoring pass.
+
+### Tuning `feedback_weight`
+
+The weight controls how aggressively feedback influences retrieval:
+
+| Weight | Behavior | When to use |
+|---|---|---|
+| `0.05` | Minimal influence, very stable | Early stages, small feedback datasets |
+| `0.15` | Balanced (default) | Most use cases |
+| `0.30` | Aggressive learning | Agents frequently retrieve irrelevant memories |
+| `0.50+` | Feedback-dominant | Only when you have high-volume, high-quality feedback |
+
+Start with the default `0.15`. Increase if agents consistently retrieve memories they never use. Decrease if you see useful memories dropping out of results too quickly.
+
+---
+
 ## Next Steps
 
 Once ALMA is running:

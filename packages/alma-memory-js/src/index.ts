@@ -95,6 +95,17 @@ export type {
   MCPResponse,
 } from './types';
 
+// Types - v0.9.0 Retrieval Feedback
+export { FeedbackSignal } from './types';
+export type {
+  RetrievalFeedback,
+  FeedbackSummary,
+  RecordFeedbackParams,
+  RecordUsageParams,
+  RecordFeedbackResponse,
+  RecordUsageResponse,
+} from './types';
+
 // Types - v0.6.0 Workflow Context
 export type {
   RetrievalScope,
@@ -155,4 +166,4 @@ export {
 } from './errors';
 
 // Version
-export const VERSION = '0.6.0';
+export const VERSION = '0.9.0';
