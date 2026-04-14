@@ -1,0 +1,47 @@
+{
+  "benchmark": "feedback_learning",
+  "system": "ALMA",
+  "version": "0.10.0",
+  "date": "2026-04-14",
+  "runtime": "Google Colab T4 GPU",
+  "config": {
+    "rounds": 3,
+    "simulator_mode": "realistic",
+    "simulator_accuracy": 0.80,
+    "weights": [0.05, 0.15, 0.30],
+    "top_k": 50,
+    "embedding_provider": "local",
+    "seed": 42,
+    "total_questions": 500,
+    "sessions_ingested": 19143
+  },
+  "weight_runs": {
+    "0.05": {
+      "weight": 0.05,
+      "rounds": [
+        {"round": 1, "recall_at_5": 0.268, "mrr": 0.2104, "ndcg_at_5": 0.2059},
+        {"round": 2, "recall_at_5": 0.300, "mrr": 0.2439, "ndcg_at_5": 0.2377},
+        {"round": 3, "recall_at_5": 0.318, "mrr": 0.2523, "ndcg_at_5": 0.2486}
+      ],
+      "delta_r5_final": 0.050
+    },
+    "0.15": {
+      "weight": 0.15,
+      "rounds": [
+        {"round": 1, "recall_at_5": 0.258, "mrr": 0.1832, "ndcg_at_5": 0.1838},
+        {"round": 2, "recall_at_5": 0.364, "mrr": 0.2770, "ndcg_at_5": 0.2825},
+        {"round": 3, "recall_at_5": 0.390, "mrr": 0.3127, "ndcg_at_5": 0.3150}
+      ],
+      "delta_r5_final": 0.132
+    },
+    "0.30": {
+      "weight": 0.30,
+      "rounds": [
+        {"round": 1, "recall_at_5": 0.182, "mrr": 0.1352, "ndcg_at_5": 0.1243},
+        {"round": 2, "recall_at_5": 0.362, "mrr": 0.2664, "ndcg_at_5": 0.2701},
+        {"round": 3, "recall_at_5": 0.474, "mrr": 0.3624, "ndcg_at_5": 0.3741}
+      ],
+      "delta_r5_final": 0.292
+    }
+  }
+}
