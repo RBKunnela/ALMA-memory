@@ -24,8 +24,6 @@ import {
 import type {
   RetrievalFeedback,
   FeedbackSummary,
-  RecordFeedbackParams,
-  RecordUsageParams,
 } from '../src';
 
 // Mock fetch globally

@@ -443,9 +443,7 @@ class TestFeedbackAwareScorer:
         with pytest.raises(ValueError, match="between 0.0 and 1.0"):
             FeedbackAwareScorer(tracker, feedback_weight=1.5)
 
-    def test_UNIT_init_should_accept_boundary_weights(
-        self, tracker: FeedbackTracker
-    ):
+    def test_UNIT_init_should_accept_boundary_weights(self, tracker: FeedbackTracker):
         """Boundary values 0.0 and 1.0 should be valid."""
         s0 = FeedbackAwareScorer(tracker, feedback_weight=0.0)
         s1 = FeedbackAwareScorer(tracker, feedback_weight=1.0)
