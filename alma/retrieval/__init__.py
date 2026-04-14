@@ -31,6 +31,7 @@ from alma.retrieval.embeddings import (
     MockEmbedder,
 )
 from alma.retrieval.engine import RetrievalEngine
+from alma.retrieval.feedback import FeedbackAwareScorer, FeedbackTracker
 from alma.retrieval.hybrid import (
     HybridResult,
     HybridSearchConfig,
@@ -160,4 +161,7 @@ __all__ = [
     "Reranker",
     "NoOpReranker",
     "CrossEncoderReranker",
+    # Retrieval Feedback (v1.0)
+    "FeedbackTracker",
+    "FeedbackAwareScorer",
 ]

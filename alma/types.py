@@ -347,3 +347,74 @@ class MemorySlice:
             + len(self.domain_knowledge)
             + len(self.anti_patterns)
         )
+
+
+class FeedbackSignal(Enum):
+    """Signals for retrieval feedback indicating memory usefulness."""
+
+    USED = "used"
+    IGNORED = "ignored"
+    THUMBS_UP = "thumbs_up"
+    THUMBS_DOWN = "thumbs_down"
+
+
+@dataclass
+class RetrievalFeedback:
+    """
+    A single feedback signal for a retrieved memory.
+
+    Records whether an agent actually used or ignored a memory
+    that was returned during retrieval, enabling future score
+    adjustments.
+    """
+
+    id: str
+    memory_id: str
+    memory_type: MemoryType
+    query: str
+    agent: str
+    project_id: str
+    signal: FeedbackSignal
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class FeedbackSummary:
+    """
+    Aggregated feedback statistics for a single memory.
+
+    Summarizes usage and explicit feedback signals to produce
+    a composite feedback_score used for retrieval re-ranking.
+    """
+
+    memory_id: str
+    memory_type: MemoryType
+    use_count: int = 0
+    ignore_count: int = 0
+    positive_count: int = 0
+    negative_count: int = 0
+
+    @property
+    def feedback_score(self) -> float:
+        """Calculate feedback score in range -1.0 to 1.0.
+
+        Positive values indicate the memory is generally useful.
+        Negative values indicate the memory is frequently ignored
+        or explicitly marked as unhelpful.
+
+        Returns:
+            Score from -1.0 (always negative) to 1.0 (always positive).
+            Returns 0.0 when no feedback exists.
+        """
+        total = (
+            self.use_count
+            + self.ignore_count
+            + self.positive_count
+            + self.negative_count
+        )
+        if total == 0:
+            return 0.0
+        positive = self.use_count + self.positive_count
+        negative = self.ignore_count + self.negative_count
+        return (positive - negative) / total

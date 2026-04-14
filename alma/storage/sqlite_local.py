@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from alma.learning.decay import MemoryStrength
     from alma.session import SessionHandoff
     from alma.storage.archive import ArchivedMemory
+    from alma.types import FeedbackSummary, RetrievalFeedback
     from alma.workflow import ArtifactRef, Checkpoint, WorkflowOutcome
 
 logger = logging.getLogger(__name__)
@@ -435,6 +436,31 @@ class SQLiteStorage(StorageBackend):
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_archive_restored "
                 "ON memory_archive(restored)"
+            )
+
+            # ==================== RETRIEVAL FEEDBACK TABLE (v1.0+) ====================
+
+            # Retrieval feedback for tracking memory usage
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS retrieval_feedback (
+                    id TEXT PRIMARY KEY,
+                    memory_id TEXT NOT NULL,
+                    memory_type TEXT NOT NULL,
+                    query TEXT,
+                    agent TEXT NOT NULL,
+                    project_id TEXT NOT NULL,
+                    signal TEXT NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    metadata_json TEXT DEFAULT '{}'
+                )
+            """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_feedback_memory "
+                "ON retrieval_feedback(memory_id, memory_type)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_feedback_project_agent "
+                "ON retrieval_feedback(project_id, agent)"
             )
 
     def _load_faiss_indices(self, memory_types: Optional[List[str]] = None):
@@ -3155,3 +3181,80 @@ class SQLiteStorage(StorageBackend):
             restored_at=restored_at,
             restored_as=row["restored_as"],
         )
+
+    # ==================== RETRIEVAL FEEDBACK (v1.0+) ====================
+
+    def save_retrieval_feedback(self, feedback: "RetrievalFeedback") -> str:
+        """Save a retrieval feedback record."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO retrieval_feedback (
+                    id, memory_id, memory_type, query, agent,
+                    project_id, signal, timestamp, metadata_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    feedback.id,
+                    feedback.memory_id,
+                    feedback.memory_type.value,
+                    feedback.query,
+                    feedback.agent,
+                    feedback.project_id,
+                    feedback.signal.value,
+                    feedback.timestamp.isoformat(),
+                    json.dumps(feedback.metadata),
+                ),
+            )
+        return feedback.id
+
+    def get_feedback_summary(
+        self,
+        memory_ids: List[str],
+        memory_type: "MemoryType",
+    ) -> Dict[str, "FeedbackSummary"]:
+        """Get aggregated feedback summaries for a set of memories."""
+        from alma.types import FeedbackSignal, FeedbackSummary
+
+        if not memory_ids:
+            return {}
+
+        placeholders = ", ".join("?" * len(memory_ids))
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                SELECT memory_id, signal, COUNT(*) as cnt
+                FROM retrieval_feedback
+                WHERE memory_id IN ({placeholders}) AND memory_type = ?
+                GROUP BY memory_id, signal
+                """,
+                (*memory_ids, memory_type.value),
+            )
+            rows = cursor.fetchall()
+
+        # Build summaries from aggregated counts
+        summaries: Dict[str, FeedbackSummary] = {}
+        for row in rows:
+            mid = row["memory_id"]
+            signal = row["signal"]
+            count = row["cnt"]
+
+            if mid not in summaries:
+                summaries[mid] = FeedbackSummary(
+                    memory_id=mid,
+                    memory_type=memory_type,
+                )
+
+            summary = summaries[mid]
+            if signal == FeedbackSignal.USED.value:
+                summary.use_count = count
+            elif signal == FeedbackSignal.IGNORED.value:
+                summary.ignore_count = count
+            elif signal == FeedbackSignal.THUMBS_UP.value:
+                summary.positive_count = count
+            elif signal == FeedbackSignal.THUMBS_DOWN.value:
+                summary.negative_count = count
+
+        return summaries

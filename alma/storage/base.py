@@ -29,6 +29,7 @@ from alma.types import (
 
 if TYPE_CHECKING:
     from alma.session import SessionHandoff
+    from alma.types import FeedbackSummary, MemoryType, RetrievalFeedback
     from alma.workflow import ArtifactRef, Checkpoint, WorkflowOutcome
 
 
@@ -1121,6 +1122,46 @@ class StorageBackend(ABC):
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not support memory archiving."
+        )
+
+    # ==================== RETRIEVAL FEEDBACK OPERATIONS (v1.0+) ====================
+
+    def save_retrieval_feedback(self, feedback: "RetrievalFeedback") -> str:
+        """
+        Save a retrieval feedback record.
+
+        Args:
+            feedback: RetrievalFeedback instance to save
+
+        Returns:
+            The feedback record ID
+
+        Note: Default implementation raises NotImplementedError.
+              Backends should override for retrieval feedback support.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support retrieval feedback. "
+            "Use SQLiteStorage or PostgreSQLStorage for feedback features."
+        )
+
+    def get_feedback_summary(
+        self,
+        memory_ids: List[str],
+        memory_type: "MemoryType",
+    ) -> Dict[str, "FeedbackSummary"]:
+        """
+        Get aggregated feedback summaries for a set of memories.
+
+        Args:
+            memory_ids: Memory IDs to get summaries for
+            memory_type: Type of the memories
+
+        Returns:
+            Dict mapping memory_id to its FeedbackSummary.
+            Only includes entries for memories that have feedback.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not support retrieval feedback."
         )
 
     # ==================== UTILITY ====================
