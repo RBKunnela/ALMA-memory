@@ -18,6 +18,14 @@ import {
   isValidationError,
   isServerError,
   VERSION,
+  FeedbackSignal,
+} from '../src';
+
+import type {
+  RetrievalFeedback,
+  FeedbackSummary,
+  RecordFeedbackParams,
+  RecordUsageParams,
 } from '../src';
 
 // Mock fetch globally
@@ -615,7 +623,293 @@ describe('ALMA Client', () => {
 
   describe('VERSION', () => {
     it('should export version', () => {
-      expect(VERSION).toBe('0.6.0');
+      expect(VERSION).toBe('0.9.0');
+    });
+  });
+});
+
+describe('FeedbackSignal enum', () => {
+  it('should have all expected values', () => {
+    expect(FeedbackSignal.USED).toBe('used');
+    expect(FeedbackSignal.IGNORED).toBe('ignored');
+    expect(FeedbackSignal.THUMBS_UP).toBe('thumbs_up');
+    expect(FeedbackSignal.THUMBS_DOWN).toBe('thumbs_down');
+  });
+
+  it('should have exactly 4 values', () => {
+    const values = Object.values(FeedbackSignal);
+    expect(values).toHaveLength(4);
+  });
+});
+
+describe('Feedback types', () => {
+  it('should allow constructing a RetrievalFeedback object', () => {
+    const feedback: RetrievalFeedback = {
+      id: 'fb-1',
+      memoryId: 'heur-1',
+      memoryType: 'heuristic',
+      query: 'form validation',
+      agent: 'dev-agent',
+      projectId: 'test-project',
+      signal: FeedbackSignal.USED,
+      timestamp: '2026-04-14T10:00:00Z',
+      metadata: { context: 'testing' },
+    };
+
+    expect(feedback.id).toBe('fb-1');
+    expect(feedback.signal).toBe(FeedbackSignal.USED);
+    expect(feedback.memoryType).toBe('heuristic');
+  });
+
+  it('should allow constructing a FeedbackSummary object', () => {
+    const summary: FeedbackSummary = {
+      memoryId: 'heur-1',
+      memoryType: 'heuristic',
+      useCount: 10,
+      ignoreCount: 2,
+      positiveCount: 8,
+      negativeCount: 1,
+      feedbackScore: 0.75,
+    };
+
+    expect(summary.feedbackScore).toBe(0.75);
+    expect(summary.useCount).toBe(10);
+  });
+
+  it('should allow negative feedbackScore', () => {
+    const summary: FeedbackSummary = {
+      memoryId: 'ap-1',
+      memoryType: 'anti_pattern',
+      useCount: 0,
+      ignoreCount: 5,
+      positiveCount: 0,
+      negativeCount: 3,
+      feedbackScore: -0.8,
+    };
+
+    expect(summary.feedbackScore).toBe(-0.8);
+  });
+});
+
+describe('ALMA Client - Feedback methods', () => {
+  let alma: ALMA;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    alma = new ALMA({
+      baseUrl: 'http://localhost:8765',
+      projectId: 'test-project',
+    });
+  });
+
+  describe('recordFeedback()', () => {
+    it('should record feedback successfully', async () => {
+      const mockResponse = {
+        success: true,
+        feedbackId: 'fb-123',
+      };
+
+      setupMockResponse(createMCPResponse(mockResponse));
+
+      const feedbackId = await alma.recordFeedback({
+        memoryId: 'heur-1',
+        memoryType: 'heuristic',
+        query: 'form validation',
+        agent: 'dev-agent',
+        signal: FeedbackSignal.USED,
+      });
+
+      expect(feedbackId).toBe('fb-123');
+    });
+
+    it('should pass all parameters to server', async () => {
+      setupMockResponse(createMCPResponse({ success: true, feedbackId: 'fb-1' }));
+
+      await alma.recordFeedback({
+        memoryId: 'heur-1',
+        memoryType: 'heuristic',
+        query: 'test query',
+        agent: 'test-agent',
+        signal: FeedbackSignal.THUMBS_UP,
+        metadata: { reason: 'helpful' },
+      });
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.params.arguments.memory_id).toBe('heur-1');
+      expect(callBody.params.arguments.memory_type).toBe('heuristic');
+      expect(callBody.params.arguments.query).toBe('test query');
+      expect(callBody.params.arguments.agent).toBe('test-agent');
+      expect(callBody.params.arguments.project_id).toBe('test-project');
+      expect(callBody.params.arguments.signal).toBe('thumbs_up');
+      expect(callBody.params.arguments.metadata).toEqual({ reason: 'helpful' });
+    });
+
+    it('should throw ValidationError if memoryId is empty', async () => {
+      await expect(
+        alma.recordFeedback({
+          memoryId: '',
+          memoryType: 'heuristic',
+          query: 'test',
+          agent: 'agent',
+          signal: FeedbackSignal.USED,
+        }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError if agent is empty', async () => {
+      await expect(
+        alma.recordFeedback({
+          memoryId: 'heur-1',
+          memoryType: 'heuristic',
+          query: 'test',
+          agent: '',
+          signal: FeedbackSignal.USED,
+        }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError if query is empty', async () => {
+      await expect(
+        alma.recordFeedback({
+          memoryId: 'heur-1',
+          memoryType: 'heuristic',
+          query: '',
+          agent: 'agent',
+          signal: FeedbackSignal.USED,
+        }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ServerError on failed response', async () => {
+      setupMockResponse(
+        createMCPResponse({ success: false, error: 'Memory not found' }),
+      );
+
+      await expect(
+        alma.recordFeedback({
+          memoryId: 'nonexistent',
+          memoryType: 'heuristic',
+          query: 'test',
+          agent: 'agent',
+          signal: FeedbackSignal.USED,
+        }),
+      ).rejects.toThrow(ServerError);
+    });
+
+    it('should support all feedback signals', async () => {
+      for (const signal of [
+        FeedbackSignal.USED,
+        FeedbackSignal.IGNORED,
+        FeedbackSignal.THUMBS_UP,
+        FeedbackSignal.THUMBS_DOWN,
+      ]) {
+        jest.clearAllMocks();
+        setupMockResponse(createMCPResponse({ success: true, feedbackId: `fb-${signal}` }));
+
+        const id = await alma.recordFeedback({
+          memoryId: 'heur-1',
+          memoryType: 'heuristic',
+          query: 'test',
+          agent: 'agent',
+          signal,
+        });
+
+        expect(id).toBe(`fb-${signal}`);
+      }
+    });
+  });
+
+  describe('recordUsage()', () => {
+    it('should record batch usage successfully', async () => {
+      const mockResponse = {
+        success: true,
+        feedbackIds: ['fb-1', 'fb-2', 'fb-3'],
+      };
+
+      setupMockResponse(createMCPResponse(mockResponse));
+
+      const ids = await alma.recordUsage({
+        memoryIds: ['heur-1', 'heur-2', 'heur-3'],
+        memoryType: 'heuristic',
+        query: 'form validation',
+        agent: 'dev-agent',
+      });
+
+      expect(ids).toEqual(['fb-1', 'fb-2', 'fb-3']);
+    });
+
+    it('should pass all parameters to server', async () => {
+      setupMockResponse(
+        createMCPResponse({ success: true, feedbackIds: ['fb-1'] }),
+      );
+
+      await alma.recordUsage({
+        memoryIds: ['heur-1'],
+        memoryType: 'domain_knowledge',
+        query: 'auth patterns',
+        agent: 'test-agent',
+        metadata: { batch: true },
+      });
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(callBody.params.arguments.memory_ids).toEqual(['heur-1']);
+      expect(callBody.params.arguments.memory_type).toBe('domain_knowledge');
+      expect(callBody.params.arguments.query).toBe('auth patterns');
+      expect(callBody.params.arguments.agent).toBe('test-agent');
+      expect(callBody.params.arguments.project_id).toBe('test-project');
+      expect(callBody.params.arguments.metadata).toEqual({ batch: true });
+    });
+
+    it('should throw ValidationError if memoryIds is empty', async () => {
+      await expect(
+        alma.recordUsage({
+          memoryIds: [],
+          memoryType: 'heuristic',
+          query: 'test',
+          agent: 'agent',
+        }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError if agent is empty', async () => {
+      await expect(
+        alma.recordUsage({
+          memoryIds: ['heur-1'],
+          memoryType: 'heuristic',
+          query: 'test',
+          agent: '',
+        }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ServerError on failed response', async () => {
+      setupMockResponse(
+        createMCPResponse({ success: false, error: 'Batch failed' }),
+      );
+
+      await expect(
+        alma.recordUsage({
+          memoryIds: ['heur-1'],
+          memoryType: 'heuristic',
+          query: 'test',
+          agent: 'agent',
+        }),
+      ).rejects.toThrow(ServerError);
+    });
+
+    it('should handle single memory ID', async () => {
+      setupMockResponse(
+        createMCPResponse({ success: true, feedbackIds: ['fb-solo'] }),
+      );
+
+      const ids = await alma.recordUsage({
+        memoryIds: ['solo-1'],
+        memoryType: 'outcome',
+        query: 'test',
+        agent: 'agent',
+      });
+
+      expect(ids).toEqual(['fb-solo']);
     });
   });
 });

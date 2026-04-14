@@ -77,14 +77,20 @@ ALMA is benchmarked against [LongMemEval](https://xiaowu0162.github.io/long-mem-
 
 ![ALMA Benchmark Comparison](docs/diagrams/alma-benchmark-results.png)
 
-| System | Recall@5 | Recall@10 | API Keys Needed |
-|--------|----------|-----------|-----------------|
-| **ALMA v0.9.0** | **0.964** | **0.980** | **None** |
-| Hindsight | 0.914 | — | Yes (Gemini-3 Pro) |
-| Zep/Graphiti | 0.638 | — | Yes |
-| Mem0 | 0.490 | — | No |
+| System | LongMemEval | API Keys | Memory Types | Feedback Loop |
+|--------|-------------|----------|--------------|---------------|
+| **ALMA** | **R@5=0.964** | None | 5 | Yes (v1.0) |
+| Mem0 | ~49% acc.* | GPT-4o | 2 | No |
+| Zep | 71.2% acc.* | GPT-4o | 1 | No |
+| Letta | Not published | GPT-4o | 2 | No |
+| Beads | Not published | None | N/A (tasks) | No |
+| RuVector | Not published | None | N/A (vectors) | Self-learning |
+
+*Accuracy (end-to-end with LLM) vs ALMA's Recall@5 (retrieval-only). Different metrics — not directly comparable.
 
 **R@5 = 0.964** means when your agent asks "what did we discuss about X?", the correct answer is in the top 5 results 96.4% of the time. No cloud APIs. Runs entirely on your machine.
+
+**v1.0 absorbs ideas from the open-source community:** [RuVector](https://github.com/ruvector/ruvector) (MIT, 3.8k stars) inspired ALMA's retrieval feedback loop — memories that agents actually use get scored higher. [Beads](https://github.com/beads-ai/beads) (MIT, 20.7k stars) task dependency concepts are planned for a future release.
 
 <details>
 <summary>Reproduce it yourself in 3 commands</summary>
@@ -127,6 +133,7 @@ Other memory systems are databases. ALMA is a learning system.
 | All memories equal | Confidence scoring — proven strategies rank higher |
 | No concept of mistakes | Anti-patterns: what NOT to do, why, and what to do instead |
 | Grows forever | Memories decay — unused knowledge fades, reinforced knowledge strengthens |
+| No usage tracking | **Retrieval feedback loop** — tracks which memories agents actually use, adjusts future scores |
 
 ### 2. Five memory types (not just embeddings)
 
@@ -226,6 +233,29 @@ alma.learn(agent="developer", task="Fix login bug",
 ```
 
 **3. That's it.** Every run gets smarter. No manual prompt engineering needed.
+
+**4. Close the feedback loop (v1.0):**
+```python
+from alma.types import MemoryType, FeedbackSignal
+
+# Record which memories were useful
+alma.record_usage(
+    retrieved_memory_ids=["m1", "m2", "m3"],
+    used_memory_ids=["m1", "m3"],
+    memory_type=MemoryType.HEURISTIC,
+    agent="dev-agent",
+)
+
+# Explicit feedback
+alma.record_feedback(
+    memory_id="m1",
+    memory_type=MemoryType.HEURISTIC,
+    signal=FeedbackSignal.THUMBS_UP,
+    agent="dev-agent",
+)
+```
+
+Memories that agents actually use get scored higher on future retrievals. Memories that get skipped decay faster. Your agent's recall improves automatically over time.
 
 ---
 

@@ -47,9 +47,3 @@ class ExtractionError(ALMAError):
     """Raised when fact extraction fails."""
 
     pass
-
-
-class RAGError(ALMAError):
-    """Raised when RAG bridge operations fail."""
-
-    pass

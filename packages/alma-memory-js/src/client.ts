@@ -22,6 +22,11 @@ import type {
   MCPRequest,
   MCPResponse,
   RetryConfig,
+  // v0.9.0 Feedback types
+  RecordFeedbackParams,
+  RecordFeedbackResponse,
+  RecordUsageParams,
+  RecordUsageResponse,
   // v0.6.0 Workflow types
   ConsolidateOptions,
   ConsolidateResponse,
@@ -416,6 +421,105 @@ export class ALMA {
   async health(): Promise<HealthResponse> {
     const response = await this.callTool<HealthResponse>('alma_health', {});
     return response;
+  }
+
+  // ============================================================
+  // v0.9.0 Retrieval Feedback Methods
+  // ============================================================
+
+  /**
+   * Record feedback on a retrieved memory.
+   *
+   * Use this after retrieving memories to signal how useful they were.
+   * Feedback is used to improve future retrieval scoring.
+   *
+   * @param params - Feedback parameters
+   * @returns ID of the created feedback record
+   * @throws {ValidationError} If required fields are missing
+   * @throws {ConnectionError} If server is unreachable
+   * @throws {ServerError} If server returns an error
+   *
+   * @example
+   * ```typescript
+   * const feedbackId = await alma.recordFeedback({
+   *   memoryId: 'heur-123',
+   *   memoryType: 'heuristic',
+   *   query: 'form validation',
+   *   agent: 'dev-agent',
+   *   signal: FeedbackSignal.USED,
+   *   metadata: { context: 'testing' }
+   * });
+   * ```
+   */
+  async recordFeedback(params: RecordFeedbackParams): Promise<string> {
+    this.validateRequired(params.memoryId, 'memoryId');
+    this.validateRequired(params.memoryType, 'memoryType');
+    this.validateRequired(params.query, 'query');
+    this.validateRequired(params.agent, 'agent');
+    this.validateRequired(params.signal, 'signal');
+
+    const response = await this.callTool<RecordFeedbackResponse>('alma_record_feedback', {
+      memory_id: params.memoryId,
+      memory_type: params.memoryType,
+      query: params.query,
+      agent: params.agent,
+      project_id: this.config.projectId,
+      signal: params.signal,
+      metadata: params.metadata,
+    });
+
+    if (!response.success || !response.feedbackId) {
+      throw new ServerError(response.error ?? 'Failed to record feedback');
+    }
+
+    return response.feedbackId;
+  }
+
+  /**
+   * Record batch usage feedback for multiple retrieved memories.
+   *
+   * Convenience method that records a USED signal for each memory ID.
+   * Use this when multiple memories were retrieved and applied together.
+   *
+   * @param params - Batch usage parameters
+   * @returns IDs of the created feedback records
+   * @throws {ValidationError} If required fields are missing
+   * @throws {ConnectionError} If server is unreachable
+   * @throws {ServerError} If server returns an error
+   *
+   * @example
+   * ```typescript
+   * const feedbackIds = await alma.recordUsage({
+   *   memoryIds: ['heur-1', 'heur-2', 'heur-3'],
+   *   memoryType: 'heuristic',
+   *   query: 'form validation',
+   *   agent: 'dev-agent'
+   * });
+   * ```
+   */
+  async recordUsage(params: RecordUsageParams): Promise<string[]> {
+    this.validateRequired(params.memoryIds, 'memoryIds');
+    if (params.memoryIds.length === 0) {
+      throw new ValidationError('memoryIds must not be empty', { field: 'memoryIds' });
+    }
+    this.validateRequired(params.memoryType, 'memoryType');
+    this.validateRequired(params.query, 'query');
+    this.validateRequired(params.agent, 'agent');
+
+    const response = await this.callTool<RecordUsageResponse>('alma_record_usage', {
+      memory_ids: params.memoryIds,
+      memory_type: params.memoryType,
+      query: params.query,
+      agent: params.agent,
+      project_id: this.config.projectId,
+      metadata: params.metadata,
+    });
+
+    if (!response.success || !response.feedbackIds) {
+      throw new ServerError(response.error ?? 'Failed to record usage');
+    }
+
+    return response.feedbackIds;
   }
 
   // ============================================================
