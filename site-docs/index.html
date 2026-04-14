@@ -45,7 +45,7 @@
             "name": "RBKunnela",
             "url": "https://github.com/RBKunnela"
         },
-        "softwareVersion": "0.9.0",
+        "softwareVersion": "1.0.0",
         "license": "https://opensource.org/licenses/MIT",
         "codeRepository": "https://github.com/RBKunnela/ALMA-memory",
         "programmingLanguage": ["Python"],
@@ -201,6 +201,7 @@
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="#builtin-vs-alma" class="text-slate-400 hover:text-white transition">Why ALMA</a>
                     <a href="#benchmark" class="text-slate-400 hover:text-white transition">Benchmarks</a>
+                    <a href="#feedback-loop" class="text-slate-400 hover:text-white transition">Feedback Loop</a>
                     <a href="#features" class="text-slate-400 hover:text-white transition">Features</a>
                     <a href="#quickstart" class="text-slate-400 hover:text-white transition">Quick Start</a>
                     <a href="#setup" class="text-slate-400 hover:text-white transition">Setup</a>
@@ -232,7 +233,7 @@
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700 text-sm">
                             <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                            <span>v0.9.0 - Learning Memory</span>
+                            <span>v1.0.0 - Feedback Learning</span>
                         </div>
                         <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-sm text-emerald-400 font-medium">
                             <span>#1 on LongMemEval</span>
@@ -434,7 +435,7 @@ result = agent.run_with_context(memories)</code></pre>
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-3xl sm:text-4xl font-bold mb-4">
-                    Proven: <span class="gradient-text">#1 on LongMemEval</span>
+                    Proven: <span class="gradient-text">#1 on LongMemEval</span> <span class="text-sm text-emerald-400 font-normal">+ Feedback Learning</span>
                 </h2>
                 <p class="text-slate-400 text-lg max-w-3xl mx-auto">
                     Benchmarked against <a href="https://xiaowu0162.github.io/long-mem-eval/" target="_blank" class="text-blue-400 hover:text-blue-300 underline">LongMemEval</a> (ICLR 2025) -- the standard benchmark for AI agent memory. 500 questions, ~53 conversation sessions each.
@@ -452,44 +453,64 @@ result = agent.run_with_context(memories)</code></pre>
                     <thead>
                         <tr class="border-b border-slate-700">
                             <th class="py-4 px-4 text-slate-400 font-medium text-sm">System</th>
-                            <th class="py-4 px-4 text-slate-400 font-medium text-sm">Recall@5</th>
-                            <th class="py-4 px-4 text-slate-400 font-medium text-sm">Recall@10</th>
-                            <th class="py-4 px-4 text-slate-400 font-medium text-sm">API Keys Needed</th>
+                            <th class="py-4 px-4 text-slate-400 font-medium text-sm">LongMemEval</th>
+                            <th class="py-4 px-4 text-slate-400 font-medium text-sm">API Keys</th>
+                            <th class="py-4 px-4 text-slate-400 font-medium text-sm">Memory Types</th>
+                            <th class="py-4 px-4 text-slate-400 font-medium text-sm">Feedback Loop</th>
                         </tr>
                     </thead>
                     <tbody class="text-sm">
                         <tr class="border-b border-slate-800 bg-emerald-500/5">
-                            <td class="py-4 px-4 font-semibold text-emerald-400">ALMA v0.9.0</td>
-                            <td class="py-4 px-4 font-bold text-emerald-400">0.964</td>
-                            <td class="py-4 px-4 font-bold text-emerald-400">0.980</td>
+                            <td class="py-4 px-4 font-semibold text-emerald-400">ALMA v1.0</td>
+                            <td class="py-4 px-4 font-bold text-emerald-400">R@5 = 0.964</td>
                             <td class="py-4 px-4 text-emerald-400 font-semibold">None</td>
+                            <td class="py-4 px-4 text-emerald-400">5</td>
+                            <td class="py-4 px-4 text-emerald-400 font-semibold">Yes (v1.0)</td>
                         </tr>
                         <tr class="border-b border-slate-800">
-                            <td class="py-4 px-4 text-slate-300">Hindsight</td>
-                            <td class="py-4 px-4 text-slate-400">0.914</td>
-                            <td class="py-4 px-4 text-slate-500">--</td>
-                            <td class="py-4 px-4 text-slate-400">Yes (Gemini-3 Pro)</td>
+                            <td class="py-4 px-4 text-slate-300">Mem0</td>
+                            <td class="py-4 px-4 text-slate-400">~49% acc.*</td>
+                            <td class="py-4 px-4 text-slate-400">GPT-4o</td>
+                            <td class="py-4 px-4 text-slate-400">2</td>
+                            <td class="py-4 px-4 text-slate-500">No</td>
                         </tr>
                         <tr class="border-b border-slate-800">
-                            <td class="py-4 px-4 text-slate-300">Zep / Graphiti</td>
-                            <td class="py-4 px-4 text-slate-400">0.638</td>
-                            <td class="py-4 px-4 text-slate-500">--</td>
-                            <td class="py-4 px-4 text-slate-400">Yes</td>
+                            <td class="py-4 px-4 text-slate-300">Zep</td>
+                            <td class="py-4 px-4 text-slate-400">71.2% acc.*</td>
+                            <td class="py-4 px-4 text-slate-400">GPT-4o</td>
+                            <td class="py-4 px-4 text-slate-400">1</td>
+                            <td class="py-4 px-4 text-slate-500">No</td>
+                        </tr>
+                        <tr class="border-b border-slate-800">
+                            <td class="py-4 px-4 text-slate-300">Letta</td>
+                            <td class="py-4 px-4 text-slate-500">Not published</td>
+                            <td class="py-4 px-4 text-slate-400">GPT-4o</td>
+                            <td class="py-4 px-4 text-slate-400">2</td>
+                            <td class="py-4 px-4 text-slate-500">No</td>
+                        </tr>
+                        <tr class="border-b border-slate-800">
+                            <td class="py-4 px-4 text-slate-300">Beads</td>
+                            <td class="py-4 px-4 text-slate-500">Not published</td>
+                            <td class="py-4 px-4 text-slate-400">None</td>
+                            <td class="py-4 px-4 text-slate-400">N/A (tasks)</td>
+                            <td class="py-4 px-4 text-slate-500">No</td>
                         </tr>
                         <tr>
-                            <td class="py-4 px-4 text-slate-300">Mem0</td>
-                            <td class="py-4 px-4 text-slate-400">0.490</td>
-                            <td class="py-4 px-4 text-slate-500">--</td>
-                            <td class="py-4 px-4 text-slate-400">No</td>
+                            <td class="py-4 px-4 text-slate-300">RuVector</td>
+                            <td class="py-4 px-4 text-slate-500">Not published</td>
+                            <td class="py-4 px-4 text-slate-400">None</td>
+                            <td class="py-4 px-4 text-slate-400">N/A (vectors)</td>
+                            <td class="py-4 px-4 text-slate-400">Self-learning</td>
                         </tr>
                     </tbody>
                 </table>
+                <p class="text-xs text-slate-500 mt-3 px-4">* Mem0 and Zep report accuracy (LLM-judged correctness), not recall. ALMA reports Recall@5 (retrieval-only, no LLM judge). Metrics are not directly comparable -- recall is a stricter, more reproducible measure.</p>
             </div>
 
             <!-- Visual Bar Chart -->
             <div class="mb-12 space-y-4">
                 <div class="flex items-center gap-4">
-                    <span class="w-24 text-sm text-emerald-400 font-semibold text-right">ALMA</span>
+                    <span class="w-24 text-sm text-emerald-400 font-semibold text-right">ALMA v1.0</span>
                     <div class="flex-1 bg-slate-800 rounded-full h-8 overflow-hidden">
                         <div class="bench-bar h-full bg-gradient-to-r from-emerald-500 to-cyan-400 rounded-full flex items-center justify-end pr-3" style="width: 96.4%">
                             <span class="text-xs font-bold text-white">0.964</span>
@@ -569,8 +590,59 @@ python -m benchmarks.longmemeval.runner --data /tmp/longmemeval.json</code></pre
         </div>
     </section>
 
+    <!-- Feedback Learning Benchmark (FLB) Section -->
+    <section id="feedback-loop" class="py-24 bg-slate-900">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-sm text-emerald-400 font-medium mb-6">
+                    <span>New in v1.0</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">
+                    Retrieval That <span class="gradient-text">Gets Better Over Time</span>
+                </h2>
+                <p class="text-slate-400 text-lg max-w-3xl mx-auto">
+                    The Feedback Learning Benchmark (FLB) proves that ALMA's retrieval improves with usage. As agents provide feedback on which memories helped, future retrieval becomes more precise -- without any model retraining.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6 mb-12">
+                <div class="p-6 rounded-xl bg-slate-800/50 border border-slate-800 text-center">
+                    <div class="text-3xl font-bold text-emerald-400 mb-2">record_usage()</div>
+                    <p class="text-sm text-slate-400">Track which retrieved memories the agent actually referenced in its output</p>
+                </div>
+                <div class="p-6 rounded-xl bg-slate-800/50 border border-slate-800 text-center">
+                    <div class="text-3xl font-bold text-cyan-400 mb-2">record_feedback()</div>
+                    <p class="text-sm text-slate-400">Explicit positive/negative signal on memory quality -- "this helped" or "this was wrong"</p>
+                </div>
+                <div class="p-6 rounded-xl bg-slate-800/50 border border-slate-800 text-center">
+                    <div class="text-3xl font-bold text-purple-400 mb-2">Auto-adjust</div>
+                    <p class="text-sm text-slate-400">Retrieval scores shift automatically based on accumulated feedback. No manual tuning needed.</p>
+                </div>
+            </div>
+
+            <!-- Absorption callout -->
+            <div class="bg-slate-800/50 rounded-xl p-8 border border-slate-700">
+                <h3 class="text-lg font-semibold mb-3">Standing on the shoulders of open source</h3>
+                <p class="text-slate-400 mb-4">
+                    ALMA v1.0 absorbs concepts from two MIT-licensed projects:
+                </p>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div class="flex items-start gap-3 text-sm">
+                        <span class="px-2 py-1 text-xs rounded bg-blue-500/20 text-blue-400 font-mono flex-shrink-0">Beads</span>
+                        <span class="text-slate-300">Task dependency tracking and structured workflow memory -- absorbed into ALMA's workflow checkpoint system</span>
+                    </div>
+                    <div class="flex items-start gap-3 text-sm">
+                        <span class="px-2 py-1 text-xs rounded bg-purple-500/20 text-purple-400 font-mono flex-shrink-0">RuVector</span>
+                        <span class="text-slate-300">Self-learning vector retrieval with feedback signals -- the inspiration behind ALMA's Retrieval Feedback Loop</span>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 mt-4">Both Beads and RuVector are MIT-licensed. ALMA integrates their concepts natively rather than wrapping them as dependencies.</p>
+            </div>
+        </div>
+    </section>
+
     <!-- How It Works Section -->
-    <section class="py-24 bg-slate-900">
+    <section class="py-24 bg-slate-950">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-3xl sm:text-4xl font-bold mb-4">How ALMA Works</h2>
@@ -744,6 +816,61 @@ python -m benchmarks.longmemeval.runner --data /tmp/longmemeval.json</code></pre
                     <div class="rounded-xl overflow-hidden border border-slate-800">
                         <img src="assets/diagrams/alma-memory-stack.png" alt="4-Layer MemoryStack" class="w-full" loading="lazy">
                     </div>
+                </div>
+            </div>
+
+            <!-- Feature 4: Retrieval Feedback Loop (v1.0) -->
+            <div class="mb-16">
+                <div class="grid lg:grid-cols-2 gap-8 items-center">
+                    <div class="order-2 lg:order-1 rounded-xl overflow-hidden border border-slate-800">
+                        <img src="assets/diagrams/feedback-loop-cycle.png" alt="Retrieval Feedback Loop" class="w-full" loading="lazy">
+                    </div>
+                    <div class="order-1 lg:order-2">
+                        <div class="flex items-center gap-3 mb-4">
+                            <h3 class="text-2xl font-bold">Self-improving retrieval</h3>
+                            <span class="px-2 py-1 text-xs rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium">v1.0</span>
+                        </div>
+                        <p class="text-slate-400 mb-6">Most memory systems retrieve and forget. ALMA v1.0 tracks which memories your agent actually <strong class="text-white">uses vs ignores</strong>, then adjusts future retrieval scores automatically. Retrieval gets better every run -- no retraining, no manual tuning.</p>
+                        <div class="space-y-3 mb-6">
+                            <div class="flex items-start gap-3 text-sm">
+                                <svg class="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <span class="text-slate-300"><strong>Usage tracking</strong> -- which memories agents actually reference in their output</span>
+                            </div>
+                            <div class="flex items-start gap-3 text-sm">
+                                <svg class="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <span class="text-slate-300"><strong>Feedback scoring</strong> -- positive/negative signals adjust retrieval weight over time</span>
+                            </div>
+                            <div class="flex items-start gap-3 text-sm">
+                                <svg class="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <span class="text-slate-300"><strong>Zero config</strong> -- works automatically with any storage backend</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900 rounded-xl p-4 border border-slate-800">
+<pre><code class="language-python"># Track what the agent actually used
+alma.record_usage(
+    memory_ids=["mem_1", "mem_3"],
+    task="deploy auth service"
+)
+
+# Explicit feedback: this memory helped
+alma.record_feedback(
+    memory_id="mem_1",
+    signal="positive",
+    reason="correct deployment strategy"
+)
+
+# Next retrieval auto-boosts mem_1,
+# auto-demotes unused memories</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback Scoring Pipeline Diagram -->
+            <div class="mb-16 rounded-xl overflow-hidden border border-slate-800">
+                <img src="assets/diagrams/feedback-scoring-pipeline.png" alt="Feedback Scoring Pipeline" class="w-full" loading="lazy">
+                <div class="px-6 py-3 bg-slate-800/50 text-sm text-slate-400">
+                    The feedback scoring pipeline: memories that get used rise in rank. Memories that get ignored decay. Your retrieval improves automatically.
                 </div>
             </div>
 
@@ -1199,7 +1326,7 @@ pip install alma-memory[all]       # Everything</code></pre>
                     <span class="text-slate-500">|</span>
                     <span class="text-sm text-slate-500">Agent Learning Memory Architecture</span>
                     <span class="text-slate-700">|</span>
-                    <span class="text-xs text-slate-600">v0.9.0</span>
+                    <span class="text-xs text-slate-600">v1.0.0</span>
                 </div>
 
                 <div class="flex items-center space-x-6 text-sm text-slate-400">
