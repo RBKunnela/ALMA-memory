@@ -110,8 +110,14 @@ PRPs/
 
 # Development & Testing
 # tests/ - REMOVED: tests should be public for open source
-scripts/
+scripts/*
+!scripts/benchmarks/
+!scripts/benchmarks/**
 .benchmarks/
+
+# Scratch/session dirs (local only)
+.aiox/
+.draft/
 
 # Benchmark datasets (too large for GitHub)
 benchmarks/data/
