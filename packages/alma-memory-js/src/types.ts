@@ -601,6 +601,184 @@ export interface RecordUsageResponse {
 }
 
 // ============================================================
+// v0.10.0 Veritas Trust & Verification Types
+// ============================================================
+
+/**
+ * Trust level constants matching the Veritas framework.
+ *
+ * Trust scores range from 0.0 (UNTRUSTED) to 1.0 (FULL).
+ * These thresholds match the Python TrustLevel class in alma/retrieval/trust_scoring.py.
+ */
+export enum TrustLevel {
+  UNTRUSTED = 0.0,
+  MINIMAL = 0.2,
+  LOW = 0.4,
+  MODERATE = 0.5,
+  GOOD = 0.7,
+  HIGH = 0.85,
+  FULL = 1.0,
+}
+
+/**
+ * Verification status for a retrieved memory.
+ *
+ * Assigned during two-stage verified retrieval.
+ */
+export type VerificationStatus = 'verified' | 'uncertain' | 'contradicted' | 'unverifiable';
+
+/**
+ * Method used to verify a memory.
+ */
+export type VerificationMethod = 'ground_truth' | 'cross_verify' | 'confidence' | 'none';
+
+/**
+ * Trust profile for an agent, tracking behavioral trust metrics.
+ *
+ * Maps to AgentTrustProfile in alma/retrieval/trust_scoring.py.
+ */
+export interface AgentTrustProfile {
+  /** Agent identifier */
+  agentId: string;
+  /** Current trust score (0.0 to 1.0) */
+  currentTrust: number;
+  /** Number of sessions completed */
+  sessionsCompleted: number;
+  /** Total actions taken */
+  totalActions: number;
+  /** Total violations committed */
+  totalViolations: number;
+  /** Consecutive sessions without violations */
+  consecutiveCleanSessions: number;
+  /** When the agent last had a session */
+  lastSession?: string;
+  /** Half-life for trust decay in days (default: 30) */
+  trustHalfLifeDays: number;
+  /** Per-behavior trust scores (0.0 to 1.0 each) */
+  behaviorTrust: {
+    /** Does the agent verify claims before asserting them? */
+    verification_before_claim: number;
+    /** Does the agent report failures loudly instead of hiding them? */
+    loud_failure: number;
+    /** Does the agent express uncertainty honestly? */
+    honest_uncertainty: number;
+    /** Does the agent maintain an audit trail? */
+    paper_trail: number;
+    /** Does the agent execute tasks diligently? */
+    diligent_execution: number;
+  };
+}
+
+/**
+ * Result of verifying a single memory.
+ */
+export interface Verification {
+  /** Verification status */
+  status: VerificationStatus;
+  /** Confidence in the verification result (0.0 to 1.0) */
+  confidence: number;
+  /** Human-readable explanation */
+  reason: string;
+  /** Method used for verification */
+  method: VerificationMethod;
+  /** Source of contradiction if status is 'contradicted' */
+  contradictingSource?: string;
+  /** Time taken for verification in milliseconds */
+  verificationTimeMs: number;
+}
+
+/**
+ * A memory with its verification result attached.
+ */
+export interface VerifiedMemory {
+  /** The original memory object */
+  memory: Heuristic | Outcome | DomainKnowledge | AntiPattern | UserPreference;
+  /** Verification result */
+  verification: Verification;
+  /** Original retrieval score */
+  retrievalScore: number;
+}
+
+/**
+ * Categorized verification results from verified retrieval.
+ */
+export interface VerifiedResults {
+  /** Memories confirmed accurate */
+  verified: VerifiedMemory[];
+  /** Memories with uncertain status */
+  uncertain: VerifiedMemory[];
+  /** Memories with conflicts detected */
+  contradicted: VerifiedMemory[];
+  /** Memories that couldn't be verified */
+  unverifiable: VerifiedMemory[];
+  /** Summary statistics */
+  summary: {
+    verified: number;
+    uncertain: number;
+    contradicted: number;
+    unverifiable: number;
+    total: number;
+    usableCount: number;
+    usableRatio: number;
+    verificationTimeMs: number;
+  };
+}
+
+/**
+ * Configuration for verification behavior.
+ */
+export interface VerificationConfig {
+  /** Whether verification is enabled (default: false, opt-in) */
+  enabled: boolean;
+  /** Default verification method */
+  defaultMethod: VerificationMethod;
+  /** Confidence threshold for automatic verification (default: 0.7) */
+  confidenceThreshold: number;
+  /** Timeout for LLM-based verification in seconds */
+  llmTimeoutSeconds: number;
+  /** Factor to expand candidate set for verification (default: 4x) */
+  expandCandidatesFactor: number;
+  /** Max sources for ground truth verification */
+  maxSourcesForVerification: number;
+  /** Max other memories to cross-verify against */
+  maxMemoriesForCrossVerify: number;
+}
+
+/**
+ * Scoring weights that include trust factor.
+ *
+ * All weights are normalized to sum to 1.0.
+ */
+export interface TrustWeights {
+  /** Weight for vector similarity (default: 0.35) */
+  similarity: number;
+  /** Weight for recency (default: 0.25) */
+  recency: number;
+  /** Weight for success rate (default: 0.15) */
+  successRate: number;
+  /** Weight for confidence (default: 0.10) */
+  confidence: number;
+  /** Weight for agent/source trust (default: 0.15) */
+  trust: number;
+}
+
+/**
+ * A scored item with trust information attached.
+ */
+export interface TrustScoredItem {
+  /** The memory item */
+  item: Heuristic | Outcome | DomainKnowledge | AntiPattern;
+  /** Combined score */
+  score: number;
+  /** Trust score of the source agent */
+  trustScore: number;
+  /** Source agent identifier */
+  sourceAgent?: string;
+  /** Human-readable trust level label */
+  trustLevel: string;
+}
+
+// ============================================================
 // v0.6.0 Workflow Context Types
 // ============================================================
 

@@ -106,6 +106,20 @@ export type {
   RecordUsageResponse,
 } from './types';
 
+// Types - v0.10.0 Veritas Trust & Verification
+export { TrustLevel } from './types';
+export type {
+  VerificationStatus,
+  VerificationMethod,
+  AgentTrustProfile,
+  Verification,
+  VerifiedMemory,
+  VerifiedResults,
+  VerificationConfig,
+  TrustWeights,
+  TrustScoredItem,
+} from './types';
+
 // Types - v0.6.0 Workflow Context
 export type {
   RetrievalScope,
@@ -166,4 +180,4 @@ export {
 } from './errors';
 
 // Version
-export const VERSION = '0.9.0';
+export const VERSION = '0.10.0';

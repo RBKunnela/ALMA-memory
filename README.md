@@ -79,14 +79,14 @@ ALMA is benchmarked against [LongMemEval](https://xiaowu0162.github.io/long-mem-
 
 ![ALMA Benchmark Comparison](docs/diagrams/alma-benchmark-results.png)
 
-| System | LongMemEval | API Keys | Memory Types | Feedback Loop |
-|--------|-------------|----------|--------------|---------------|
-| **ALMA** | **R@5=0.964** | None | 5 | Yes (v1.0) |
-| Mem0 | ~49% acc.* | GPT-4o | 2 | No |
-| Zep | 71.2% acc.* | GPT-4o | 1 | No |
-| Letta | Not published | GPT-4o | 2 | No |
-| Beads | Not published | None | N/A (tasks) | No |
-| RuVector | Not published | None | N/A (vectors) | Self-learning |
+| System | LongMemEval | API Keys | Memory Types | Trust/Verification | Feedback Loop |
+|--------|-------------|----------|--------------|-------------------|---------------|
+| **ALMA** | **R@5=0.964** | None | 5 | **Veritas (built-in)** | Yes (v1.0) |
+| Mem0 | ~49% acc.* | GPT-4o | 2 | No | No |
+| Zep | 71.2% acc.* | GPT-4o | 1 | No | No |
+| Letta | Not published | GPT-4o | 2 | No | No |
+| Beads | Not published | None | N/A (tasks) | No | No |
+| RuVector | Not published | None | N/A (vectors) | No | Self-learning |
 
 *Accuracy (end-to-end with LLM) vs ALMA's Recall@5 (retrieval-only). Different metrics — not directly comparable.
 
@@ -113,7 +113,9 @@ Full methodology: [BENCHMARK-REPORT.md](docs/benchmarks/BENCHMARK-REPORT.md)
 
 ![ALMA Retrieval Pipeline](docs/diagrams/alma-retrieval-pipeline.png)
 
-**Retrieve:** Your agent asks ALMA for relevant memories. ALMA searches using FAISS vector similarity, scores results by relevance + recency + success rate + confidence, and returns the most useful context.
+**Retrieve:** Your agent asks ALMA for relevant memories. ALMA searches using FAISS vector similarity, scores results by relevance + recency + success rate + confidence, and returns the most useful context. With Veritas trust scoring enabled, memories from trusted agents rank higher automatically.
+
+**Verify:** For high-stakes decisions, ALMA's verified retrieval cross-checks memories against each other. Contradictions are flagged before your agent acts on bad data.
 
 **Learn:** After the task, ALMA records what happened — success or failure, what strategy was used, how long it took.
 
@@ -179,6 +181,89 @@ ALMA is a library, not a service. Your database, your rules.
 | **PostgreSQL + pgvector** | Production | $0 (Supabase free tier) |
 | **Qdrant / Pinecone / Chroma** | Managed vector DB | Varies |
 | **Azure Cosmos DB** | Enterprise | Azure pricing |
+
+### 6. Veritas Trust Layer — trust your agent's memories
+
+![Veritas Trust Layer](docs/diagrams/alma-veritas-trust-layer.png)
+
+When you run multiple agents, memories can conflict. Agent A says "lead is disqualified." Agent B says "lead is engaged." Which one does your agent trust?
+
+ALMA includes the **Veritas trust framework** — built-in trust scoring and memory verification so your agents don't act on bad data.
+
+**Trust Scoring** — Every agent builds a trust profile over time. Memories from trusted agents rank higher.
+
+```python
+from alma.retrieval.trust_scoring import TrustAwareScorer, AgentTrustProfile
+
+# Create trust-aware scorer
+scorer = TrustAwareScorer()
+
+# Set trust profiles for your agents
+scorer.set_trust_profile(AgentTrustProfile(
+    agent_id="senior-dev",
+    sessions_completed=50,
+    total_actions=200,
+    total_violations=2,       # Very few mistakes
+    consecutive_clean_sessions=15,
+))
+
+scorer.set_trust_profile(AgentTrustProfile(
+    agent_id="new-intern-bot",
+    sessions_completed=3,
+    total_actions=10,
+    total_violations=4,       # Lots of mistakes early on
+))
+
+# Score memories — senior-dev's memories rank higher automatically
+scored = scorer.score_with_trust(memories, agent="senior-dev")
+```
+
+Trust scores factor in 5 behavioral dimensions: verification-before-claim, loud-failure, honest-uncertainty, paper-trail, and diligent-execution. Trust decays over time if an agent goes inactive (30-day half-life), so stale agents don't get trusted blindly.
+
+**Verified Retrieval** — For high-stakes decisions, ALMA can verify memories before your agent uses them.
+
+```python
+from alma.retrieval.verification import VerifiedRetriever, VerificationConfig
+
+retriever = VerifiedRetriever(
+    retrieval_engine=alma.retrieval_engine,
+    llm_client=my_llm,  # Optional — works without LLM too
+    config=VerificationConfig(
+        enabled=True,
+        default_method="cross_verify",  # Verify against other memories
+        confidence_threshold=0.7,
+    )
+)
+
+results = retriever.retrieve_verified(
+    query="What's the status of lead #1234?",
+    agent="voice-agent",
+    project_id="my-project",
+)
+
+# Only use memories you can trust
+for memory in results.verified:
+    print(f"Safe to use: {memory.memory}")
+
+for memory in results.contradicted:
+    print(f"CONFLICT: {memory.memory} — {memory.verification.reason}")
+
+# Quick summary
+print(results.summary())
+# {'verified': 3, 'uncertain': 1, 'contradicted': 1, 'unverifiable': 0,
+#  'usable_ratio': 0.8, 'verification_time_ms': 45}
+```
+
+Every retrieved memory gets a status:
+
+| Status | Meaning | Should your agent use it? |
+|--------|---------|--------------------------|
+| **VERIFIED** | Confirmed accurate against ground truth or other memories | Yes |
+| **UNCERTAIN** | No conflicting evidence, but unconfirmed | Yes, with caution |
+| **CONTRADICTED** | Conflicts with other memories detected | No — review needed |
+| **UNVERIFIABLE** | Can't be verified (no other sources) | Use your judgment |
+
+This is critical for multi-agent systems. Without verification, your voice agent might call a lead that your email agent already disqualified — because both agents stored conflicting memories about the same person.
 
 ---
 
@@ -313,11 +398,13 @@ Connect ALMA directly to Claude with 22 MCP tools:
 | Metric | Value |
 |--------|-------|
 | LongMemEval R@5 | **0.964** (#1 open-source) |
-| Tests passing | 2,121 |
+| Tests passing | 2,121+ |
 | Storage backends | 7 |
 | Graph backends | 4 |
 | MCP tools | 22 |
 | Memory types | 5 |
+| Trust scoring | Veritas framework (per-agent, 5 behavioral dimensions) |
+| Verified retrieval | 4-status verification (VERIFIED / CONTRADICTED / UNCERTAIN / UNVERIFIABLE) |
 | Chat formats ingested | 6 |
 | Monthly cost (local) | $0.00 |
 | API keys needed | None |
