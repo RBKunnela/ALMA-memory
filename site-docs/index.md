@@ -20,11 +20,11 @@
 
     Hierarchical knowledge sharing with `inherit_from` and `share_with` scopes.
 
--   :material-shield-check:{ .lg .middle } __Scoped Learning__
+-   :material-shield-check:{ .lg .middle } __Veritas Trust Layer__
 
     ---
 
-    Define exactly what each agent can and cannot learn. Prevent domain confusion.
+    Built-in trust scoring and verified retrieval. Agents build trust profiles. Contradictions caught before agents act on bad data.
 
 -   :material-database:{ .lg .middle } __7 Storage Backends__
 
@@ -40,6 +40,7 @@ ALMA isn't just another memory framework. Here's what sets it apart:
 
 | Feature | ALMA | Mem0 | LangChain Memory |
 |---------|------|------|------------------|
+| **Trust / Verification** | **Veritas (built-in)** | No | No |
 | **Memory Scoping** | `can_learn` / `cannot_learn` | Basic isolation | None |
 | **Anti-Pattern Learning** | Yes | No | No |
 | **Multi-Agent Sharing** | Yes | No | No |
