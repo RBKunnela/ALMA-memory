@@ -77,11 +77,14 @@ nav:
   - Guides:
     - Memory Types: guides/memory-types.md
     - Multi-Agent Sharing: guides/multi-agent-sharing.md
+    - Veritas Trust Layer: guides/veritas-trust-layer.md
     - Storage Backends: guides/storage-backends.md
     - Event System: guides/events-webhooks.md
     - MCP Integration: guides/mcp-integration.md
     - TypeScript SDK: guides/typescript-sdk.md
     - Testing: guides/testing.md
+  - Veritas Cloud:
+    - Early Access: guides/veritas-cloud.md
   - Comparisons:
     - ALMA vs Mem0: comparison/mem0-vs-alma.md
     - ALMA vs LangChain: comparison/langchain-memory-vs-alma.md
