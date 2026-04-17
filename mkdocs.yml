@@ -1,5 +1,5 @@
 site_name: ALMA Memory
-site_url: https://alma-memory.pages.dev
+site_url: https://alma-memory.pages.dev/docs/
 site_description: Persistent memory for AI agents - Learn, remember, improve. Alternative to Mem0 with scoped learning, anti-patterns, multi-agent sharing, and MCP integration.
 site_author: RBKunnela
 
@@ -56,6 +56,7 @@ markdown_extensions:
       permalink: true
 
 extra:
+  homepage: /
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/RBKunnela/ALMA-memory
@@ -69,7 +70,7 @@ extra:
 docs_dir: site-docs
 
 nav:
-  - Home: index.md
+  - Documentation: index.md
   - Getting Started:
     - Installation: getting-started/installation.md
     - Quick Start: getting-started/quickstart.md
