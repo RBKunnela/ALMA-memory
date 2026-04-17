@@ -28,12 +28,20 @@ jobs:
       - name: Install MkDocs dependencies
         run: pip install -r docs-requirements.txt
 
-      - name: Build site
-        run: mkdocs build
+      - name: Build MkDocs into docs/ subfolder
+        run: mkdocs build -d _build/docs
+
+      - name: Assemble final site
+        run: |
+          cp site-docs/index.html _build/index.html
+          cp -r site-docs/assets _build/assets 2>/dev/null || true
+          cp site-docs/og-image.svg _build/og-image.svg 2>/dev/null || true
+          cp site-docs/robots.txt _build/robots.txt 2>/dev/null || true
+          cp site-docs/sitemap.xml _build/sitemap.xml 2>/dev/null || true
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy site --project-name=alma-memory
+          command: pages deploy _build --project-name=alma-memory
