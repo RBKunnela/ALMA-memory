@@ -8,6 +8,10 @@ repo_url: https://github.com/RBKunnela/ALMA-memory
 
 theme:
   name: material
+  # Disable Material's default Google Fonts loading — extra.css loads
+  # Fraunces + Plus Jakarta Sans + JetBrains Mono via @import instead.
+  # See: docs/design-system/DESIGN-alma.md
+  font: false
   palette:
     - scheme: default
       primary: deep purple
@@ -38,6 +42,17 @@ theme:
 plugins:
   - search
   - tags
+
+# ALMA design system — loads design tokens, typography overrides, and
+# custom ALMA components (metric tiles, score pills, CLI blocks).
+# Spec: docs/design-system/DESIGN-alma.md
+extra_css:
+  - stylesheets/extra.css
+
+# Landing page animations — scroll reveals, counter animation, parallax orbs.
+# Lightweight, dependency-free, respects prefers-reduced-motion.
+extra_javascript:
+  - javascripts/animations.js
 
 markdown_extensions:
   - pymdownx.highlight:

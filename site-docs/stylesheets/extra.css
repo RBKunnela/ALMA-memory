@@ -1,0 +1,1191 @@
+/* ============================================================================
+   ALMA Design System — Material theme overrides
+   Reference: docs/design-system/DESIGN-alma.md
+   Canonical: D:\1.GITHUB\ALMA-memory\docs\design-system\DESIGN-alma.md
+
+   Three-role typography:
+   - Fraunces      → display/hero (28px+)
+   - Plus Jakarta  → UI + body
+   - JetBrains Mono → code + scores + CLI
+
+   Color placeholder: primary stays Material's "deep purple" until
+   #TBD-primary is decided via ds-creator. All other tokens are final.
+   ============================================================================ */
+
+
+/* ----------------------------------------------------------------------------
+   1. Google Fonts — variable fonts, single request
+   ---------------------------------------------------------------------------- */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..700,0..100&family=Plus+Jakarta+Sans:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap');
+
+
+/* ----------------------------------------------------------------------------
+   2. Design tokens — CSS custom properties
+   ---------------------------------------------------------------------------- */
+
+:root {
+  /* Typography ------------------------------------------------------------ */
+  --alma-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --alma-font-sans:    'Plus Jakarta Sans', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --alma-font-mono:    'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
+
+  /* Text scale ----------------------------------------------------------- */
+  --alma-text-primary:   #1a1a1a;   /* warm near-black, never pure */
+  --alma-text-focused:   #374151;
+  --alma-text-secondary: #6b7280;
+  --alma-text-tertiary:  #9ca3af;
+  --alma-text-quiet:     #d1d5db;
+
+  /* Surface -------------------------------------------------------------- */
+  --alma-surface-base:   #ffffff;
+  --alma-surface-off:    #fafafa;
+  --alma-border:         #e5e7eb;
+
+  /* Semantic ------------------------------------------------------------- */
+  --alma-success:        #16a34a;
+  --alma-success-tint:   rgba(22, 163, 74, 0.12);
+  --alma-warn:           #ea580c;
+  --alma-warn-tint:      rgba(234, 88, 12, 0.12);
+  --alma-error:          #dc2626;
+  --alma-error-tint:     rgba(220, 38, 38, 0.12);
+  --alma-info:           #2563eb;
+  --alma-info-tint:      rgba(37, 99, 235, 0.12);
+
+  /* Shadows -------------------------------------------------------------- */
+  --alma-shadow-metric: rgba(0, 0, 0, 0.04) 0 1px 2px;
+  --alma-shadow-card:   rgba(0, 0, 0, 0.02) 0 0 0 1px,
+                        rgba(0, 0, 0, 0.04) 0 2px 6px,
+                        rgba(0, 0, 0, 0.08) 0 4px 8px;
+  --alma-shadow-hover:  rgba(0, 0, 0, 0.08) 0 4px 12px;
+  --alma-shadow-modal:  rgba(0, 0, 0, 0.15) 0 12px 32px,
+                        rgba(0, 0, 0, 0.08) 0 4px 12px;
+
+  /* Radius --------------------------------------------------------------- */
+  --alma-radius-sharp:   4px;
+  --alma-radius-sm:      8px;
+  --alma-radius-md:     12px;
+  --alma-radius-lg:     16px;
+  --alma-radius-xl:     24px;
+  --alma-radius-pill:   9999px;
+
+  /* Material theme overrides (these drive default Material rendering) ---- */
+  --md-text-font: 'Plus Jakarta Sans';
+  --md-code-font: 'JetBrains Mono';
+  --md-typeset-font-size: 0.94rem;    /* 15px body */
+  --md-typeset-line-height: 1.55;
+  --md-default-fg-color: var(--alma-text-primary);
+  --md-default-fg-color--light: var(--alma-text-focused);
+  --md-default-fg-color--lighter: var(--alma-text-secondary);
+  --md-default-fg-color--lightest: var(--alma-text-tertiary);
+  --md-default-bg-color: var(--alma-surface-base);
+  --md-code-bg-color: var(--alma-surface-off);
+  --md-code-fg-color: var(--alma-text-primary);
+}
+
+/* Dark mode (Material's "slate" scheme) overrides ------------------------- */
+[data-md-color-scheme="slate"] {
+  --alma-surface-base:   #0f0f10;
+  --alma-surface-off:    #1a1a1c;
+  --alma-border:         #2a2a2e;
+  --alma-text-primary:   #f4f4f5;
+  --alma-text-focused:   #e4e4e7;
+  --alma-text-secondary: #a1a1aa;
+  --alma-text-tertiary:  #71717a;
+  --alma-shadow-card:    rgba(0, 0, 0, 0.4) 0 0 0 1px,
+                         rgba(0, 0, 0, 0.3) 0 2px 6px,
+                         rgba(0, 0, 0, 0.5) 0 4px 8px;
+}
+
+
+/* ----------------------------------------------------------------------------
+   3. Base typography — body + headings + mono
+   ---------------------------------------------------------------------------- */
+
+body,
+.md-typeset {
+  font-family: var(--alma-font-sans);
+  font-feature-settings: 'kern', 'liga', 'calt';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings — Plus Jakarta Sans with negative tracking --------------------- */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  font-family: var(--alma-font-sans);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--alma-text-primary);
+}
+
+.md-typeset h1 {
+  font-size: 2rem;             /* 32px — docs page title */
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 0 0 1.5rem;
+}
+
+.md-typeset h2 {
+  font-size: 1.5rem;           /* 24px */
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 2.5rem 0 1rem;
+}
+
+.md-typeset h3 {
+  font-size: 1.25rem;          /* 20px */
+  font-weight: 600;
+  margin: 2rem 0 0.75rem;
+}
+
+.md-typeset h4 {
+  font-size: 1.0625rem;        /* 17px */
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+}
+
+/* Paragraph body ---------------------------------------------------------- */
+.md-typeset p {
+  line-height: 1.6;
+  color: var(--alma-text-primary);
+}
+
+/* Monospace — code, pre, kbd ---------------------------------------------- */
+.md-typeset code,
+.md-typeset pre,
+.md-typeset kbd {
+  font-family: var(--alma-font-mono);
+  font-feature-settings: 'calt' 0;    /* disable ligatures for code clarity */
+}
+
+.md-typeset code {
+  font-size: 0.875em;
+  font-weight: 500;
+  background-color: var(--alma-surface-off);
+  border-radius: var(--alma-radius-sharp);
+  padding: 2px 6px;
+  color: var(--alma-text-primary);
+}
+
+.md-typeset pre > code {
+  font-size: 0.875rem;         /* 14px code blocks */
+  font-weight: 400;
+  line-height: 1.6;
+  padding: 0;
+}
+
+/* Code blocks (highlight container) --------------------------------------- */
+.md-typeset .highlight {
+  background-color: var(--alma-surface-off);
+  border: 1px solid var(--alma-border);
+  border-radius: var(--alma-radius-sm);
+  padding: 0;
+}
+
+.md-typeset .highlight pre {
+  padding: 1rem;
+  margin: 0;
+}
+
+
+/* ----------------------------------------------------------------------------
+   4. Navigation + header refinements
+   ---------------------------------------------------------------------------- */
+
+.md-header {
+  box-shadow: none;
+  border-bottom: 1px solid var(--alma-border);
+}
+
+.md-tabs {
+  border-bottom: 1px solid var(--alma-border);
+}
+
+.md-nav__link {
+  font-weight: 500;
+}
+
+.md-nav__item .md-nav__link--active {
+  font-weight: 600;
+}
+
+
+/* ----------------------------------------------------------------------------
+   5. Links + interactive elements
+   ---------------------------------------------------------------------------- */
+
+.md-typeset a {
+  font-weight: 500;
+  transition: color 0.15s ease, border-bottom-color 0.15s ease;
+}
+
+.md-typeset a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Buttons (if declared via Material) -------------------------------------- */
+.md-typeset .md-button {
+  font-family: var(--alma-font-sans);
+  font-weight: 500;
+  border-radius: var(--alma-radius-sm);
+  transition: all 0.2s ease;
+}
+
+.md-typeset .md-button--primary {
+  box-shadow: var(--alma-shadow-metric);
+}
+
+.md-typeset .md-button--primary:hover {
+  box-shadow: var(--alma-shadow-hover);
+  transform: translateY(-1px);
+}
+
+
+/* ----------------------------------------------------------------------------
+   6. Tables — cleaner borders, better typography
+   ---------------------------------------------------------------------------- */
+
+.md-typeset table:not([class]) {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--alma-radius-md);
+  overflow: hidden;
+  box-shadow: var(--alma-shadow-metric);
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--alma-surface-off);
+  font-family: var(--alma-font-sans);
+  font-weight: 600;
+  font-size: 0.8125rem;        /* 13px headers */
+  color: var(--alma-text-focused);
+  text-transform: none;
+  border-bottom: 1px solid var(--alma-border);
+}
+
+.md-typeset table:not([class]) td {
+  border-bottom: 1px solid var(--alma-border);
+  line-height: 1.5;
+}
+
+/* Numbers in tables get mono treatment ------------------------------------ */
+.md-typeset table:not([class]) td:has(code),
+.md-typeset .alma-num {
+  font-family: var(--alma-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ----------------------------------------------------------------------------
+   7. Admonitions — warmer tint, same Material structure
+   ---------------------------------------------------------------------------- */
+
+.md-typeset .admonition {
+  border-radius: var(--alma-radius-sm);
+  border-left-width: 4px;
+  box-shadow: var(--alma-shadow-metric);
+  font-size: 0.875rem;
+}
+
+
+/* ============================================================================
+   8. ALMA-specific components (custom classes)
+   Use these in markdown via `attr_list` or raw HTML blocks.
+   ============================================================================ */
+
+
+/* 8.1  Hero — for landing/marketing moments ------------------------------ */
+.alma-hero {
+  padding: 4rem 0 3rem;
+  text-align: left;
+  max-width: 880px;
+}
+
+.alma-hero h1,
+.alma-hero .alma-display-hero {
+  font-family: var(--alma-font-display);
+  font-size: 3.5rem;           /* 56px desktop */
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--alma-text-primary);
+  font-variation-settings: 'SOFT' 50, 'opsz' 144;
+  margin: 0 0 1.25rem;
+}
+
+.alma-hero .alma-display-lead {
+  font-family: var(--alma-font-sans);
+  font-size: 1.25rem;          /* 20px subtitle */
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--alma-text-secondary);
+  max-width: 640px;
+  margin: 0 0 2rem;
+}
+
+/* Scale hero down on mobile --------------------------------------------- */
+@media (max-width: 768px) {
+  .alma-hero h1,
+  .alma-hero .alma-display-hero {
+    font-size: 2.25rem;        /* 36px mobile */
+  }
+  .alma-hero .alma-display-lead {
+    font-size: 1.0625rem;      /* 17px mobile */
+  }
+}
+
+
+/* 8.2  Metric tile — ALMA's signature dashboard component --------------- */
+.alma-metric-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: var(--alma-surface-base);
+  border: 1px solid var(--alma-border);
+  border-radius: var(--alma-radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--alma-shadow-metric);
+}
+
+.alma-metric-tile .alma-metric-label {
+  font-family: var(--alma-font-sans);
+  font-size: 0.8125rem;        /* 13px */
+  font-weight: 500;
+  color: var(--alma-text-secondary);
+}
+
+.alma-metric-tile .alma-metric-value {
+  font-family: var(--alma-font-mono);
+  font-size: 1.75rem;          /* 28px */
+  font-weight: 500;
+  color: var(--alma-text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.alma-metric-tile .alma-metric-delta {
+  font-family: var(--alma-font-sans);
+  font-size: 0.75rem;          /* 12px */
+  font-weight: 500;
+  color: var(--alma-text-secondary);
+}
+
+.alma-metric-tile .alma-metric-delta.is-up    { color: var(--alma-success); }
+.alma-metric-tile .alma-metric-delta.is-down  { color: var(--alma-error); }
+.alma-metric-tile .alma-metric-delta.is-flat  { color: var(--alma-warn); }
+
+/* Grid layout helper for metric tiles ----------------------------------- */
+.alma-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+
+/* 8.3  Score pill — status indicator ------------------------------------ */
+.alma-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 4px 12px;
+  border-radius: var(--alma-radius-pill);
+  font-family: var(--alma-font-sans);
+  font-size: 0.75rem;          /* 12px */
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.alma-pill .alma-pill-value {
+  font-family: var(--alma-font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.alma-pill.is-success { background-color: var(--alma-success-tint); color: var(--alma-success); }
+.alma-pill.is-warn    { background-color: var(--alma-warn-tint);    color: var(--alma-warn); }
+.alma-pill.is-error   { background-color: var(--alma-error-tint);   color: var(--alma-error); }
+.alma-pill.is-info    { background-color: var(--alma-info-tint);    color: var(--alma-info); }
+
+
+/* 8.4  CLI output block — terminal-style display ----------------------- */
+.alma-cli {
+  background-color: var(--alma-surface-off);
+  border: 1px solid var(--alma-border);
+  border-radius: var(--alma-radius-sm);
+  padding: 1rem 1.25rem;
+  font-family: var(--alma-font-mono);
+  font-size: 0.8125rem;        /* 13px */
+  line-height: 1.6;
+  color: var(--alma-text-primary);
+  overflow-x: auto;
+}
+
+.alma-cli .alma-cli-prompt {
+  font-family: var(--alma-font-sans);
+  font-weight: 600;
+  color: var(--alma-text-focused);
+  user-select: none;
+}
+
+.alma-cli .alma-cli-success { color: var(--alma-success); }
+.alma-cli .alma-cli-error   { color: var(--alma-error); }
+.alma-cli .alma-cli-dim     { color: var(--alma-text-secondary); }
+
+
+/* 8.5  Card container — elevated surface ------------------------------- */
+.alma-card {
+  background-color: var(--alma-surface-base);
+  border-radius: var(--alma-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--alma-shadow-card);
+}
+
+.alma-card:hover {
+  box-shadow: var(--alma-shadow-hover);
+  transition: box-shadow 0.2s ease;
+}
+
+
+/* 8.6  Benchmark showcase — hero metric (R@5 = 0.964) ------------------ */
+.alma-benchmark-hero {
+  text-align: left;
+  padding: 1rem 0;
+}
+
+.alma-benchmark-hero .alma-benchmark-label {
+  font-family: var(--alma-font-sans);
+  font-size: 0.875rem;         /* 14px */
+  font-weight: 500;
+  color: var(--alma-text-secondary);
+  margin: 0 0 0.5rem;
+}
+
+.alma-benchmark-hero .alma-benchmark-value {
+  font-family: var(--alma-font-mono);
+  font-size: 2.5rem;           /* 40px */
+  font-weight: 500;
+  color: var(--alma-text-primary);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.alma-benchmark-hero .alma-benchmark-caption {
+  font-family: var(--alma-font-sans);
+  font-size: 0.8125rem;        /* 13px */
+  font-weight: 500;
+  color: var(--alma-success);
+  margin: 0.5rem 0 0;
+}
+
+
+/* 8.7  Inline mono number — for in-body scores ------------------------- */
+/* Use <code class="alma-num"> in markdown or just <code> in body text
+   — the Material default code style now shows in JetBrains Mono. */
+
+
+/* ----------------------------------------------------------------------------
+   9. Utilities
+   ---------------------------------------------------------------------------- */
+
+.alma-mono         { font-family: var(--alma-font-mono); font-variant-numeric: tabular-nums; }
+.alma-display      { font-family: var(--alma-font-display); font-variation-settings: 'SOFT' 50; }
+.alma-text-muted   { color: var(--alma-text-secondary); }
+.alma-text-quiet   { color: var(--alma-text-tertiary); }
+.alma-text-success { color: var(--alma-success); }
+.alma-text-warn    { color: var(--alma-warn); }
+.alma-text-error   { color: var(--alma-error); }
+
+
+/* ----------------------------------------------------------------------------
+   10. Selection styling
+   ---------------------------------------------------------------------------- */
+
+::selection {
+  background-color: rgba(124, 58, 237, 0.18);  /* TODO: swap to #TBD-primary/0.18 */
+  color: var(--alma-text-primary);
+}
+
+
+/* ============================================================================
+   11. Landing page — hero + sections + animations
+   Inspired by the soft-aurora / parallax-depth pattern language.
+   Adapted with ALMA's three-role typography and cognition-memory palette.
+   ============================================================================ */
+
+
+/* 11.1  Hero section — dark backdrop + aurora glow ---------------------- */
+
+.alma-hero-section {
+  position: relative;
+  padding: 5rem 1.5rem 6rem;
+  margin: -1.5rem -1.5rem 0;                  /* bleed to viewport edges */
+  background-color: #0a0a12;                  /* deep near-black with cool tint */
+  color: #f4f4f5;
+  overflow: hidden;
+  border-radius: 0 0 var(--alma-radius-xl) var(--alma-radius-xl);
+}
+
+.alma-hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 960px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.alma-eyebrow {
+  display: inline-block;
+  font-family: var(--alma-font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(244, 244, 245, 0.6);
+  padding: 0.375rem 0.875rem;
+  border: 1px solid rgba(244, 244, 245, 0.15);
+  border-radius: var(--alma-radius-pill);
+  margin: 0 0 1.75rem;
+  backdrop-filter: blur(8px);
+}
+
+.alma-hero-section h1,
+.alma-hero-section .alma-display-hero {
+  font-family: var(--alma-font-display);
+  font-size: clamp(2.25rem, 5.5vw, 4rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  color: #f4f4f5;
+  font-variation-settings: 'SOFT' 50, 'opsz' 144;
+  margin: 0 0 1.5rem;
+  max-width: 20ch;
+}
+
+.alma-display-accent {
+  background: linear-gradient(135deg, #c4b5fd 0%, #7c3aed 45%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  font-variation-settings: 'SOFT' 60, 'opsz' 144;
+}
+
+.alma-hero-section .alma-display-lead {
+  font-family: var(--alma-font-sans);
+  font-size: 1.1875rem;
+  font-weight: 400;
+  line-height: 1.55;
+  color: rgba(244, 244, 245, 0.78);
+  max-width: 640px;
+  margin: 0 0 2.25rem;
+}
+
+.alma-hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 2rem;
+}
+
+.alma-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-family: var(--alma-font-sans);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.2;
+  border-radius: var(--alma-radius-sm);
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.alma-btn--primary {
+  background-color: #7c3aed;                  /* placeholder for #TBD-primary */
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(124, 58, 237, 0.35),
+              0 4px 16px rgba(124, 58, 237, 0.28);
+}
+.alma-btn--primary:hover {
+  background-color: #6d28d9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.4),
+              0 8px 24px rgba(124, 58, 237, 0.35);
+  text-decoration: none;
+}
+
+.alma-btn--ghost {
+  background-color: rgba(244, 244, 245, 0.06);
+  color: #f4f4f5;
+  border-color: rgba(244, 244, 245, 0.18);
+  backdrop-filter: blur(8px);
+}
+.alma-btn--ghost:hover {
+  background-color: rgba(244, 244, 245, 0.12);
+  border-color: rgba(244, 244, 245, 0.28);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+[data-md-color-scheme="slate"] .alma-btn--ghost,
+.alma-hero-section .alma-btn--ghost {
+  color: #f4f4f5;
+}
+
+/* Outside the dark hero, ghost button gets light treatment */
+.alma-cta-section .alma-btn--ghost {
+  background-color: transparent;
+  color: var(--alma-text-primary);
+  border-color: var(--alma-border);
+}
+.alma-cta-section .alma-btn--ghost:hover {
+  background-color: var(--alma-surface-off);
+  border-color: var(--alma-text-tertiary);
+}
+
+
+.alma-hero-install {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.875rem;
+  margin: 0.5rem 0 0;
+  color: rgba(244, 244, 245, 0.55);
+}
+
+.alma-cli-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-family: var(--alma-font-mono);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #f4f4f5;
+  background-color: rgba(244, 244, 245, 0.06);
+  border: 1px solid rgba(244, 244, 245, 0.12);
+  border-radius: var(--alma-radius-sm);
+  backdrop-filter: blur(8px);
+}
+
+.alma-cli-line .alma-cli-prompt {
+  font-family: var(--alma-font-sans);
+  color: #a78bfa;
+  font-weight: 700;
+  user-select: none;
+}
+
+.alma-cli-caption {
+  font-family: var(--alma-font-sans);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+
+/* 11.2  Aurora backdrop — animated radial-glow orbs --------------------- */
+
+.alma-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.alma-aurora-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  will-change: transform;
+  animation: alma-orb-drift 18s ease-in-out infinite alternate;
+}
+
+.alma-aurora-orb--1 {
+  top: -15%;
+  left: -5%;
+  width: 50vw;
+  height: 50vw;
+  max-width: 720px;
+  max-height: 720px;
+  background: radial-gradient(circle at 30% 30%, rgba(124, 58, 237, 0.75), transparent 60%);
+  animation-duration: 22s;
+}
+
+.alma-aurora-orb--2 {
+  top: 10%;
+  right: -10%;
+  width: 45vw;
+  height: 45vw;
+  max-width: 640px;
+  max-height: 640px;
+  background: radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.55), transparent 60%);
+  animation-duration: 26s;
+  animation-delay: -6s;
+}
+
+.alma-aurora-orb--3 {
+  bottom: -20%;
+  left: 30%;
+  width: 55vw;
+  height: 55vw;
+  max-width: 780px;
+  max-height: 780px;
+  background: radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.35), transparent 60%);
+  animation-duration: 30s;
+  animation-delay: -12s;
+  opacity: 0.4;
+}
+
+@keyframes alma-orb-drift {
+  0%   { transform: translate3d(0, 0, 0)          scale(1);    }
+  50%  { transform: translate3d(6%, 3%, 0)        scale(1.08); }
+  100% { transform: translate3d(-4%, 8%, 0)       scale(0.95); }
+}
+
+
+/* 11.3  Benchmark section ----------------------------------------------- */
+
+.alma-benchmark-section {
+  max-width: 720px;
+  margin: 4rem auto 2rem;
+  padding: 2.5rem 2rem;
+  text-align: left;
+  background-color: var(--alma-surface-base);
+  border: 1px solid var(--alma-border);
+  border-radius: var(--alma-radius-lg);
+  box-shadow: var(--alma-shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.alma-benchmark-section::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.12), transparent 65%);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.alma-benchmark-section .alma-benchmark-label {
+  font-family: var(--alma-font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--alma-text-secondary);
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.alma-benchmark-section .alma-benchmark-value {
+  font-family: var(--alma-font-mono);
+  font-size: clamp(3rem, 8vw, 4.5rem);
+  font-weight: 500;
+  color: var(--alma-text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  background: linear-gradient(135deg, #1a1a1a 0%, #7c3aed 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.alma-benchmark-section .alma-benchmark-caption {
+  font-family: var(--alma-font-sans);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--alma-success);
+  margin: 0.375rem 0 0;
+}
+
+.alma-benchmark-note {
+  font-family: var(--alma-font-sans);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--alma-text-focused);
+  margin: 1.75rem 0 0;
+  padding: 1.5rem 0 0;
+  border-top: 1px solid var(--alma-border);
+  position: relative;
+  z-index: 1;
+}
+
+
+/* 11.4  Problem / capability / compare sections ------------------------- */
+
+.alma-problem-section,
+.alma-capabilities-section,
+.alma-compare-section,
+.alma-quickstart-section {
+  max-width: 1080px;
+  margin: 5rem auto;
+  padding: 0 1rem;
+}
+
+.alma-section-heading {
+  font-family: var(--alma-font-sans);
+  font-size: clamp(1.625rem, 3.5vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--alma-text-primary);
+  margin: 0 0 1rem;
+  max-width: 28ch;
+}
+
+.alma-section-lead {
+  font-family: var(--alma-font-sans);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--alma-text-secondary);
+  max-width: 620px;
+  margin: 0 0 2.5rem;
+}
+
+.alma-problem-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+}
+
+.alma-problem-card {
+  background-color: var(--alma-surface-base);
+  border: 1px solid var(--alma-border);
+  border-radius: var(--alma-radius-lg);
+  padding: 1.75rem 1.5rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.alma-problem-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--alma-shadow-card);
+  border-color: transparent;
+}
+
+.alma-problem-number {
+  font-family: var(--alma-font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #a78bfa;
+  letter-spacing: 0.1em;
+  margin: 0 0 1rem;
+}
+
+.alma-problem-card h3 {
+  font-family: var(--alma-font-sans);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--alma-text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.alma-problem-card p {
+  font-family: var(--alma-font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--alma-text-secondary);
+  margin: 0;
+}
+
+
+/* 11.5  Capability grid (6 cards) --------------------------------------- */
+
+.alma-capability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.alma-capability-card {
+  display: block;
+  padding: 1.75rem 1.5rem;
+  background-color: var(--alma-surface-base);
+  border: 1px solid var(--alma-border);
+  border-radius: var(--alma-radius-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.alma-capability-card::after {
+  content: "→";
+  position: absolute;
+  top: 1.75rem;
+  right: 1.5rem;
+  font-size: 1rem;
+  color: var(--alma-text-tertiary);
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+.alma-capability-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--alma-shadow-card);
+  border-color: rgba(124, 58, 237, 0.3);
+  text-decoration: none;
+}
+
+.alma-capability-card:hover::after {
+  transform: translateX(4px);
+  color: #7c3aed;
+}
+
+.alma-capability-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  margin: 0 0 1rem;
+  display: block;
+}
+
+.alma-capability-card h3 {
+  font-family: var(--alma-font-sans);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--alma-text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.alma-capability-card p {
+  font-family: var(--alma-font-sans);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--alma-text-secondary);
+  margin: 0;
+}
+
+.alma-capability-card code {
+  font-family: var(--alma-font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background-color: var(--alma-surface-off);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+
+/* 11.6  Compare table --------------------------------------------------- */
+
+.alma-compare-table {
+  margin: 2rem 0 2rem;
+  overflow-x: auto;
+}
+
+.alma-compare-table table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: var(--alma-surface-base);
+  border-radius: var(--alma-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--alma-shadow-card);
+}
+
+.alma-compare-table th,
+.alma-compare-table td {
+  padding: 0.9rem 1.1rem;
+  font-family: var(--alma-font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  border-bottom: 1px solid var(--alma-border);
+  vertical-align: top;
+}
+
+.alma-compare-table thead th {
+  background-color: var(--alma-surface-off);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--alma-text-focused);
+}
+
+.alma-compare-table thead th:last-child {
+  color: #7c3aed;
+  font-weight: 700;
+}
+
+.alma-compare-table tbody td:first-child {
+  font-weight: 600;
+  color: var(--alma-text-primary);
+  background-color: var(--alma-surface-off);
+  width: 30%;
+}
+
+.alma-compare-table .alma-compare-meta {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--alma-text-secondary);
+}
+
+.alma-compare-table tbody tr:last-child th,
+.alma-compare-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.alma-compare-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+
+/* 11.7  Quickstart code showcase ---------------------------------------- */
+
+.alma-code-showcase {
+  margin: 2rem 0 1rem;
+  border-radius: var(--alma-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--alma-shadow-card);
+}
+
+.alma-code-showcase .highlight {
+  margin: 0;
+  border-radius: var(--alma-radius-lg);
+  border: 1px solid var(--alma-border);
+}
+
+.alma-code-showcase pre {
+  margin: 0;
+  padding: 1.5rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.alma-code-caption {
+  font-family: var(--alma-font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--alma-text-secondary);
+  text-align: center;
+  max-width: 640px;
+  margin: 1rem auto 0;
+}
+
+
+/* 11.8  Bottom CTA section ---------------------------------------------- */
+
+.alma-cta-section {
+  max-width: 960px;
+  margin: 6rem auto 4rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at top, rgba(124, 58, 237, 0.08), transparent 70%),
+    var(--alma-surface-base);
+  border: 1px solid var(--alma-border);
+  border-radius: var(--alma-radius-xl);
+  box-shadow: var(--alma-shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.alma-cta-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.alma-cta-section h2 {
+  font-family: var(--alma-font-display);
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--alma-text-primary);
+  font-variation-settings: 'SOFT' 50, 'opsz' 144;
+  max-width: 22ch;
+  margin: 0 auto 1rem;
+}
+
+.alma-cta-section p {
+  font-family: var(--alma-font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--alma-text-secondary);
+  max-width: 540px;
+  margin: 0 auto 2rem;
+}
+
+.alma-cta-section .alma-hero-ctas {
+  justify-content: center;
+}
+
+
+/* ----------------------------------------------------------------------------
+   12. Scroll-reveal animations
+   JS toggles `.alma-revealed` on elements with `.alma-reveal` when in viewport.
+   ---------------------------------------------------------------------------- */
+
+.alma-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.6, 0.2, 1) var(--delay, 0s),
+    transform 0.7s cubic-bezier(0.2, 0.6, 0.2, 1) var(--delay, 0s);
+  will-change: opacity, transform;
+}
+
+.alma-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Respect prefers-reduced-motion ----------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .alma-reveal,
+  .alma-revealed,
+  .alma-aurora-orb {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
+
+/* ----------------------------------------------------------------------------
+   13. Responsive tuning for landing hero
+   ---------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .alma-hero-section {
+    padding: 3.5rem 1.25rem 4rem;
+  }
+  .alma-hero-install {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .alma-benchmark-section {
+    margin: 3rem 1rem 2rem;
+    padding: 2rem 1.5rem;
+  }
+  .alma-problem-section,
+  .alma-capabilities-section,
+  .alma-compare-section,
+  .alma-quickstart-section {
+    margin: 3.5rem auto;
+  }
+  .alma-cta-section {
+    padding: 3rem 1.5rem;
+    margin: 4rem 1rem 3rem;
+  }
+}
