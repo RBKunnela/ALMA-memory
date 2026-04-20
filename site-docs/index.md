@@ -1,67 +1,217 @@
-# ALMA - Agent Learning Memory Architecture
+---
+hide:
+  - navigation
+  - toc
+---
 
-<div style="text-align: center; margin: 2rem 0;">
-  <h2 style="font-size: 1.5rem; color: #666;">Your AI forgets everything. ALMA fixes that.</h2>
-  <p><strong>One memory layer. Every AI. Never start from zero.</strong></p>
-  <p><code>pip install alma-memory</code> — 5 minutes to persistent memory. Free forever on SQLite.</p>
-</div>
+<!-- ALMA Landing Page — design system per docs/design-system/DESIGN-alma.md -->
 
-<div class="grid cards" markdown>
+<section class="alma-hero-section" markdown="0">
+  <div class="alma-aurora" aria-hidden="true">
+    <span class="alma-aurora-orb alma-aurora-orb--1"></span>
+    <span class="alma-aurora-orb alma-aurora-orb--2"></span>
+    <span class="alma-aurora-orb alma-aurora-orb--3"></span>
+  </div>
 
--   :material-brain:{ .lg .middle } __Learn from Outcomes__
+  <div class="alma-hero-inner">
+    <span class="alma-eyebrow alma-reveal">Agent Learning Memory Architecture</span>
 
-    ---
+    <h1 class="alma-display-hero alma-reveal" style="--delay: 0.08s">
+      Your AI forgets everything.<br>
+      <span class="alma-display-accent">ALMA fixes that.</span>
+    </h1>
 
-    Agents remember what worked and what didn't. Success becomes heuristics, failures become anti-patterns.
+    <p class="alma-display-lead alma-reveal" style="--delay: 0.16s">
+      Give any AI agent permanent memory that learns and improves over time.
+      One memory layer. Every AI. Never start from zero.
+    </p>
 
--   :material-share-variant:{ .lg .middle } __Multi-Agent Sharing__
+    <div class="alma-hero-ctas alma-reveal" style="--delay: 0.24s">
+      <a class="alma-btn alma-btn--primary" href="getting-started/installation/">
+        Install ALMA
+      </a>
+      <a class="alma-btn alma-btn--ghost" href="https://github.com/RBKunnela/ALMA-memory" target="_blank" rel="noopener">
+        Star on GitHub ↗
+      </a>
+    </div>
 
-    ---
+    <div class="alma-hero-install alma-reveal" style="--delay: 0.32s">
+      <code class="alma-cli-line">
+        <span class="alma-cli-prompt">$</span>
+        pip install alma-memory
+      </code>
+      <span class="alma-cli-caption">5 minutes to persistent memory · Free forever on SQLite</span>
+    </div>
+  </div>
+</section>
 
-    Hierarchical knowledge sharing with `inherit_from` and `share_with` scopes.
 
--   :material-shield-check:{ .lg .middle } __Veritas Trust Layer__
+<section class="alma-benchmark-section alma-reveal" markdown="0">
+  <div class="alma-benchmark-hero">
+    <div class="alma-benchmark-label">Benchmarked on LongMemEval · ICLR 2025 · 500 questions</div>
+    <div class="alma-benchmark-value" data-counter="0.964" data-decimals="3">0.000</div>
+    <div class="alma-benchmark-caption">R@5 — #1 on the open-source leaderboard</div>
+  </div>
+  <p class="alma-benchmark-note">
+    ALMA doesn't make your AI remember. <strong>It makes your AI learn.</strong>
+    Built-in memory stores preferences. ALMA tracks outcomes — what worked, what failed,
+    and why — and auto-creates reusable strategies from real experience.
+  </p>
+</section>
 
-    ---
 
-    Built-in trust scoring and verified retrieval. Agents build trust profiles. Contradictions caught before agents act on bad data.
+<section class="alma-problem-section" markdown="0">
+  <h2 class="alma-section-heading alma-reveal">The problem with every AI tool you already use</h2>
+  <div class="alma-problem-grid">
 
--   :material-database:{ .lg .middle } __7 Storage Backends__
+    <div class="alma-problem-card alma-reveal" style="--delay: 0.05s">
+      <div class="alma-problem-number">01</div>
+      <h3>Fragmented context</h3>
+      <p>Claude doesn't know what ChatGPT learned. Every new AI restart starts from zero.</p>
+    </div>
 
-    ---
+    <div class="alma-problem-card alma-reveal" style="--delay: 0.1s">
+      <div class="alma-problem-number">02</div>
+      <h3>Notepads, not learning</h3>
+      <p>Built-in memory remembers facts. It doesn't remember what worked vs what failed.</p>
+    </div>
 
-    SQLite, PostgreSQL, Qdrant, Pinecone, Chroma, Azure Cosmos DB. Your data, your infrastructure.
+    <div class="alma-problem-card alma-reveal" style="--delay: 0.15s">
+      <div class="alma-problem-number">03</div>
+      <h3>Locked in walled gardens</h3>
+      <p>Your working context lives on someone else's servers, fragmented across accounts.</p>
+    </div>
 
-</div>
+  </div>
+</section>
 
-## Why ALMA?
 
-ALMA isn't just another memory framework. Here's what sets it apart:
+<section class="alma-capabilities-section" markdown="0">
+  <h2 class="alma-section-heading alma-reveal">What ALMA actually does</h2>
+  <p class="alma-section-lead alma-reveal" style="--delay: 0.05s">
+    Six capabilities that turn memory into a learning system. Compose them,
+    or use them independently.
+  </p>
 
-| Feature | ALMA | Mem0 | LangChain Memory |
-|---------|------|------|------------------|
-| **Trust / Verification** | **Veritas (built-in)** | No | No |
-| **Memory Scoping** | `can_learn` / `cannot_learn` | Basic isolation | None |
-| **Anti-Pattern Learning** | Yes | No | No |
-| **Multi-Agent Sharing** | Yes | No | No |
-| **Memory Consolidation** | LLM-powered | Basic | None |
-| **Event System** | Webhooks + callbacks | No | No |
-| **MCP Integration** | Native | No | No |
-| **TypeScript SDK** | Full-featured | No | No |
-| **Vector DB Backends** | 6 options | Limited | Limited |
+  <div class="alma-capability-grid">
 
-[See full Mem0 comparison](comparison/mem0-vs-alma.md){ .md-button }
-[See full LangChain comparison](comparison/langchain-memory-vs-alma.md){ .md-button }
+    <a class="alma-capability-card alma-reveal" style="--delay: 0.05s" href="guides/memory-types/">
+      <div class="alma-capability-icon">🧠</div>
+      <h3>Learn from outcomes</h3>
+      <p>Agents track what strategies worked and failed. Success auto-compounds into heuristics; failures become named anti-patterns with <code>why_bad</code> and <code>better_alternative</code>.</p>
+    </a>
 
-## How It Works
+    <a class="alma-capability-card alma-reveal" style="--delay: 0.1s" href="guides/multi-agent-sharing/">
+      <div class="alma-capability-icon">🔗</div>
+      <h3>Multi-agent sharing</h3>
+      <p>Hierarchical knowledge flows with <code>inherit_from</code> and <code>share_with</code> scopes. Junior agents inherit from senior agents — no copy-paste, no drift.</p>
+    </a>
 
-![How ALMA Works — The Learning Cycle](assets/diagrams/alma-how-it-works.jpeg)
+    <a class="alma-capability-card alma-reveal" style="--delay: 0.15s" href="guides/veritas-trust-layer/">
+      <div class="alma-capability-icon">🛡️</div>
+      <h3>Veritas trust layer</h3>
+      <p>Built-in trust scoring. Contradictions caught before agents act on bad data. The moment silent fallbacks stop being invisible.</p>
+    </a>
 
-Every time your agent runs, ALMA retrieves what worked before and learns from new outcomes. No manual prompt engineering. No copy-pasting from past conversations. The memory compounds automatically.
+    <a class="alma-capability-card alma-reveal" style="--delay: 0.05s" href="guides/storage-backends/">
+      <div class="alma-capability-icon">💾</div>
+      <h3>Your data, your database</h3>
+      <p>SQLite, PostgreSQL, Qdrant, Pinecone, Chroma, Azure Cosmos. Your infra, your control, your backup strategy.</p>
+    </a>
+
+    <a class="alma-capability-card alma-reveal" style="--delay: 0.1s" href="guides/mcp-integration/">
+      <div class="alma-capability-icon">🔌</div>
+      <h3>MCP-native</h3>
+      <p>Plug into any MCP-compatible AI. Your working context becomes portable across Claude, ChatGPT, Gemini, and whatever ships next.</p>
+    </a>
+
+    <a class="alma-capability-card alma-reveal" style="--delay: 0.15s" href="guides/events-webhooks/">
+      <div class="alma-capability-icon">📡</div>
+      <h3>Event system</h3>
+      <p>Webhooks + callbacks on every memory event. Wire ALMA into your existing observability, audit, or automation stack.</p>
+    </a>
+
+  </div>
+</section>
+
+
+<section class="alma-compare-section" markdown="0">
+  <h2 class="alma-section-heading alma-reveal">Built-in memory is a notepad. ALMA is a learning system.</h2>
+
+  <div class="alma-compare-table alma-reveal" style="--delay: 0.05s">
+
+| | Built-in memory <br><span class="alma-compare-meta">Claude · ChatGPT · OpenClaw</span> | **ALMA** |
+|---|---|---|
+| **What it stores** | Facts and preferences | Outcomes — what strategies worked, failed, and why |
+| **Does it learn?** | No. Remembers what you told it. | **Yes.** After 3+ similar outcomes, auto-creates reusable strategies. |
+| **Warns you?** | No | **Yes.** Anti-patterns track what NOT to do, with `why_bad` + `better_alternative`. |
+| **Cross-platform?** | No | **Yes.** One memory layer across every AI tool. |
+| **Multi-agent?** | No | **Yes.** Junior agents inherit from senior agents. |
+| **Scoring?** | Basic relevance | 4-factor: similarity + recency + success rate + confidence |
+| **Lifecycle?** | Grows until you delete | Automatic decay · compression · consolidation · archival |
+| **Benchmarked?** | Not measured | **R@5 = 0.964** on LongMemEval |
+| **Your data?** | Their servers | **Your database.** SQLite · Postgres · Qdrant |
+
+  </div>
+
+  <div class="alma-compare-ctas alma-reveal" style="--delay: 0.1s">
+    <a class="alma-btn alma-btn--ghost" href="comparison/mem0-vs-alma/">ALMA vs Mem0 →</a>
+    <a class="alma-btn alma-btn--ghost" href="comparison/langchain-memory-vs-alma/">ALMA vs LangChain →</a>
+  </div>
+</section>
+
+
+<section class="alma-quickstart-section" markdown="0">
+  <h2 class="alma-section-heading alma-reveal">Three lines to persistent memory</h2>
+  <p class="alma-section-lead alma-reveal" style="--delay: 0.05s">
+    No complex setup. No separate service. Works offline on SQLite by default.
+  </p>
+
+  <div class="alma-code-showcase alma-reveal" style="--delay: 0.1s">
+
+```python
+from alma import ALMA
+
+alma = ALMA.from_config(".alma/config.yaml")
+
+# Before task: What strategies worked for this type of problem?
+memories = alma.retrieve(task="Deploy auth service", agent="backend-dev")
+
+# After task: Record what happened so next time is better
+alma.learn(agent="backend-dev", task="Deploy auth service",
+           outcome="success", strategy_used="Blue-green deployment")
+```
+
+  </div>
+
+  <p class="alma-code-caption alma-reveal" style="--delay: 0.15s">
+    Next time the backend agent deploys — on Claude, ChatGPT, or any platform —
+    it already knows blue-green works and rolling updates don't.
+  </p>
+</section>
+
+
+<section class="alma-cta-section alma-reveal" markdown="0">
+  <div class="alma-cta-inner">
+    <h2>Memory has replaced models as the moat of 2026.</h2>
+    <p>Free forever on SQLite. MIT-licensed. Anonymized quality telemetry keeps ALMA honest and improving.</p>
+    <div class="alma-hero-ctas">
+      <a class="alma-btn alma-btn--primary" href="getting-started/installation/">Get Started</a>
+      <a class="alma-btn alma-btn--ghost" href="https://github.com/RBKunnela/ALMA-memory" target="_blank" rel="noopener">View on GitHub ↗</a>
+    </div>
+  </div>
+</section>
+
+
+## How it works
+
+Every time your agent runs, ALMA retrieves what worked before and learns from new outcomes. No manual prompt engineering. No copy-pasting from past conversations. **The memory compounds automatically.**
+
+![How ALMA Works — The Learning Cycle](assets/diagrams/alma-how-it-works.jpeg){ .alma-reveal }
 
 ---
 
-## Quick Start
+## Language SDKs
 
 === "Python"
 
@@ -109,134 +259,21 @@ Every time your agent runs, ALMA retrieves what worked before and learns from ne
     ```typescript
     import { ALMA } from '@rbkunnela/alma-memory';
 
-    // Create client
     const alma = new ALMA({
       baseUrl: 'http://localhost:8765',
       projectId: 'my-project'
     });
 
-    // Retrieve memories
     const memories = await alma.retrieve({
       query: 'authentication flow',
       agent: 'dev-agent',
       topK: 5
     });
 
-    // Learn from outcomes
     await alma.learn({
       agent: 'dev-agent',
       task: 'Implement OAuth',
       outcome: 'success',
-      strategyUsed: 'Used passport.js middleware'
+      strategy_used: 'Used Passport.js with JWT strategy'
     });
     ```
-
-=== "MCP (Claude Code)"
-
-    ```json
-    // .mcp.json
-    {
-      "mcpServers": {
-        "alma-memory": {
-          "command": "python",
-          "args": ["-m", "alma.mcp", "--config", ".alma/config.yaml"]
-        }
-      }
-    }
-    ```
-
-    22 MCP tools available: `alma_retrieve`, `alma_learn`, `alma_checkpoint`, and more.
-
-## Five Memory Types
-
-![Five Memory Types](assets/diagrams/alma-memory-types.jpeg)
-
-| Type | What It Stores | Example |
-|------|----------------|---------|
-| **Heuristic** | Learned strategies | "For forms with >5 fields, test validation incrementally" |
-| **Outcome** | Task results | "Login test succeeded using JWT token strategy" |
-| **Preference** | User constraints | "User prefers verbose test output" |
-| **Domain Knowledge** | Accumulated facts | "Login uses OAuth 2.0 with 24h token expiry" |
-| **Anti-pattern** | What NOT to do | "Don't use sleep() for async waits - causes flaky tests" |
-
-## Storage Backends
-
-Deploy anywhere with your preferred database:
-
-| Backend | Use Case | Vector Search |
-|---------|----------|---------------|
-| **SQLite + FAISS** | Local development | Yes |
-| **PostgreSQL + pgvector** | Production | Yes (HNSW) |
-| **Qdrant** | Managed vector DB | Yes (HNSW) |
-| **Pinecone** | Serverless | Yes |
-| **Chroma** | Lightweight local | Yes |
-| **Azure Cosmos DB** | Enterprise | Yes (DiskANN) |
-
-## v0.8.0 — RAG Integration Layer
-
-The latest release adds:
-
-- **RAG Bridge** — Accept chunks from any RAG framework and enhance with memory signals
-- **Hybrid Search** — Vector + keyword with Reciprocal Rank Fusion
-- **Feedback Loop** — Track and auto-tune retrieval weights
-- **IR Metrics** — MRR, NDCG, Recall, Precision, MAP
-- **Cross-Encoder Reranking** — Pluggable reranking pipeline
-- **Memory Consolidation** — LLM-powered deduplication across memory types
-
-[View Changelog](about/changelog.md){ .md-button .md-button--primary }
-
-## Architecture
-
-![ALMA Architecture](assets/diagrams/alma-architecture.jpeg)
-
----
-
-## Get Started
-
-<div class="grid cards" markdown>
-
--   :material-download:{ .lg .middle } __Installation__
-
-    ---
-
-    Install ALMA with pip or npm and configure your first project.
-
-    [:octicons-arrow-right-24: Installation Guide](getting-started/installation.md)
-
--   :material-rocket-launch:{ .lg .middle } __Quick Start__
-
-    ---
-
-    Build your first memory-powered agent in 5 minutes.
-
-    [:octicons-arrow-right-24: Quick Start](getting-started/quickstart.md)
-
--   :material-cog:{ .lg .middle } __Configuration__
-
-    ---
-
-    Configure storage backends, agents, and scopes.
-
-    [:octicons-arrow-right-24: Configuration](getting-started/configuration.md)
-
--   :fontawesome-brands-github:{ .lg .middle } __GitHub__
-
-    ---
-
-    Star the repo, report issues, contribute.
-
-    [:octicons-arrow-right-24: GitHub](https://github.com/RBKunnela/ALMA-memory)
-
-</div>
-
----
-
-<div style="text-align: center; margin-top: 3rem;">
-  <p><strong>Built for AI agents that get better with every task.</strong></p>
-  <p>
-    <a href="https://pypi.org/project/alma-memory/">PyPI</a> ·
-    <a href="https://www.npmjs.com/package/@rbkunnela/alma-memory">npm</a> ·
-    <a href="https://github.com/RBKunnela/ALMA-memory">GitHub</a> ·
-    <a href="https://github.com/RBKunnela/ALMA-memory/issues">Issues</a>
-  </p>
-</div>
