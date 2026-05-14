@@ -18,10 +18,15 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Suppress noisy optional-dep warnings from HuggingFace and tokenizers
+# Suppress noisy warnings from HuggingFace, tokenizers, and sentence-transformers
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
-os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")
+os.environ.setdefault("HF_HUB_VERBOSITY", "error")
+os.environ.setdefault("HUGGINGFACE_HUB_VERBOSITY", "error")
 os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+
+import warnings as _warnings
+_warnings.filterwarnings("ignore", category=FutureWarning, module="sentence_transformers")
+_warnings.filterwarnings("ignore", category=DeprecationWarning, module="sentence_transformers")
 
 
 # ─── helpers ──────────────────────────────────────────────────────────────────

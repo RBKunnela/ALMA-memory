@@ -145,6 +145,10 @@ class ALMA:
 
         storage = SQLiteStorage.from_config(config)
         retrieval = RetrievalEngine(storage=storage, embedding_provider="local")
+
+        # Eagerly initialize the embedder so learn() stores embeddings immediately
+        retrieval._embedder = retrieval._init_embedder()
+
         learning = LearningProtocol(
             storage=storage, scopes={}, embedder=retrieval._embedder
         )
