@@ -39,7 +39,7 @@ try:
     QDRANT_AVAILABLE = True
 except ImportError:
     QDRANT_AVAILABLE = False
-    logger.warning(
+    logger.debug(
         "qdrant-client not installed. Install with: pip install 'alma-memory[qdrant]'"
     )
 

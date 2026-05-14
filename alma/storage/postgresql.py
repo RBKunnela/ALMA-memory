@@ -57,7 +57,7 @@ try:
     PSYCOPG_AVAILABLE = True
 except ImportError:
     PSYCOPG_AVAILABLE = False
-    logger.warning(
+    logger.debug(
         "psycopg not installed. Install with: pip install 'alma-memory[postgres]'"
     )
 
@@ -195,7 +195,7 @@ class PostgreSQLStorage(StorageBackend):
                 logger.info("pgvector extension enabled")
             except Exception as e:
                 conn.rollback()  # Important: rollback to clear aborted transaction
-                logger.warning(f"pgvector not available: {e}. Using fallback search.")
+                logger.debug(f"pgvector not available: {e}. Using fallback search.")
                 self._pgvector_available = False
 
             # Create tables

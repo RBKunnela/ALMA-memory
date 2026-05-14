@@ -39,7 +39,7 @@ except ImportError:
     PINECONE_AVAILABLE = False
     Pinecone = None  # type: ignore
     ServerlessSpec = None  # type: ignore
-    logger.warning(
+    logger.debug(
         "pinecone not installed. Install with: pip install 'alma-memory[pinecone]'"
     )
 

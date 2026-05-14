@@ -38,7 +38,7 @@ try:
     CHROMADB_AVAILABLE = True
 except ImportError:
     CHROMADB_AVAILABLE = False
-    logger.warning(
+    logger.debug(
         "chromadb not installed. Install with: pip install 'alma-memory[chroma]'"
     )
 

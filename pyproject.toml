@@ -89,9 +89,16 @@ dev = [
     "bandit[toml]>=1.7.0",
     "numpy>=1.24.0",  # Required by SQLite storage
 ]
+quickstart = [
+    "sentence-transformers>=2.2.0",
+    "faiss-cpu>=1.7.4",
+]
 all = [
     "alma-memory[local,azure,postgres,qdrant,chroma,pinecone,mcp,rag,observability,dev]",
 ]
+
+[project.scripts]
+alma = "alma.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/RBKunnela/ALMA-memory"
