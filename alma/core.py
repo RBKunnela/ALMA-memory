@@ -90,6 +90,74 @@ class ALMA:
         self.project_id = project_id
 
     @classmethod
+    @classmethod
+    def quickstart(
+        cls,
+        project_id: str = "my-project",
+        storage_dir: str = ".alma",
+        agent: Optional[str] = None,
+    ) -> "ALMA":
+        """
+        Zero-config quickstart — SQLite + local embeddings, no YAML needed.
+
+        Requires: pip install 'alma-memory[local]'
+
+        Args:
+            project_id: Identifier for this project's memory namespace
+            storage_dir: Directory for the SQLite database (default: .alma)
+            agent: Optional default agent name
+
+        Returns:
+            Ready-to-use ALMA instance
+
+        Example:
+            alma = ALMA.quickstart()
+            alma.learn(agent="dev", task="deploy service", outcome="success",
+                       strategy_used="blue-green")
+            memories = alma.retrieve(task="deploy", agent="dev")
+        """
+        try:
+            from sentence_transformers import SentenceTransformer  # noqa: F401
+        except ImportError:
+            raise ImportError(
+                "ALMA.quickstart() requires local embeddings.\n"
+                "Run: pip install 'alma-memory[local]'\n"
+                "Or use ALMA.from_config() with a custom config."
+            )
+
+        from pathlib import Path as _Path
+        from alma.storage.sqlite_local import SQLiteStorage
+        from alma.retrieval.engine import RetrievalEngine
+        from alma.learning.protocols import LearningProtocol
+
+        storage_path = _Path(storage_dir).expanduser()
+        storage_path.mkdir(parents=True, exist_ok=True)
+
+        config = {
+            "project_id": project_id,
+            "storage": "sqlite",
+            "embedding_provider": "local",
+            "embedding_dim": 384,
+            "storage_dir": str(storage_path),
+            "db_name": "alma.db",
+            "agents": {},
+        }
+
+        storage = SQLiteStorage.from_config(config)
+        retrieval = RetrievalEngine(storage=storage, embedding_provider="local")
+        learning = LearningProtocol(
+            storage=storage, scopes={}, embedder=retrieval._embedder
+        )
+
+        return cls(
+            storage=storage,
+            retrieval_engine=retrieval,
+            learning_protocol=learning,
+            scopes={},
+            project_id=project_id,
+        )
+
+    @classmethod
     def from_config(cls, config_path: str) -> "ALMA":
         """
         Initialize ALMA from a configuration file.
@@ -194,9 +262,9 @@ class ALMA:
         start_time = time.time()
         metrics = get_metrics()
 
-        # Validate agent has a defined scope
+        # Validate agent has a defined scope (debug only — open-scope is normal for quickstart)
         if agent not in self.scopes:
-            structured_logger.warning(
+            structured_logger.debug(
                 f"Agent '{agent}' has no defined scope, using defaults",
                 agent=agent,
                 project_id=self.project_id,

@@ -48,7 +48,7 @@ try:
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
-    logger.warning("FAISS not available, falling back to numpy-based vector search")
+    logger.debug("FAISS not available, falling back to numpy-based vector search")
 
 
 class SQLiteStorage(StorageBackend):

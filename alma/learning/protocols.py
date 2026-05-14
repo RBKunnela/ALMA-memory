@@ -90,7 +90,7 @@ class LearningProtocol:
         # Validate agent has a scope (warn but don't block)
         scope = self.scopes.get(agent)
         if scope is None:
-            logger.warning(f"Agent '{agent}' has no defined scope")
+            logger.debug(f"Agent '{agent}' has no defined scope")
 
         # Generate embedding for searchability
         embedding = None

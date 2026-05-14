@@ -51,7 +51,7 @@ except ImportError:
     exceptions = None  # type: ignore
     ContainerProxy = Any  # type: ignore
     DatabaseProxy = Any  # type: ignore
-    logger.warning(
+    logger.debug(
         "azure-cosmos package not installed. Install with: pip install azure-cosmos"
     )
 

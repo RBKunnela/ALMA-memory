@@ -32,7 +32,7 @@ try:
     AIOHTTP_AVAILABLE = True
 except ImportError:
     AIOHTTP_AVAILABLE = False
-    logger.warning("aiohttp not installed - webhook delivery will be unavailable")
+    logger.debug("aiohttp not installed - webhook delivery will be unavailable")
 
 
 class WebhookDeliveryStatus(Enum):
