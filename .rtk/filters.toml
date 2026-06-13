@@ -1,0 +1,99 @@
+# RTK project-local filters for ALMA-memory (Python: pip/pytest/mkdocs/bandit).
+# Project-local filters override user-global (~/.config|AppData/rtk/filters.toml).
+# After editing: run `rtk trust` in the repo root, then `rtk verify`.
+# Regexes use TOML literal (single-quoted) strings so backslashes need no escaping.
+schema_version = 1
+
+# ---------------------------------------------------------------------------
+# pip install — kill the "Requirement already satisfied" wall + progress bars,
+# keep Collecting / Successfully installed / ERROR lines.
+# ---------------------------------------------------------------------------
+[filters.pip-install]
+description = "Compact pip install output (drop already-satisfied + progress)"
+match_command = 'pip\s+install\b'
+strip_ansi = true
+strip_lines_matching = [
+  '^\s*Requirement already satisfied',
+  '^\s*[━╸\-]+\s+[\d.]+/[\d.]+\s*[kKmMgG]B',
+  '^\s*\|.*\d+\s*[kKmMgG]B',
+  '^\s*$',
+]
+on_empty = "pip: nothing to do"
+
+[[tests.pip-install]]
+name = "drops already-satisfied and progress, keeps install result"
+input = """
+Requirement already satisfied: pyyaml in ./.venv/lib (6.0)
+Requirement already satisfied: certifi in ./.venv/lib (2024.1)
+Collecting numpy>=1.24.0
+  ━━━━━━━━━━━━━━━━ 17.0/17.0 MB 24.1 MB/s
+Successfully installed numpy-1.26.4
+"""
+expected = """
+Collecting numpy>=1.24.0
+Successfully installed numpy-1.26.4
+"""
+
+# NOTE: pytest is intentionally NOT defined here — rtk ships a native Rust
+# pytest module that already compacts its output. A custom [filters.pytest]
+# is shadowed ("will never activate") so we rely on the built-in.
+
+# ---------------------------------------------------------------------------
+# mkdocs build/serve — drop the INFO log spam, keep WARNING/ERROR.
+# ---------------------------------------------------------------------------
+[filters.mkdocs]
+description = "Drop mkdocs INFO logging, keep warnings/errors"
+match_command = 'mkdocs\b'
+strip_ansi = true
+strip_lines_matching = [
+  '^INFO\s+-\s+',
+  '^DEBUG\s+-\s+',
+  '^\s*$',
+]
+on_empty = "mkdocs: build clean"
+
+[[tests.mkdocs]]
+name = "keeps WARNING, drops INFO"
+input = """
+INFO    -  Building documentation...
+INFO    -  Cleaning site directory
+WARNING -  A relative path to 'missing.md' is included but not found
+INFO    -  Documentation built in 1.42 seconds
+"""
+expected = """
+WARNING -  A relative path to 'missing.md' is included but not found
+"""
+
+# ---------------------------------------------------------------------------
+# bandit — drop the [main] INFO preamble and the lines-of-code footer,
+# keep the actual issues.
+# ---------------------------------------------------------------------------
+[filters.bandit]
+description = "Drop bandit run metadata, keep issues"
+match_command = 'bandit\b'
+strip_ansi = true
+strip_lines_matching = [
+  '^\[main\]\s+INFO',
+  '^\s*Total lines of code:',
+  '^\s*Total lines skipped',
+  '^\s*$',
+]
+on_empty = "bandit: no issues"
+
+[[tests.bandit]]
+name = "drops [main] INFO and LOC footer, keeps issue"
+input = """
+[main]  INFO    profile include tests: None
+[main]  INFO    running on Python 3.12.1
+>> Issue: [B105:hardcoded_password_string] Possible hardcoded password
+   Severity: Low   Confidence: Medium
+   Location: alma/config.py:12
+Code scanned:
+  Total lines of code: 4821
+"""
+expected = """
+>> Issue: [B105:hardcoded_password_string] Possible hardcoded password
+   Severity: Low   Confidence: Medium
+   Location: alma/config.py:12
+Code scanned:
+"""
