@@ -1,37 +1,43 @@
 # ALMA - Agent Learning Memory Architecture
-# Core dependencies
+#
+# pyproject.toml is the authoritative dependency source. This file is a
+# convenience mirror for `pip install -r requirements.txt` local-dev flows.
+# Prefer the extras instead, e.g.:
+#   pip install -e ".[local]"         # local embeddings + faiss
+#   pip install -e ".[azure]"         # Azure / OpenAI embeddings
+#   pip install -e ".[tokenizer]"     # accurate tiktoken token counting
+#   pip install -e ".[dev]"           # test + lint tooling
+#   pip install -e ".[all]"           # everything
 
-# Configuration
+# Core (matches [project].dependencies)
 pyyaml>=6.0
+python-dotenv>=1.0.0
 
-# Embeddings (local)
+# Embeddings (local) — matches [local] extra.
+# torch is NOT pinned directly: it is a transitive dependency of
+# sentence-transformers, so pinning it here only created drift.
 sentence-transformers>=2.2.0
-torch>=2.0.0
 
-# Vector search (local)
+# Vector search (local) — matches [local] extra
 faiss-cpu>=1.7.4
 
-# Azure (production)
+# Azure (production) + OpenAI embeddings — matches [azure] extra
 azure-cosmos>=4.5.0
 azure-identity>=1.15.0
 azure-keyvault-secrets>=4.7.0
-
-# OpenAI embeddings (optional, for Azure OpenAI)
 openai>=1.0.0
 
 # Database (local development)
 # sqlite3 is built into Python
 
-# Testing
+# Token estimation (optional) — matches [tokenizer] extra.
+# Used by alma/utils/tokenizer.py; falls back to approximate estimation when absent.
+tiktoken>=0.5.0
+
+# Testing — matches [dev] extra
 pytest>=7.0.0
 pytest-asyncio>=0.21.0
 pytest-cov>=4.0.0
 
-# Type checking
+# Type checking — matches [dev] extra
 mypy>=1.0.0
-
-# Token estimation
-tiktoken>=0.5.0
-
-# Utilities
-python-dotenv>=1.0.0
