@@ -25,14 +25,23 @@ is Phase 3 (see TODOs). RN parity / cross-device / HIPAA pruning is Phase 4.
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List, Optional
 
 __all__ = ["handle_memory_query", "handle_memory_store", "build_alma"]
+
+logger = logging.getLogger(__name__)
 
 # Default ALMA "domain" bucket for facts written through the gateway.
 _DEFAULT_DOMAIN = "maia_memory"
 # Default top_k when the device omits `limit`.
 _DEFAULT_LIMIT = 10
+# Hard cap on top_k so a hostile/buggy caller cannot force an unbounded scan.
+_MAX_LIMIT = 100
+# Max UTF-8 byte length for caller-supplied text (`content` / `query`). Guards
+# against memory/DoS from oversized payloads. Reject over-limit rather than
+# silently truncating (clearer contract + testable).
+MAX_CONTENT_BYTES = 32 * 1024
 
 
 def _slice_to_contents(memory_slice: Any) -> List[str]:
@@ -94,9 +103,13 @@ def handle_memory_query(
         if not isinstance(query, str) or not query.strip():
             return {"ok": False, "error": "missing or invalid 'query'"}
 
+        if len(query.encode("utf-8")) > MAX_CONTENT_BYTES:
+            return {"ok": False, "error": "input too large"}
+
         limit = params.get("limit", _DEFAULT_LIMIT)
         if not isinstance(limit, int) or limit <= 0:
             limit = _DEFAULT_LIMIT
+        limit = min(limit, _MAX_LIMIT)
 
         resolved_agent = _resolve_agent(params.get("metadata"), agent)
         user_id = _resolve_user_id(params.get("metadata"))
@@ -110,8 +123,11 @@ def handle_memory_query(
 
         results = [{"content": c} for c in _slice_to_contents(memory_slice)]
         return {"ok": True, "payload": {"results": results}}
-    except Exception as exc:  # never raise into the RPC layer
-        return {"ok": False, "error": f"memory.query failed: {exc}"}
+    except Exception:  # never raise into the RPC layer
+        # Log real detail server-side; return a generic message to the caller so
+        # DB path / schema / SQL do not leak across the RPC boundary.
+        logger.exception("memory.query failed")
+        return {"ok": False, "error": "internal error"}
 
 
 def handle_memory_store(
@@ -142,6 +158,9 @@ def handle_memory_store(
         if not isinstance(content, str) or not content.strip():
             return {"ok": False, "error": "missing or invalid 'content'"}
 
+        if len(content.encode("utf-8")) > MAX_CONTENT_BYTES:
+            return {"ok": False, "error": "input too large"}
+
         metadata = params.get("metadata")
         if metadata is not None and not isinstance(metadata, dict):
             return {"ok": False, "error": "'metadata' must be an object"}
@@ -155,8 +174,11 @@ def handle_memory_store(
             source="user_stated",
         )
         return {"ok": True}
-    except Exception as exc:  # never raise into the RPC layer
-        return {"ok": False, "error": f"memory.store failed: {exc}"}
+    except Exception:  # never raise into the RPC layer
+        # Log real detail server-side; return a generic message to the caller so
+        # DB path / schema / SQL do not leak across the RPC boundary.
+        logger.exception("memory.store failed")
+        return {"ok": False, "error": "internal error"}
 
 
 def _resolve_agent(metadata: Optional[Dict[str, Any]], default: str) -> str:

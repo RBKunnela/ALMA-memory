@@ -69,13 +69,39 @@ class FakeALMA:
 
 
 class ExplodingALMA:
-    """Raises on every call — proves handlers never leak exceptions."""
+    """Raises on every call — proves handlers never leak exceptions.
+
+    The exception text (`_SECRET_DETAIL`) stands in for the kind of internal
+    detail (DB path / schema / SQL) that must NOT reach the RPC caller.
+    """
 
     def retrieve(self, *a: Any, **k: Any) -> Any:
-        raise RuntimeError("boom")
+        raise RuntimeError(_SECRET_DETAIL)
 
     def add_domain_knowledge(self, *a: Any, **k: Any) -> Any:
-        raise RuntimeError("boom")
+        raise RuntimeError(_SECRET_DETAIL)
+
+
+# Sentinel that mimics a leaky internal error (e.g. a DB path in an SQL error).
+_SECRET_DETAIL = "sqlite3 error at /var/alma/secret.db: no such table: facts"
+
+
+class RecordingALMA(FakeALMA):
+    """FakeALMA that records the `top_k` it was called with (for cap tests)."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.last_top_k: Optional[int] = None
+
+    def retrieve(
+        self,
+        task: str,
+        agent: str,
+        top_k: int = 5,
+        user_id: Optional[str] = None,
+    ) -> _FakeSlice:
+        self.last_top_k = top_k
+        return super().retrieve(task, agent, top_k=top_k, user_id=user_id)
 
 
 # --- query -----------------------------------------------------------------
@@ -124,6 +150,36 @@ def test_query_never_raises_on_backend_failure():
     assert "error" in out
 
 
+def test_query_error_is_generic_and_does_not_leak_internals():
+    out = handle_memory_query({"query": "x"}, alma=ExplodingALMA())
+    assert out == {"ok": False, "error": "internal error"}
+    # The raw exception text / DB path / SQL must never reach the caller.
+    assert _SECRET_DETAIL not in out["error"]
+    assert "sqlite3" not in out["error"]
+    assert "secret.db" not in out["error"]
+
+
+def test_query_clamps_oversized_limit_to_max():
+    alma = RecordingALMA()
+    alma.add_domain_knowledge(agent="maia", domain="d", fact="a fact")
+    out = handle_memory_query({"query": "x", "limit": 1_000_000}, alma=alma)
+    assert out["ok"] is True
+    # ALMA must be called with a clamped top_k (<= 100), never the raw 1,000,000.
+    assert alma.last_top_k is not None
+    assert alma.last_top_k <= 100
+
+
+def test_query_rejects_oversized_query():
+    alma = RecordingALMA()
+    big_query = "x" * (32 * 1024 + 1)  # > MAX_CONTENT_BYTES (32KB)
+    out = handle_memory_query({"query": big_query}, alma=alma)
+    assert out["ok"] is False
+    assert "error" in out
+    # Non-leaking rejection message; ALMA must not have been called.
+    assert _SECRET_DETAIL not in out["error"]
+    assert alma.last_top_k is None
+
+
 # --- store -----------------------------------------------------------------
 
 
@@ -157,6 +213,25 @@ def test_store_never_raises_on_backend_failure():
     out = handle_memory_store({"content": "x"}, alma=ExplodingALMA())
     assert out["ok"] is False
     assert "error" in out
+
+
+def test_store_error_is_generic_and_does_not_leak_internals():
+    out = handle_memory_store({"content": "x"}, alma=ExplodingALMA())
+    assert out == {"ok": False, "error": "internal error"}
+    assert _SECRET_DETAIL not in out["error"]
+    assert "sqlite3" not in out["error"]
+    assert "secret.db" not in out["error"]
+
+
+def test_store_rejects_oversized_content():
+    alma = FakeALMA()
+    big_content = "x" * (32 * 1024 + 1)  # > MAX_CONTENT_BYTES (32KB)
+    out = handle_memory_store({"content": big_content}, alma=alma)
+    assert out["ok"] is False
+    assert "error" in out
+    # Non-leaking rejection message; nothing persisted (ALMA never called).
+    assert _SECRET_DETAIL not in out["error"]
+    assert alma.facts == []
 
 
 # --- round trip ------------------------------------------------------------
