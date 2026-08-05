@@ -92,6 +92,22 @@ class LearningProtocol:
         if scope is None:
             logger.debug(f"Agent '{agent}' has no defined scope")
 
+        # Atlas G2: anti-pattern write guard (Code-Hub 1624)
+        from alma.learning.write_guard import check_write_guard
+        from alma.exceptions import ScopeViolationError
+
+        guard = check_write_guard(
+            self.storage,
+            project_id=project_id,
+            agent=agent,
+            texts=[task, strategy_used or "", error_message or ""],
+        )
+        if guard.blocked:
+            raise ScopeViolationError(
+                f"Learn blocked by anti-pattern write guard "
+                f"(id={guard.anti_pattern_id}): {guard.matched_pattern}"
+            )
+
         # Generate embedding for searchability
         embedding = None
         if self.embedder is not None:

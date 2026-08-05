@@ -53,7 +53,7 @@ class MigrationRunner:
     """
 
     # Current schema version for fresh installations
-    CURRENT_SCHEMA_VERSION = "1.0.0"
+    CURRENT_SCHEMA_VERSION = "1.2.0"
 
     def __init__(
         self,

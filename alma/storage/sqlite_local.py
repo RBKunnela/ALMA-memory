@@ -438,6 +438,9 @@ class SQLiteStorage(StorageBackend):
                 "ON memory_archive(restored)"
             )
 
+            # ==================== ATLAS GAPS v1.2.0 (Chefe 561 / Code-Hub 1624) ====================
+            self._ensure_atlas_gap_schema(cursor)
+
             # ==================== RETRIEVAL FEEDBACK TABLE (v1.0+) ====================
 
             # Retrieval feedback for tracking memory usage
@@ -1717,6 +1720,171 @@ class SQLiteStorage(StorageBackend):
                 self._index_dirty[MemoryType.ANTI_PATTERNS] = True
                 return True
             return False
+
+    # ==================== ATLAS GAPS v1.2.0 (persist verify + forget audit) ====================
+
+    def _ensure_atlas_gap_schema(self, cursor) -> None:
+        """Add verification columns + forget_audit if missing (idempotent)."""
+        from alma.storage.migrations.versions.v1_2_0_atlas_gaps import (
+            MEMORY_TABLES,
+            VERIFICATION_COLUMNS_SQLITE,
+            _sqlite_add_column_if_missing,
+        )
+
+        for table in MEMORY_TABLES:
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                (table,),
+            )
+            if not cursor.fetchone():
+                continue
+            for col, coltype in VERIFICATION_COLUMNS_SQLITE:
+                _sqlite_add_column_if_missing(cursor, table, col, coltype)
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS alma_forget_audit (
+                id TEXT PRIMARY KEY,
+                project_id TEXT NOT NULL,
+                memory_type TEXT NOT NULL,
+                memory_id TEXT NOT NULL,
+                agent TEXT,
+                reason TEXT,
+                strategy TEXT,
+                pruned_at TEXT NOT NULL,
+                metadata TEXT
+            )
+            """
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_forget_audit_project "
+            "ON alma_forget_audit(project_id, pruned_at)"
+        )
+
+    def update_memory_verification(
+        self,
+        memory_type: str,
+        memory_id: str,
+        verification_status: str,
+        verification_method: str = "none",
+        verification_confidence: float = 0.0,
+        verification_reason: str = "",
+        contradicting_source: Optional[str] = None,
+        verified_at: Optional[str] = None,
+    ) -> bool:
+        """Persist VerificationStatus for a memory row (Atlas G1)."""
+        from alma.storage.verification_store import TABLE_BY_TYPE
+
+        table = TABLE_BY_TYPE.get(memory_type) or TABLE_BY_TYPE.get(
+            str(memory_type).replace("heuristics", "heuristic")
+        )
+        # normalize plural storage constants
+        plural_map = {
+            "heuristics": "heuristics",
+            "outcomes": "outcomes",
+            "preferences": "preferences",
+            "domain_knowledge": "domain_knowledge",
+            "anti_patterns": "anti_patterns",
+            "heuristic": "heuristics",
+            "outcome": "outcomes",
+            "user_preference": "preferences",
+            "anti_pattern": "anti_patterns",
+        }
+        table = plural_map.get(str(memory_type), table)
+        if not table:
+            return False
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                f"""
+                UPDATE {table}
+                SET verification_status = ?,
+                    verification_method = ?,
+                    verification_confidence = ?,
+                    verification_reason = ?,
+                    verified_at = ?,
+                    contradicting_source = ?
+                WHERE id = ?
+                """,
+                (
+                    verification_status,
+                    verification_method,
+                    verification_confidence,
+                    verification_reason,
+                    verified_at,
+                    contradicting_source,
+                    memory_id,
+                ),
+            )
+            return cursor.rowcount > 0
+
+    def record_forget_audit(
+        self,
+        project_id: str,
+        memory_type: str,
+        memory_id: str,
+        agent: Optional[str] = None,
+        reason: str = "",
+        strategy: str = "",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Append-only forget audit row (Atlas G4)."""
+        import json
+        import uuid
+        from datetime import datetime, timezone
+
+        audit_id = f"fga_{uuid.uuid4().hex[:12]}"
+        with self._get_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO alma_forget_audit
+                (id, project_id, memory_type, memory_id, agent, reason, strategy, pruned_at, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    audit_id,
+                    project_id,
+                    memory_type,
+                    memory_id,
+                    agent,
+                    reason,
+                    strategy,
+                    datetime.now(timezone.utc).isoformat(),
+                    json.dumps(metadata or {}),
+                ),
+            )
+        return audit_id
+
+    def list_by_verification_status(
+        self,
+        project_id: str,
+        verification_status: str,
+        memory_type: str = "outcomes",
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """Query memories by persisted verification_status (MCP/API surface)."""
+        plural_map = {
+            "heuristic": "heuristics",
+            "outcome": "outcomes",
+            "user_preference": "preferences",
+            "domain_knowledge": "domain_knowledge",
+            "anti_pattern": "anti_patterns",
+            "heuristics": "heuristics",
+            "outcomes": "outcomes",
+            "preferences": "preferences",
+            "anti_patterns": "anti_patterns",
+        }
+        table = plural_map.get(memory_type, memory_type)
+        with self._get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                f"""
+                SELECT * FROM {table}
+                WHERE project_id = ? AND verification_status = ?
+                LIMIT ?
+                """,
+                (project_id, verification_status, limit),
+            ).fetchall()
+            return [dict(r) for r in rows]
 
     # ==================== MIGRATION SUPPORT ====================
 

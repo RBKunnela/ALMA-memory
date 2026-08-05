@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] — Atlas gaps (Chefe 561 / Code-Hub 1624)
+
+### Added
+- **G1 Persist VerificationStatus** — columns on heuristics/outcomes/domain_knowledge/preferences/anti_patterns; `SQLiteStorage.update_memory_verification` + `list_by_verification_status`; `VerifiedRetriever` persists when `storage=` is passed (`alma/storage/verification_store.py`).
+- **G2 Anti-pattern write guard** — `alma/learning/write_guard.py`; blocks `LearningProtocol.learn` when strategy/task matches a stored anti-pattern. Env `ALMA_ANTI_PATTERN_WRITE_GUARD` (default **on**).
+- **G4 Forget audit** — table `alma_forget_audit`; `record_forget_audit`; ForgettingEngine audits before prune deletes.
+- **G3 Migration v1.2.0** — dual sqlite/postgresql migration; SQLite `_ensure_atlas_gap_schema` on init.
+- **Tests** — `tests/unit/test_atlas_gaps_561.py` (8 tests).
+
+### Notes
+- Response to Agent Memory Atlas (neoneye) detailed code report + Chefe email feedback.
+- A0 LICENSE already landed `7ce60ab`.
+
+---
+
 ## [0.9.0] - 2026-04-13
 
 ### Added

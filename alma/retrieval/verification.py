@@ -344,6 +344,8 @@ class VerifiedRetriever:
         retrieval_engine: Any,
         llm_client: Optional[LLMClient] = None,
         config: Optional[VerificationConfig] = None,
+        storage: Optional[Any] = None,
+        persist_verification: bool = True,
     ):
         """
         Initialize verified retriever.
@@ -352,10 +354,15 @@ class VerifiedRetriever:
             retrieval_engine: RetrievalEngine or compatible retriever
             llm_client: Optional LLM client for verification
             config: Verification configuration
+            storage: Optional storage backend — when set, verification is
+                persisted on the memory row (Atlas G1 / Chefe 561)
+            persist_verification: Persist results when storage supports it
         """
         self.retrieval_engine = retrieval_engine
         self.llm = llm_client
         self.config = config or VerificationConfig()
+        self.storage = storage
+        self.persist_verification = persist_verification
 
     def retrieve_verified(
         self,
@@ -486,6 +493,15 @@ class VerifiedRetriever:
                 verification=verification,
                 retrieval_score=retrieval_score,
             )
+
+            # Atlas G1: persist verification on memory row when storage available
+            if self.persist_verification and self.storage is not None:
+                try:
+                    from alma.storage.verification_store import persist_verification
+
+                    persist_verification(self.storage, candidate, verification)
+                except Exception as e:
+                    logger.warning("persist_verification skipped: %s", e)
 
             # Categorize by status
             if verification.status == VerificationStatus.VERIFIED:

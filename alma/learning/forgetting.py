@@ -291,9 +291,42 @@ class ForgettingEngine:
 
         if not dry_run:
             for h in to_delete:
+                self._audit_forget(
+                    project_id=project_id,
+                    memory_type="heuristic",
+                    memory_id=h.id,
+                    agent=h.agent,
+                    reason="prune_heuristics",
+                    strategy=str(getattr(h, "strategy", "") or ""),
+                )
                 self.storage.delete_heuristic(h.id)
 
         return len(to_delete)
+
+    def _audit_forget(
+        self,
+        project_id: str,
+        memory_type: str,
+        memory_id: str,
+        agent: Optional[str] = None,
+        reason: str = "",
+        strategy: str = "",
+    ) -> None:
+        """Atlas G4: write forget audit before delete when storage supports it."""
+        recorder = getattr(self.storage, "record_forget_audit", None)
+        if recorder is None:
+            return
+        try:
+            recorder(
+                project_id=project_id,
+                memory_type=memory_type,
+                memory_id=memory_id,
+                agent=agent,
+                reason=reason,
+                strategy=strategy,
+            )
+        except Exception as e:
+            logger.warning("forget_audit failed id=%s: %s", memory_id, e)
 
     def _prune_domain_knowledge(
         self,
@@ -348,6 +381,13 @@ class ForgettingEngine:
 
         if not dry_run:
             for dk in to_delete:
+                self._audit_forget(
+                    project_id=project_id,
+                    memory_type="domain_knowledge",
+                    memory_id=dk.id,
+                    agent=getattr(dk, "agent", None),
+                    reason="prune_domain_knowledge",
+                )
                 self.storage.delete_domain_knowledge(dk.id)
 
         return len(to_delete)
@@ -386,6 +426,14 @@ class ForgettingEngine:
 
         if not dry_run:
             for ap in to_delete:
+                self._audit_forget(
+                    project_id=project_id,
+                    memory_type="anti_pattern",
+                    memory_id=ap.id,
+                    agent=getattr(ap, "agent", None),
+                    reason="prune_anti_patterns",
+                    strategy=getattr(ap, "pattern", "") or "",
+                )
                 self.storage.delete_anti_pattern(ap.id)
 
         return len(to_delete)

@@ -77,31 +77,33 @@ O atlas apontou **near-misses epistêmicos e operacionais** que limitam trust/au
 ## 4) PO — acceptance criteria (resumo)
 
 ### Story A0-LICENSE
-- [ ] `LICENSE` MIT no root  
-- [ ] README aponta para o arquivo  
+- [x] `LICENSE` MIT no root  (`7ce60ab`)
+- [x] README aponta para o arquivo  
 
 ### Story A1-SCHEMA
-- [ ] Migrations versionadas PG + SQLite  
-- [ ] Colunas verification + tabela forget_audit  
-- [ ] Upgrade path documentado (SQLite existing DBs)  
+- [x] Migrations versionadas PG + SQLite  (`v1_2_0_atlas_gaps.py`)
+- [x] Colunas verification + tabela forget_audit  
+- [x] Upgrade path documentado (SQLite existing DBs via `_ensure_atlas_gap_schema`)  
 
 ### Story A2-PERSIST-VERIFY
-- [ ] Após retrieve com verification, status gravado  
-- [ ] MCP/API pode filtrar por status  
-- [ ] Teste: contradicted reaparece no DB  
+- [x] Após retrieve com verification, status gravado  (`VerifiedRetriever` + storage)
+- [x] MCP/API pode filtrar por status  (`list_by_verification_status`)
+- [x] Teste: contradicted reaparece no DB  
 
 ### Story A3-WRITE-GUARD
-- [ ] Learn blocked/flagged when anti-pattern matches  
-- [ ] Config on/off  
-- [ ] Teste unitário com anti-pattern planted  
+- [x] Learn blocked/flagged when anti-pattern matches  
+- [x] Config on/off  (`ALMA_ANTI_PATTERN_WRITE_GUARD`)
+- [x] Teste unitário com anti-pattern planted  
 
 ### Story A4-PARITY-CI
-- [ ] `pytest` schema parity  
-- [ ] CI job green  
+- [x] `pytest` schema parity  (`test_schema_parity_sqlite_columns`)
+- [ ] CI job green  (local suite green; full CI on push)
 
 ### Story A5-DOCS
-- [ ] ADR ou docs/architecture gap-closure  
-- [ ] CHANGELOG  
+- [x] ADR ou docs/architecture gap-closure  
+- [x] CHANGELOG  
+
+**Code-Hub implement:** 2026-08-05 Chefe 1624 (Pedro)
 
 ---
 
