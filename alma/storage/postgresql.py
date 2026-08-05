@@ -2097,3 +2097,122 @@ class PostgreSQLStorage(StorageBackend):
                 summary.negative_count = count
 
         return summaries
+
+    # ==================== ATLAS GAPS v1.2.0 (G1/G4 PG parity) ====================
+
+    def update_memory_verification(
+        self,
+        memory_type: str,
+        memory_id: str,
+        verification_status: str,
+        verification_method: str = "none",
+        verification_confidence: float = 0.0,
+        verification_reason: str = "",
+        contradicting_source: Optional[str] = None,
+        verified_at: Optional[str] = None,
+    ) -> bool:
+        """Persist VerificationStatus (Atlas G1) — PostgreSQL tables use alma_ prefix."""
+        plural_map = {
+            "heuristic": "alma_heuristics",
+            "heuristics": "alma_heuristics",
+            "outcome": "alma_outcomes",
+            "outcomes": "alma_outcomes",
+            "user_preference": "alma_preferences",
+            "preferences": "alma_preferences",
+            "domain_knowledge": "alma_domain_knowledge",
+            "anti_pattern": "alma_anti_patterns",
+            "anti_patterns": "alma_anti_patterns",
+        }
+        table = plural_map.get(str(memory_type))
+        if not table:
+            return False
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                f"""
+                UPDATE {self.schema}.{table}
+                SET verification_status = %s,
+                    verification_method = %s,
+                    verification_confidence = %s,
+                    verification_reason = %s,
+                    verified_at = %s,
+                    contradicting_source = %s
+                WHERE id = %s
+                """,
+                (
+                    verification_status,
+                    verification_method,
+                    verification_confidence,
+                    verification_reason,
+                    verified_at,
+                    contradicting_source,
+                    memory_id,
+                ),
+            )
+            return cursor.rowcount > 0
+
+    def record_forget_audit(
+        self,
+        project_id: str,
+        memory_type: str,
+        memory_id: str,
+        agent: Optional[str] = None,
+        reason: str = "",
+        strategy: str = "",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Append-only forget audit (Atlas G4)."""
+        import uuid
+
+        audit_id = f"fga_{uuid.uuid4().hex[:12]}"
+        with self._get_connection() as conn:
+            conn.execute(
+                f"""
+                INSERT INTO {self.schema}.alma_forget_audit
+                (id, project_id, memory_type, memory_id, agent, reason, strategy, pruned_at, metadata)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    audit_id,
+                    project_id,
+                    memory_type,
+                    memory_id,
+                    agent,
+                    reason,
+                    strategy,
+                    datetime.now(timezone.utc),
+                    json.dumps(metadata or {}),
+                ),
+            )
+        return audit_id
+
+    def list_by_verification_status(
+        self,
+        project_id: str,
+        verification_status: str,
+        memory_type: str = "outcomes",
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """Query by persisted verification_status (MCP/API)."""
+        plural_map = {
+            "heuristic": "alma_heuristics",
+            "heuristics": "alma_heuristics",
+            "outcome": "alma_outcomes",
+            "outcomes": "alma_outcomes",
+            "user_preference": "alma_preferences",
+            "preferences": "alma_preferences",
+            "domain_knowledge": "alma_domain_knowledge",
+            "anti_pattern": "alma_anti_patterns",
+            "anti_patterns": "alma_anti_patterns",
+        }
+        table = plural_map.get(memory_type, f"alma_{memory_type}")
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                f"""
+                SELECT * FROM {self.schema}.{table}
+                WHERE project_id = %s AND verification_status = %s
+                LIMIT %s
+                """,
+                (project_id, verification_status, limit),
+            )
+            rows = cursor.fetchall()
+            return [dict(r) for r in rows]

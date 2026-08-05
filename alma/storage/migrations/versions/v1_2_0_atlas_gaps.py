@@ -37,7 +37,9 @@ MEMORY_TABLES = (
 )
 
 
-def _sqlite_add_column_if_missing(cursor: Any, table: str, column: str, coltype: str) -> None:
+def _sqlite_add_column_if_missing(
+    cursor: Any, table: str, column: str, coltype: str
+) -> None:
     cursor.execute(f"PRAGMA table_info({table})")
     existing = {row[1] for row in cursor.fetchall()}
     if column not in existing:

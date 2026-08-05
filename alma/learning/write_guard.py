@@ -35,10 +35,12 @@ def _normalize(text: str) -> str:
 
 
 def _tokens(text: str) -> set:
-    return {t for t in re.findall(r"[a-z0-9_]{3,}", _normalize(text))}
+    return set(re.findall(r"[a-z0-9_]{3,}", _normalize(text)))
 
 
-def text_matches_anti_pattern(candidate: str, pattern: str, min_overlap: float = 0.45) -> bool:
+def text_matches_anti_pattern(
+    candidate: str, pattern: str, min_overlap: float = 0.45
+) -> bool:
     """True if candidate contains pattern or shares enough tokens."""
     c = _normalize(candidate)
     p = _normalize(pattern)
@@ -85,8 +87,12 @@ def check_write_guard(
 
     joined = " ".join(t for t in texts if t)
     for ap in patterns:
-        pattern = getattr(ap, "pattern", None) or (ap.get("pattern") if isinstance(ap, dict) else "")
-        ap_id = getattr(ap, "id", None) or (ap.get("id") if isinstance(ap, dict) else None)
+        pattern = getattr(ap, "pattern", None) or (
+            ap.get("pattern") if isinstance(ap, dict) else ""
+        )
+        ap_id = getattr(ap, "id", None) or (
+            ap.get("id") if isinstance(ap, dict) else None
+        )
         if pattern and text_matches_anti_pattern(joined, pattern):
             why = getattr(ap, "why_bad", "") or ""
             logger.info(

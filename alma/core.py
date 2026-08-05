@@ -118,17 +118,18 @@ class ALMA:
         """
         try:
             from sentence_transformers import SentenceTransformer  # noqa: F401
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "ALMA.quickstart() requires local embeddings.\n"
                 "Run: pip install 'alma-memory[local]'\n"
                 "Or use ALMA.from_config() with a custom config."
-            )
+            ) from err
 
         from pathlib import Path as _Path
-        from alma.storage.sqlite_local import SQLiteStorage
-        from alma.retrieval.engine import RetrievalEngine
+
         from alma.learning.protocols import LearningProtocol
+        from alma.retrieval.engine import RetrievalEngine
+        from alma.storage.sqlite_local import SQLiteStorage
 
         storage_path = _Path(storage_dir).expanduser()
         storage_path.mkdir(parents=True, exist_ok=True)

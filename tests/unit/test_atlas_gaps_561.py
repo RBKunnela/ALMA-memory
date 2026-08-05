@@ -6,13 +6,10 @@ G1 persist verification · G2 write guard · G4 forget audit · G3 schema column
 
 from __future__ import annotations
 
-import os
-import tempfile
 from pathlib import Path
 
 import pytest
 
-from alma.exceptions import ScopeViolationError
 from alma.learning.write_guard import (
     check_write_guard,
     text_matches_anti_pattern,
@@ -150,8 +147,6 @@ def test_forget_audit_recorded(storage):
         strategy="age_prune",
     )
     assert aid.startswith("fga_")
-    import sqlite3
-
     with storage._get_connection() as conn:
         n = conn.execute("SELECT COUNT(*) FROM alma_forget_audit").fetchone()[0]
     assert n == 1
@@ -211,8 +206,6 @@ def test_verified_retriever_persists(storage, monkeypatch):
 
 def test_schema_parity_sqlite_columns(storage):
     """G3: verification columns exist on all memory tables."""
-    import sqlite3
-
     with storage._get_connection() as conn:
         for table in (
             "heuristics",
@@ -221,7 +214,9 @@ def test_schema_parity_sqlite_columns(storage):
             "preferences",
             "anti_patterns",
         ):
-            cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+            cols = {
+                r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()
+            }
             assert "verification_status" in cols, table
             assert "verified_at" in cols, table
         names = {
