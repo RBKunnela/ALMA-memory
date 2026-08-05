@@ -214,7 +214,9 @@ def test_schema_parity_sqlite_columns(storage):
             "preferences",
             "anti_patterns",
         ):
-            cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+            cols = {
+                r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()
+            }
             assert "verification_status" in cols, table
             assert "verified_at" in cols, table
         names = {

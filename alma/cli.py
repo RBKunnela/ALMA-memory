@@ -26,23 +26,32 @@ os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
 
 import warnings as _warnings
 
-_warnings.filterwarnings("ignore", category=FutureWarning, module="sentence_transformers")
-_warnings.filterwarnings("ignore", category=DeprecationWarning, module="sentence_transformers")
+_warnings.filterwarnings(
+    "ignore", category=FutureWarning, module="sentence_transformers"
+)
+_warnings.filterwarnings(
+    "ignore", category=DeprecationWarning, module="sentence_transformers"
+)
 
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
+
 def _green(s: str) -> str:
     return f"\033[32m{s}\033[0m"
+
 
 def _yellow(s: str) -> str:
     return f"\033[33m{s}\033[0m"
 
+
 def _red(s: str) -> str:
     return f"\033[31m{s}\033[0m"
 
+
 def _bold(s: str) -> str:
     return f"\033[1m{s}\033[0m"
+
 
 def _check(label: str, ok: bool, fix: str = "") -> bool:
     status = _green("✓") if ok else _red("✗")
@@ -107,6 +116,7 @@ def cmd_init(args: argparse.Namespace) -> int:
         # Check if sentence-transformers is installed
         try:
             import sentence_transformers  # noqa: F401
+
             print(_green("  Ready. Run: alma test\n"))
         except ImportError:
             print(_yellow("  One more step — install local embeddings:"))
@@ -133,8 +143,12 @@ def cmd_init(args: argparse.Namespace) -> int:
             )
         )
         print(f"\n  {_green('✓')}  Config written: {config_path}")
-        print(f"  {_yellow('!')}  Set password:   export ALMA_DB_PASSWORD='your-password'")
-        print(f"  {_yellow('!')}  Enable pgvector: alma pg-setup --host {host} --port {port} --db {database} --user {user}")
+        print(
+            f"  {_yellow('!')}  Set password:   export ALMA_DB_PASSWORD='your-password'"
+        )
+        print(
+            f"  {_yellow('!')}  Enable pgvector: alma pg-setup --host {host} --port {port} --db {database} --user {user}"
+        )
         print(f"\n  Then run: alma test --config {config_path}\n")
         return 0
 
@@ -154,13 +168,18 @@ def cmd_init(args: argparse.Namespace) -> int:
         args.storage = "postgres"
         return cmd_init(args)
     else:
-        print(_yellow("  Only SQLite and PostgreSQL supported in guided setup. See GUIDE.md for others."))
+        print(
+            _yellow(
+                "  Only SQLite and PostgreSQL supported in guided setup. See GUIDE.md for others."
+            )
+        )
         args.quickstart = True
         args.storage = "sqlite"
         return cmd_init(args)
 
 
 # ─── doctor ───────────────────────────────────────────────────────────────────
+
 
 def cmd_doctor(args: argparse.Namespace) -> int:
     print(_bold("\nALMA Doctor\n"))
@@ -169,12 +188,16 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     # Python version
     v = sys.version_info
     ok = v >= (3, 10)
-    all_ok &= _check(f"Python {v.major}.{v.minor}.{v.micro}", ok,
-                     "Need Python 3.10+: https://python.org/downloads")
+    all_ok &= _check(
+        f"Python {v.major}.{v.minor}.{v.micro}",
+        ok,
+        "Need Python 3.10+: https://python.org/downloads",
+    )
 
     # alma-memory installed
     try:
         import alma
+
         _check(f"alma-memory installed (v{alma.__version__})", True)
     except (ImportError, AttributeError):
         all_ok &= _check("alma-memory installed", False, "pip install alma-memory")
@@ -182,10 +205,17 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     # sentence-transformers (local embeddings)
     try:
         import sentence_transformers
-        _check(f"sentence-transformers {sentence_transformers.__version__} (local embeddings)", True)
+
+        _check(
+            f"sentence-transformers {sentence_transformers.__version__} (local embeddings)",
+            True,
+        )
     except ImportError:
-        _check("sentence-transformers (local embeddings)", False,
-               "pip install 'alma-memory[local]'")
+        _check(
+            "sentence-transformers (local embeddings)",
+            False,
+            "pip install 'alma-memory[local]'",
+        )
         # Not fatal — user may use azure or postgres embeddings
 
     # faiss
@@ -197,33 +227,44 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         else:
             raise ImportError("faiss not found")
     except ImportError:
-        _check("faiss (fast vector search)", False,
-               "pip install 'alma-memory[local]'  — uses numpy fallback until then")
+        _check(
+            "faiss (fast vector search)",
+            False,
+            "pip install 'alma-memory[local]'  — uses numpy fallback until then",
+        )
 
     # psycopg (postgres)
     try:
         import psycopg
+
         _check(f"psycopg {psycopg.__version__} (PostgreSQL support)", True)
     except ImportError:
-        _check("psycopg (PostgreSQL support)", False,
-               "pip install 'alma-memory[postgres]'  — only needed if using PostgreSQL")
+        _check(
+            "psycopg (PostgreSQL support)",
+            False,
+            "pip install 'alma-memory[postgres]'  — only needed if using PostgreSQL",
+        )
 
     # config file
     config_path = Path(args.config).expanduser()
     if config_path.exists():
         _check(f"Config found: {config_path}", True)
     else:
-        _check(f"Config found ({config_path})", False,
-               "Run: alma init --quickstart")
+        _check(f"Config found ({config_path})", False, "Run: alma init --quickstart")
         all_ok = False
 
     # live test
     if config_path.exists():
         try:
             from alma import ALMA
+
             alma_inst = ALMA.from_config(str(config_path))
-            alma_inst.learn(agent="doctor", task="health check", outcome="success",
-                           strategy_used="alma doctor")
+            alma_inst.learn(
+                agent="doctor",
+                task="health check",
+                outcome="success",
+                strategy_used="alma doctor",
+            )
             alma_inst.retrieve(task="health", agent="doctor", top_k=1)
             _check("Live store+retrieve test", True)
         except Exception as e:
@@ -240,6 +281,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 # ─── test ─────────────────────────────────────────────────────────────────────
 
+
 def cmd_test(args: argparse.Namespace) -> int:
     print(_bold("\nALMA Test\n"))
 
@@ -251,6 +293,7 @@ def cmd_test(args: argparse.Namespace) -> int:
 
     try:
         from alma import ALMA
+
         print(f"  Loading config: {config_path}")
         alma = ALMA.from_config(str(config_path))
 
@@ -269,7 +312,9 @@ def cmd_test(args: argparse.Namespace) -> int:
         )
 
         print("  Retrieving memories...")
-        result = alma.retrieve(task="deploy payment service", agent="alma-test", top_k=3)
+        result = alma.retrieve(
+            task="deploy payment service", agent="alma-test", top_k=3
+        )
 
         print()
         print(f"  {_green('✓')}  Outcomes stored and retrieved: {len(result.outcomes)}")
@@ -402,21 +447,35 @@ def cmd_pg_setup(args: argparse.Namespace) -> int:
 
         try:
             subprocess.run(
-                ["psql", f"--host={host}", f"--port={port}",
-                 f"--dbname={database}", f"--username={user}",
-                 "--command", PG_SETUP_SQL],
-                capture_output=True, text=True, check=True,
+                [
+                    "psql",
+                    f"--host={host}",
+                    f"--port={port}",
+                    f"--dbname={database}",
+                    f"--username={user}",
+                    "--command",
+                    PG_SETUP_SQL,
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
             )
             print(_green("  ✓  PostgreSQL setup complete."))
             print("  ✓  pgvector enabled, all tables created.\n")
             return 0
         except subprocess.CalledProcessError as e:
             print(_red(f"  psql error: {e.stderr[:200]}"))
-            print(_yellow("  Try: alma pg-setup --print-sql | psql -h HOST -U USER -d DB\n"))
+            print(
+                _yellow(
+                    "  Try: alma pg-setup --print-sql | psql -h HOST -U USER -d DB\n"
+                )
+            )
             return 1
         except FileNotFoundError:
             print(_red("  psql not found in PATH."))
-            print(_yellow("  Use: alma pg-setup --print-sql | psql -h HOST -U USER -d DB"))
+            print(
+                _yellow("  Use: alma pg-setup --print-sql | psql -h HOST -U USER -d DB")
+            )
             print(_yellow("  Or paste the SQL into your database console.\n"))
             return 1
 
@@ -426,11 +485,14 @@ def cmd_pg_setup(args: argparse.Namespace) -> int:
     print("    alma pg-setup --run --host HOST --port 5432 --db DATABASE --user USER\n")
     print(f"  {_bold('Option B — print SQL and run yourself:')}")
     print("    alma pg-setup --print-sql > setup.sql")
-    print("    # Then paste setup.sql into Supabase SQL editor, psql, or any PG console\n")
+    print(
+        "    # Then paste setup.sql into Supabase SQL editor, psql, or any PG console\n"
+    )
     return 0
 
 
 # ─── main ─────────────────────────────────────────────────────────────────────
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -458,16 +520,25 @@ Examples:
 
     # init
     p_init = sub.add_parser("init", help="Set up ALMA in the current project")
-    p_init.add_argument("--quickstart", action="store_true",
-                        help="Zero-config SQLite setup, no questions asked")
-    p_init.add_argument("--storage", choices=["sqlite", "postgres"],
-                        help="Storage backend to configure")
-    p_init.add_argument("--dir", default=".alma",
-                        help="Directory for config and database (default: .alma)")
-    p_init.add_argument("--project", default="",
-                        help="Project ID (default: current directory name)")
-    p_init.add_argument("--force", action="store_true",
-                        help="Overwrite existing config")
+    p_init.add_argument(
+        "--quickstart",
+        action="store_true",
+        help="Zero-config SQLite setup, no questions asked",
+    )
+    p_init.add_argument(
+        "--storage", choices=["sqlite", "postgres"], help="Storage backend to configure"
+    )
+    p_init.add_argument(
+        "--dir",
+        default=".alma",
+        help="Directory for config and database (default: .alma)",
+    )
+    p_init.add_argument(
+        "--project", default="", help="Project ID (default: current directory name)"
+    )
+    p_init.add_argument(
+        "--force", action="store_true", help="Overwrite existing config"
+    )
     p_init.add_argument("--host", default="", help="PostgreSQL host")
     p_init.add_argument("--port", default="", help="PostgreSQL port")
     p_init.add_argument("--database", default="", help="PostgreSQL database name")
@@ -475,20 +546,30 @@ Examples:
 
     # doctor
     p_doc = sub.add_parser("doctor", help="Check your ALMA installation")
-    p_doc.add_argument("--config", default=".alma/config.yaml",
-                       help="Path to config file (default: .alma/config.yaml)")
+    p_doc.add_argument(
+        "--config",
+        default=".alma/config.yaml",
+        help="Path to config file (default: .alma/config.yaml)",
+    )
 
     # test
     p_test = sub.add_parser("test", help="Run a live store+retrieve test")
-    p_test.add_argument("--config", default=".alma/config.yaml",
-                        help="Path to config file (default: .alma/config.yaml)")
+    p_test.add_argument(
+        "--config",
+        default=".alma/config.yaml",
+        help="Path to config file (default: .alma/config.yaml)",
+    )
 
     # pg-setup
     p_pg = sub.add_parser("pg-setup", help="Set up PostgreSQL for ALMA")
-    p_pg.add_argument("--print-sql", action="store_true",
-                      help="Print setup SQL to stdout (for Supabase, etc.)")
-    p_pg.add_argument("--run", action="store_true",
-                      help="Run setup SQL directly via psql")
+    p_pg.add_argument(
+        "--print-sql",
+        action="store_true",
+        help="Print setup SQL to stdout (for Supabase, etc.)",
+    )
+    p_pg.add_argument(
+        "--run", action="store_true", help="Run setup SQL directly via psql"
+    )
     p_pg.add_argument("--host", default="", help="PostgreSQL host")
     p_pg.add_argument("--port", default="", help="PostgreSQL port")
     p_pg.add_argument("--database", default="", help="PostgreSQL database name")

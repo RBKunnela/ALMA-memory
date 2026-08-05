@@ -83,7 +83,9 @@ def persist_verification(storage: Any, memory: Any, verification: Any) -> bool:
             memory_id=mid,
             verification_status=status_val,
             verification_method=method_val,
-            verification_confidence=float(getattr(verification, "confidence", 0.0) or 0.0),
+            verification_confidence=float(
+                getattr(verification, "confidence", 0.0) or 0.0
+            ),
             verification_reason=str(getattr(verification, "reason", "") or ""),
             contradicting_source=getattr(verification, "contradicting_source", None),
             verified_at=datetime.now(timezone.utc).isoformat(),
