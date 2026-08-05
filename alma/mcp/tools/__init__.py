@@ -44,6 +44,7 @@ from alma.mcp.tools.learning import (
     alma_forget,
     alma_get_weak_memories,
     alma_learn,
+    alma_list_verification,
     alma_reinforce,
     alma_smart_forget,
     async_alma_add_knowledge,
@@ -109,6 +110,7 @@ __all__ = [
     "alma_get_memory_full",
     # Sync learning tools
     "alma_learn",
+    "alma_list_verification",
     "alma_add_preference",
     "alma_add_knowledge",
     "alma_forget",

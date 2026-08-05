@@ -78,11 +78,59 @@ def alma_learn(
         }
 
     except Exception as e:
+        # Write-guard blocks raise ScopeViolationError — surface cleanly
+        err = str(e)
+        blocked = "write guard" in err.lower() or "anti-pattern" in err.lower()
         logger.exception(f"Error in alma_learn: {e}")
         return {
             "success": False,
-            "error": str(e),
+            "blocked_by_anti_pattern": blocked,
+            "error": err,
         }
+
+
+def alma_list_verification(
+    alma: ALMA,
+    verification_status: str = "contradicted",
+    memory_type: str = "outcomes",
+    project_id: Optional[str] = None,
+    limit: int = 50,
+) -> Dict[str, Any]:
+    """
+    List memories by persisted verification_status (Atlas G1 API surface).
+
+    Args:
+        alma: ALMA instance
+        verification_status: verified | uncertain | contradicted | unverifiable
+        memory_type: outcomes | heuristics | domain_knowledge | preferences | anti_patterns
+        project_id: defaults to alma.project_id
+        limit: max rows
+    """
+    pid = project_id or alma.project_id
+    lister = getattr(alma.storage, "list_by_verification_status", None)
+    if lister is None:
+        return {
+            "success": False,
+            "error": "storage backend does not support list_by_verification_status",
+        }
+    try:
+        rows = lister(
+            project_id=pid,
+            verification_status=verification_status,
+            memory_type=memory_type,
+            limit=limit,
+        )
+        return {
+            "success": True,
+            "project_id": pid,
+            "verification_status": verification_status,
+            "memory_type": memory_type,
+            "count": len(rows),
+            "items": rows,
+        }
+    except Exception as e:
+        logger.exception(f"Error in alma_list_verification: {e}")
+        return {"success": False, "error": str(e)}
 
 
 def alma_add_preference(

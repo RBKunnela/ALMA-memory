@@ -325,6 +325,8 @@ def alma_retrieve_verified(
         retriever = VerifiedRetriever(
             retrieval_engine=alma.retrieval,
             llm_client=getattr(alma, "llm", None),
+            storage=alma.storage,  # Atlas G1: persist verification on retrieve
+            persist_verification=True,
         )
 
         results = retriever.retrieve_verified(
