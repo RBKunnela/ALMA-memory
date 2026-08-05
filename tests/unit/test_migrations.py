@@ -461,5 +461,5 @@ class TestSQLiteStorageMigration:
         """Test getting schema version from storage."""
         # After auto-migrate, should have a version
         version = storage.get_schema_version()
-        # May be None, "1.0.0", or "1.1.0" depending on migrations applied
-        assert version is None or version in ("1.0.0", "1.1.0")
+        # May be None or any applied schema version (incl. atlas gaps 1.2.0)
+        assert version is None or version in ("1.0.0", "1.1.0", "1.2.0")

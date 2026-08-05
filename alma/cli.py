@@ -25,6 +25,7 @@ os.environ.setdefault("HUGGINGFACE_HUB_VERBOSITY", "error")
 os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
 
 import warnings as _warnings
+
 _warnings.filterwarnings("ignore", category=FutureWarning, module="sentence_transformers")
 _warnings.filterwarnings("ignore", category=DeprecationWarning, module="sentence_transformers")
 
@@ -88,7 +89,7 @@ def cmd_init(args: argparse.Namespace) -> int:
 
     if config_path.exists() and not args.force:
         print(f"  Config already exists: {config_path}")
-        print(f"  Use --force to overwrite.\n")
+        print("  Use --force to overwrite.\n")
         return 0
 
     alma_dir.mkdir(parents=True, exist_ok=True)
@@ -109,7 +110,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             print(_green("  Ready. Run: alma test\n"))
         except ImportError:
             print(_yellow("  One more step — install local embeddings:"))
-            print(f"    pip install 'alma-memory[local]'\n")
+            print("    pip install 'alma-memory[local]'\n")
             print("  Then run: alma test\n")
         return 0
 
@@ -189,8 +190,12 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
     # faiss
     try:
-        import faiss
-        _check("faiss (fast vector search)", True)
+        import importlib.util
+
+        if importlib.util.find_spec("faiss") is not None:
+            _check("faiss (fast vector search)", True)
+        else:
+            raise ImportError("faiss not found")
     except ImportError:
         _check("faiss (fast vector search)", False,
                "pip install 'alma-memory[local]'  — uses numpy fallback until then")
@@ -219,7 +224,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             alma_inst = ALMA.from_config(str(config_path))
             alma_inst.learn(agent="doctor", task="health check", outcome="success",
                            strategy_used="alma doctor")
-            result = alma_inst.retrieve(task="health", agent="doctor", top_k=1)
+            alma_inst.retrieve(task="health", agent="doctor", top_k=1)
             _check("Live store+retrieve test", True)
         except Exception as e:
             all_ok &= _check("Live store+retrieve test", False, str(e)[:120])
@@ -241,7 +246,7 @@ def cmd_test(args: argparse.Namespace) -> int:
     config_path = Path(args.config).expanduser()
     if not config_path.exists():
         print(_red(f"  No config at {config_path}"))
-        print(f"  Run: alma init --quickstart\n")
+        print("  Run: alma init --quickstart\n")
         return 1
 
     try:
@@ -277,7 +282,7 @@ def cmd_test(args: argparse.Namespace) -> int:
     except ImportError as e:
         if "sentence-transformers" in str(e):
             print(_red("  Missing local embeddings:"))
-            print(f"    pip install 'alma-memory[local]'\n")
+            print("    pip install 'alma-memory[local]'\n")
         else:
             print(_red(f"  Import error: {e}\n"))
         return 1
@@ -396,14 +401,14 @@ def cmd_pg_setup(args: argparse.Namespace) -> int:
         print(f"  Connecting to {user}@{host}:{port}/{database} ...")
 
         try:
-            result = subprocess.run(
+            subprocess.run(
                 ["psql", f"--host={host}", f"--port={port}",
                  f"--dbname={database}", f"--username={user}",
                  "--command", PG_SETUP_SQL],
                 capture_output=True, text=True, check=True,
             )
             print(_green("  ✓  PostgreSQL setup complete."))
-            print(f"  ✓  pgvector enabled, all tables created.\n")
+            print("  ✓  pgvector enabled, all tables created.\n")
             return 0
         except subprocess.CalledProcessError as e:
             print(_red(f"  psql error: {e.stderr[:200]}"))

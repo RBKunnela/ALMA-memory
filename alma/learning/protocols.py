@@ -93,8 +93,8 @@ class LearningProtocol:
             logger.debug(f"Agent '{agent}' has no defined scope")
 
         # Atlas G2: anti-pattern write guard (Code-Hub 1624)
-        from alma.learning.write_guard import check_write_guard
         from alma.exceptions import ScopeViolationError
+        from alma.learning.write_guard import check_write_guard
 
         guard = check_write_guard(
             self.storage,

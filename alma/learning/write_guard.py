@@ -35,7 +35,7 @@ def _normalize(text: str) -> str:
 
 
 def _tokens(text: str) -> set:
-    return {t for t in re.findall(r"[a-z0-9_]{3,}", _normalize(text))}
+    return set(re.findall(r"[a-z0-9_]{3,}", _normalize(text)))
 
 
 def text_matches_anti_pattern(candidate: str, pattern: str, min_overlap: float = 0.45) -> bool:
