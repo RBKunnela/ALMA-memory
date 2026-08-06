@@ -14,11 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **G2 Anti-pattern write guard** — `alma/learning/write_guard.py`; blocks `LearningProtocol.learn` when strategy/task matches a stored anti-pattern. Env `ALMA_ANTI_PATTERN_WRITE_GUARD` (default **on**).
 - **G4 Forget audit** — table `alma_forget_audit`; `record_forget_audit`; ForgettingEngine audits before prune deletes.
 - **G3 Migration v1.2.0** — dual sqlite/postgresql migration; SQLite `_ensure_atlas_gap_schema` on init.
+- **G5 MCP surface** — `alma_retrieve_verified` wires `storage=` for persist; new `alma_list_verification` lists rows by `verification_status`.
 - **Tests** — `tests/unit/test_atlas_gaps_561.py` (8 tests).
+- **Docs** — README “Hardened after external code review” table + verified-retrieve persist example (Chefe 1634).
 
 ### Notes
 - Response to Agent Memory Atlas (neoneye) detailed code report + Chefe email feedback.
 - A0 LICENSE already landed `7ce60ab`.
+- Feature land: PR #35 (`8af7153`). README/docs: PR #36.
 
 ---
 
