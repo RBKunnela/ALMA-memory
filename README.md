@@ -220,19 +220,20 @@ scored = scorer.score_with_trust(memories, agent="senior-dev")
 
 Trust scores factor in 5 behavioral dimensions: verification-before-claim, loud-failure, honest-uncertainty, paper-trail, and diligent-execution. Trust decays over time if an agent goes inactive (30-day half-life), so stale agents don't get trusted blindly.
 
-**Verified Retrieval** — For high-stakes decisions, ALMA can verify memories before your agent uses them.
+**Verified Retrieval** — For high-stakes decisions, ALMA can verify memories before your agent uses them. Verification status is **written back to the database** (not only returned in the response), so the next session still knows what was contradicted.
 
 ```python
 from alma.retrieval.verification import VerifiedRetriever, VerificationConfig
 
 retriever = VerifiedRetriever(
-    retrieval_engine=alma.retrieval_engine,
-    llm_client=my_llm,  # Optional — works without LLM too
+    retrieval_engine=alma.retrieval,
+    storage=alma.storage,  # persists VERIFIED / CONTRADICTED / … on the memory row
+    llm_client=my_llm,  # Optional — confidence fallback works without LLM
     config=VerificationConfig(
         enabled=True,
         default_method="cross_verify",  # Verify against other memories
         confidence_threshold=0.7,
-    )
+    ),
 )
 
 results = retriever.retrieve_verified(
@@ -248,7 +249,13 @@ for memory in results.verified:
 for memory in results.contradicted:
     print(f"CONFLICT: {memory.memory} — {memory.verification.reason}")
 
-# Quick summary
+# Later: list persisted conflicts for human review (MCP: alma_list_verification)
+rows = alma.storage.list_by_verification_status(
+    project_id="my-project",
+    verification_status="contradicted",
+    memory_type="outcomes",
+)
+
 print(results.summary())
 # {'verified': 3, 'uncertain': 1, 'contradicted': 1, 'unverifiable': 0,
 #  'usable_ratio': 0.8, 'verification_time_ms': 45}
@@ -264,6 +271,21 @@ Every retrieved memory gets a status:
 | **UNVERIFIABLE** | Can't be verified (no other sources) | Use your judgment |
 
 This is critical for multi-agent systems. Without verification, your voice agent might call a lead that your email agent already disqualified — because both agents stored conflicting memories about the same person.
+
+### 7. Hardened after external code review (2026-08)
+
+A detailed third-party code review ([Agent Memory Atlas](https://neoneye.github.io/agent-memory-atlas/systems/alma-memory/)) praised ALMA’s anti-patterns and scope model, and flagged near-misses. **Those gaps are closed on `main` (PR #35):**
+
+| Improvement | What it does |
+|-------------|----------------|
+| **Persisted verification** | `verification_status` (+ method, confidence, reason, `verified_at`) stored on memory tables — not only computed at retrieve time |
+| **Anti-pattern write guard** | `learn()` refuses to re-store strategies that match a known anti-pattern (`ALMA_ANTI_PATTERN_WRITE_GUARD=1` by default; set `0` to disable) |
+| **Forget audit trail** | Prunes write `alma_forget_audit` before delete — you can see *what* was forgotten and *why* |
+| **Schema v1.2.0** | Dual SQLite + PostgreSQL migration; SQLite auto-ensures columns on open |
+| **MCP surface** | `alma_retrieve_verified` persists when storage is wired; `alma_list_verification` lists rows by status |
+| **LICENSE** | Root [MIT `LICENSE`](LICENSE) file for legal clarity |
+
+Details: [CHANGELOG Unreleased / atlas notes](CHANGELOG.md) · [plan](docs/plans/2026-08-04-ATLAS-GAPS-AIOX-PLAN.md) · [closure](docs/plans/2026-08-05-atlas-gaps-closure-561.md)
 
 ---
 
@@ -378,7 +400,7 @@ Supported formats: Claude Code JSONL, ChatGPT JSON, Claude.ai JSON, Codex JSONL,
 
 ## Claude Code / MCP Integration
 
-Connect ALMA directly to Claude with 22 MCP tools:
+Connect ALMA directly to Claude with MCP tools (including learn, retrieve, verified retrieve, and list-by-verification-status):
 
 ```json
 {
@@ -391,6 +413,8 @@ Connect ALMA directly to Claude with 22 MCP tools:
 }
 ```
 
+Useful verification tools: `alma_retrieve_verified` (persist statuses) · `alma_list_verification` (e.g. all `contradicted` outcomes for review).
+
 ---
 
 ## At a Glance
@@ -398,13 +422,16 @@ Connect ALMA directly to Claude with 22 MCP tools:
 | Metric | Value |
 |--------|-------|
 | LongMemEval R@5 | **0.964** (#1 open-source) |
-| Tests passing | 2,121+ |
+| Tests passing | 2,121+ (incl. atlas-gap suite) |
 | Storage backends | 7 |
 | Graph backends | 4 |
-| MCP tools | 22 |
+| MCP tools | 22+ (`alma_list_verification` added) |
 | Memory types | 5 |
 | Trust scoring | Veritas framework (per-agent, 5 behavioral dimensions) |
-| Verified retrieval | 4-status verification (VERIFIED / CONTRADICTED / UNCERTAIN / UNVERIFIABLE) |
+| Verified retrieval | 4-status **persisted** verification |
+| Write guard | Anti-pattern block on `learn` (default ON) |
+| Forget audit | `alma_forget_audit` append-only |
+| Schema | **v1.2.0** (SQLite + PostgreSQL) |
 | Chat formats ingested | 6 |
 | Monthly cost (local) | $0.00 |
 | API keys needed | None |
@@ -416,7 +443,8 @@ Connect ALMA directly to Claude with 22 MCP tools:
 
 - [**Benchmark Report**](docs/benchmarks/BENCHMARK-REPORT.md) — How we achieved R@5=0.964 and what it means
 - [**Setup Guide**](GUIDE.md) — Step-by-step for every backend and experience level
-- [**Changelog**](CHANGELOG.md) — Full version history
+- [**Changelog**](CHANGELOG.md) — Full version history (incl. atlas-gap hardening)
+- [**Atlas gaps plan / closure**](docs/plans/2026-08-04-ATLAS-GAPS-AIOX-PLAN.md) — External review → shipped improvements
 - [**Architecture Decisions**](docs/architecture/) — Why things work the way they do
 - [**Contributing**](CONTRIBUTING.md) — How to help
 
