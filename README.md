@@ -115,9 +115,9 @@ Full methodology: [BENCHMARK-REPORT.md](docs/benchmarks/BENCHMARK-REPORT.md)
 
 **Retrieve:** Your agent asks ALMA for relevant memories. ALMA searches using FAISS vector similarity, scores results by relevance + recency + success rate + confidence, and returns the most useful context. With Veritas trust scoring enabled, memories from trusted agents rank higher automatically.
 
-**Verify:** For high-stakes decisions, ALMA's verified retrieval cross-checks memories against each other. Contradictions are flagged **and persisted** on the memory row before your agent acts on bad data.
+**Verify:** For high-stakes decisions, ALMA's verified retrieval cross-checks memories against each other. Contradictions are flagged, and **when storage is wired** the status is persisted on the memory row (retrieve still returns results if persist fails).
 
-**Learn:** After the task, ALMA records what happened — success or failure, what strategy was used, how long it took. **Anti-pattern write guard** blocks re-learning known bad strategies (configurable).
+**Learn:** After the task, ALMA records what happened — success or failure, what strategy was used, how long it took. **Anti-pattern write guard** blocks re-learning known bad strategies (`ALMA_ANTI_PATTERN_WRITE_GUARD` default **on**; disable with `0` / `false` / `off` / `no`).
 
 **Improve:** After 3+ similar outcomes, ALMA automatically creates reusable heuristics. After 2+ similar failures, it creates anti-patterns. Your agent gets smarter without any manual work.
 
@@ -279,7 +279,7 @@ A detailed third-party code review ([Agent Memory Atlas](https://neoneye.github.
 | Improvement | What it does |
 |-------------|----------------|
 | **Persisted verification** | `verification_status` (+ method, confidence, reason, `verified_at`) stored on memory tables — not only computed at retrieve time |
-| **Anti-pattern write guard** | `learn()` refuses to re-store strategies that match a known anti-pattern (`ALMA_ANTI_PATTERN_WRITE_GUARD=1` by default; set `0` to disable) |
+| **Anti-pattern write guard** | `learn()` refuses to re-store strategies that match a known anti-pattern (`ALMA_ANTI_PATTERN_WRITE_GUARD` default on; disable: `0`/`false`/`off`/`no`) |
 | **Forget audit trail** | Prunes write `alma_forget_audit` before delete — you can see *what* was forgotten and *why* |
 | **Schema v1.2.0** | Dual SQLite + PostgreSQL migration; SQLite auto-ensures columns on open |
 | **MCP surface** | `alma_retrieve_verified` persists when storage is wired; `alma_list_verification` lists rows by status |
