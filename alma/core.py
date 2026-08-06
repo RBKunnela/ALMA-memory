@@ -90,7 +90,6 @@ class ALMA:
         self.project_id = project_id
 
     @classmethod
-    @classmethod
     def quickstart(
         cls,
         project_id: str = "my-project",

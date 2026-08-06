@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] — Atlas gaps (Chefe 561 / Code-Hub 1624)
 
 ### Added
-- **Maia gateway adapter (Phase-1)** — `integrations/maia/` maps `memory.query`/`memory.store` → ALMA retrieve / domain knowledge (facts-first). Fresh land from stale PR #34 value (Chefe 1649). Optional; not part of `alma*` package. Maia agent-manager still needs wiring to use it.
+- **Maia gateway adapter (Phase-1)** — `integrations/maia/` maps `memory.query`/`memory.store` → ALMA (facts-first). Fresh land; supersedes stale PR #34 (Chefe 1649). Optional; not in `alma*` package.
 - **G1 Persist VerificationStatus** — columns on heuristics/outcomes/domain_knowledge/preferences/anti_patterns; `SQLiteStorage.update_memory_verification` + `list_by_verification_status`; `VerifiedRetriever` persists when `storage=` is passed (`alma/storage/verification_store.py`).
 - **G2 Anti-pattern write guard** — `alma/learning/write_guard.py`; blocks `LearningProtocol.learn` when strategy/task matches a stored anti-pattern. Env `ALMA_ANTI_PATTERN_WRITE_GUARD` (default **on**).
 - **G4 Forget audit** — table `alma_forget_audit`; `record_forget_audit`; ForgettingEngine audits before prune deletes.
@@ -19,10 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tests** — `tests/unit/test_atlas_gaps_561.py` (8 tests).
 - **Docs** — README “Hardened after external code review” table + verified-retrieve persist example (Chefe 1634).
 
+### Fixed
+- **`ALMA.quickstart` double `@classmethod`** — removed stacked decorator (broke callability on newer Python). Fresh fix (Chefe 1649); supersedes stale PR #33.
+- **MCP `server_version`** — defaults to `alma.__version__` instead of hardcoded `0.6.0`.
+
 ### Notes
 - Response to Agent Memory Atlas (neoneye) detailed code report + Chefe email feedback.
 - A0 LICENSE already landed `7ce60ab`.
 - Feature land: PR #35 (`8af7153`). README/docs: PR #36.
+- Stale PR #33 closed in favor of this clean reimplementation (Chefe 1649).
 
 ---
 
