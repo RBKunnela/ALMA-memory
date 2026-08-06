@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] — Atlas gaps (Chefe 561 / Code-Hub 1624)
+## [Unreleased]
+
+## [0.11.0] - 2026-08-06 — Atlas gaps (Chefe 561 / Code-Hub 1624 / Chefe 4588 release)
+
 
 ### Added
 - **Maia gateway adapter (Phase-1)** — `integrations/maia/` maps `memory.query`/`memory.store` → ALMA (facts-first). Fresh land; supersedes stale PR #34 (Chefe 1649). Optional; not in `alma*` package.
