@@ -11,7 +11,7 @@ import logging
 import sys
 from typing import Any, Dict, List, Optional
 
-from alma import ALMA
+from alma import ALMA, __version__
 from alma.mcp.resources import (
     get_agents_resource,
     get_config_resource,
@@ -54,7 +54,7 @@ class ALMAMCPServer:
         self,
         alma: ALMA,
         server_name: str = "alma-memory",
-        server_version: str = "0.6.0",
+        server_version: str = __version__,
     ):
         """
         Initialize the MCP server.
