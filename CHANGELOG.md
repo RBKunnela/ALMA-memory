@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] — Atlas gaps (Chefe 561 / Code-Hub 1624)
 
 ### Added
+- **Maia gateway adapter (Phase-1)** — `integrations/maia/` maps `memory.query`/`memory.store` → ALMA (facts-first). Fresh land; supersedes stale PR #34 (Chefe 1649). Optional; not in `alma*` package.
 - **G1 Persist VerificationStatus** — columns on heuristics/outcomes/domain_knowledge/preferences/anti_patterns; `SQLiteStorage.update_memory_verification` + `list_by_verification_status`; `VerifiedRetriever` persists when `storage=` is passed (`alma/storage/verification_store.py`).
 - **G2 Anti-pattern write guard** — `alma/learning/write_guard.py`; blocks `LearningProtocol.learn` when strategy/task matches a stored anti-pattern. Env `ALMA_ANTI_PATTERN_WRITE_GUARD` (default **on**).
 - **G4 Forget audit** — table `alma_forget_audit`; `record_forget_audit`; ForgettingEngine audits before prune deletes.
