@@ -1,6 +1,7 @@
 # ALMA-memory JavaScript SDK Publish Workflow
 #
-# Publishes the TypeScript/JavaScript SDK to GitHub Packages.
+# Publishes the TypeScript/JavaScript SDK to public npmjs.org
+# (@rbkunnela/alma-memory). Requires repo secret NPM_TOKEN (automation token).
 # Triggers on version tags (v*) or can be run manually.
 
 name: Publish npm Package
@@ -36,7 +37,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://npm.pkg.github.com'
+          registry-url: 'https://registry.npmjs.org'
           scope: '@rbkunnela'
 
       - name: Install dependencies
@@ -72,13 +73,13 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish to GitHub Packages
+      - name: Publish to npmjs (public)
         if: steps.check_version.outputs.exists == 'false'
-        run: npm publish
+        run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Skip publish (version exists)
         if: steps.check_version.outputs.exists == 'true'

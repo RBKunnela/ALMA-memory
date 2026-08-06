@@ -620,8 +620,12 @@ describe('ALMA Client', () => {
   });
 
   describe('VERSION', () => {
-    it('should export version', () => {
-      expect(VERSION).toBe('0.9.0');
+    it('should export version matching package.json', () => {
+      // Keep in sync with packages/alma-memory-js/package.json (npm publish gate)
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const pkg = require('../package.json') as { version: string };
+      expect(VERSION).toBe(pkg.version);
+      expect(VERSION).toBe('0.11.0');
     });
   });
 });
