@@ -18,10 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tests** — `tests/unit/test_atlas_gaps_561.py` (8 tests).
 - **Docs** — README “Hardened after external code review” table + verified-retrieve persist example (Chefe 1634).
 
+### Fixed
+- **`ALMA.quickstart` double `@classmethod`** — removed stacked decorator (broke callability on newer Python). Fresh fix (Chefe 1649); supersedes stale PR #33.
+- **MCP `server_version`** — defaults to `alma.__version__` instead of hardcoded `0.6.0`.
+
 ### Notes
 - Response to Agent Memory Atlas (neoneye) detailed code report + Chefe email feedback.
 - A0 LICENSE already landed `7ce60ab`.
 - Feature land: PR #35 (`8af7153`). README/docs: PR #36.
+- Stale PR #33 closed in favor of this clean reimplementation (Chefe 1649).
 
 ---
 
