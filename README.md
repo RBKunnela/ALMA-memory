@@ -115,9 +115,9 @@ Full methodology: [BENCHMARK-REPORT.md](docs/benchmarks/BENCHMARK-REPORT.md)
 
 **Retrieve:** Your agent asks ALMA for relevant memories. ALMA searches using FAISS vector similarity, scores results by relevance + recency + success rate + confidence, and returns the most useful context. With Veritas trust scoring enabled, memories from trusted agents rank higher automatically.
 
-**Verify:** For high-stakes decisions, ALMA's verified retrieval cross-checks memories against each other. Contradictions are flagged before your agent acts on bad data.
+**Verify:** For high-stakes decisions, ALMA's verified retrieval cross-checks memories against each other. Contradictions are flagged **and persisted** on the memory row before your agent acts on bad data.
 
-**Learn:** After the task, ALMA records what happened — success or failure, what strategy was used, how long it took.
+**Learn:** After the task, ALMA records what happened — success or failure, what strategy was used, how long it took. **Anti-pattern write guard** blocks re-learning known bad strategies (configurable).
 
 **Improve:** After 3+ similar outcomes, ALMA automatically creates reusable heuristics. After 2+ similar failures, it creates anti-patterns. Your agent gets smarter without any manual work.
 
