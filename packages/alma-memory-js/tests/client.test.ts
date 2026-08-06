@@ -5,6 +5,9 @@
  * requiring a running server.
  */
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 import {
   ALMA,
   createClient,
@@ -622,8 +625,9 @@ describe('ALMA Client', () => {
   describe('VERSION', () => {
     it('should export version matching package.json', () => {
       // Keep in sync with packages/alma-memory-js/package.json (npm publish gate)
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pkg = require('../package.json') as { version: string };
+      const pkg = JSON.parse(
+        readFileSync(join(__dirname, '..', 'package.json'), 'utf8'),
+      ) as { version: string };
       expect(VERSION).toBe(pkg.version);
       expect(VERSION).toBe('0.11.0');
     });
