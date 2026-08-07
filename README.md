@@ -29,6 +29,25 @@ We use the same security product we sell (dogfood). Learn more: **https://agenti
 
 **Continuous dogfood:** every PR/push and a **weekly cron** run `scripts/sentinel-dogfood-smoke.sh` via [Sentinel Hub dogfood](.github/workflows/sentinel-dogfood.yml) CI. Fleet plan: [docs/security/SENTINEL-DOGFOOD-FLEET-1775.md](docs/security/SENTINEL-DOGFOOD-FLEET-1775.md).
 
+### Ecosystem (OSS vs paid)
+
+**ALMA is complete for memory** — no paid product required to install or run.
+
+| Job | Product | In ALMA OSS? |
+|-----|---------|----------------|
+| **Memory / learning** | **ALMA** (this repo · MIT) | **Yes** |
+| **Accountability — architecture map** | **LAG** (Living Architecture Graph) | **No — paid** |
+| **Accountability — act witness** | **AWP** (Agent Witness Protocol) | **No — not bundled** |
+| **Accountability — value / authorize** | **PayBotFin** | **No — paid** |
+
+**What LAG is:** a paid map of your agentic system (agents, skills, tools, edges, health) — *who/what exists*, not “what strategy worked.”  
+**What PayBotFin is:** a paid stack for **authorization and numbered value receipts** when agent acts need commercial/policy proof.
+
+**Important:** LAG and PayBotFin are **extra security / accountability layers**. They are **not required** for any memory option in ALMA. Use them only when you need audit, topology, witness, or value proofs — not to make `retrieve`/`learn` work.
+
+Together (optional): smarter agents (ALMA) + accountable ops (paid spine), as **separate products** so paid IP is never given away inside MIT.  
+Full write-up: [docs/ECOSYSTEM-PAID-STACKS.md](docs/ECOSYSTEM-PAID-STACKS.md).
+
 ---
 
 ## "But Claude Code Already Has Memory..."

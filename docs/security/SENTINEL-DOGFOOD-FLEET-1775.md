@@ -30,17 +30,14 @@
 3. **Central runner** (lab or Hetzner) for full L3 packs; CI stays light  
 4. **Maia STATUS** weekly rollup link for Chefe  
 
-### Candidate fleet (first wave)
+### Candidate fleet (first wave — **public / OSS surfaces only**)
 
 | Repo / product | Surface |
 |----------------|---------|
 | ALMA-memory | PyPI + pages.dev + MCP |
-| paybotfin-* | APIs / dashboards |
-| parvisight | engine + demos |
-| parviclaw-core | core APIs |
-| lag | service |
-| friendlyai-web / agentictestari | public sites |
-| sentinel-agentic-lab | meta (scan the scanner — later) |
+| friendlyai-web / agentictestari.com | public sites |
+
+**Private paid stacks** (LAG, PayBotFin, ParviClaw Core, etc.) are **not part of the ALMA OSS repo**. Their Sentinel dogfood registry lives in **private** lab ops only — never vendored into ALMA (Chefe **1927/1928/1932**).
 
 ## Claims for ads (honest)
 
