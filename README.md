@@ -279,7 +279,7 @@ A detailed third-party code review ([Agent Memory Atlas](https://neoneye.github.
 | Improvement | What it does |
 |-------------|----------------|
 | **Persisted verification** | `verification_status` (+ method, confidence, reason, `verified_at`) stored on memory tables — not only computed at retrieve time |
-| **Anti-pattern write guard** | `learn()` refuses to re-store strategies that match a known anti-pattern (`ALMA_ANTI_PATTERN_WRITE_GUARD` default on; disable: `0`/`false`/`off`/`no`) |
+| **Anti-pattern write guard** | Storage-layer `save_*` + `learn()` refuse re-storing strategies/facts that match a known anti-pattern (`ALMA_ANTI_PATTERN_WRITE_GUARD` default on). Closes extractor/consolidation/MCP/`add_domain_knowledge` doors (Chefe 1756). `save_anti_pattern` excluded (tombstone source). |
 | **Forget audit trail** | Prunes write `alma_forget_audit` before delete — you can see *what* was forgotten and *why* |
 | **Schema v1.2.0** | Dual SQLite + PostgreSQL migration; SQLite auto-ensures columns on open |
 | **MCP surface** | `alma_retrieve_verified` persists when storage is wired; `alma_list_verification` lists rows by status |
@@ -429,7 +429,7 @@ Useful verification tools: `alma_retrieve_verified` (persist statuses) · `alma_
 | Memory types | 5 |
 | Trust scoring | Veritas framework (per-agent, 5 behavioral dimensions) |
 | Verified retrieval | 4-status **persisted** verification |
-| Write guard | Anti-pattern block on `learn` (default ON) |
+| Write guard | Anti-pattern block on all storage `save_*` + `learn` (default ON; Chefe 1756) |
 | Forget audit | `alma_forget_audit` append-only |
 | Schema | **v1.2.0** (SQLite + PostgreSQL) |
 | Chat formats ingested | 6 |
