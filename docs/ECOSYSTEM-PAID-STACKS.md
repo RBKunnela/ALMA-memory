@@ -15,6 +15,21 @@ It does **not** include proprietary products. Paid material must never ship for 
 **ALMA is always complete for memory.**  
 **LAG + AWP + PayBotFin are optional accountability layers** — not memory features, not required for `retrieve` / `learn`.
 
+## Product law (Chefe **1940**)
+
+**LAG + AWP + PayBotFin** are the **perfect combo together** for **any agentic work accountability**.
+
+| Piece | Accountability role |
+|-------|---------------------|
+| **LAG** | *What exists* — living architecture / fleet graph |
+| **AWP** | *What happened* — tamper-evident witness of the act |
+| **PayBotFin** | *What was allowed / valued* — authorize + numbered receipts ([paybotfin.com](https://paybotfin.com)) |
+
+- **Companies / production agentic work:** this trio is the accountability spine.  
+- **Developers (memory only):** not required — use **ALMA** alone.  
+- **ALMA + this trio:** full story = *learn* (OSS) + *account* (paid).  
+- Repos stay separate; **commercial suite** under PayBotFin brand is OK (**not** swallowing LAG into one monorepo — Chefe 1939).
+
 ---
 
 ## What is **ALMA**? (OSS · this repo)
