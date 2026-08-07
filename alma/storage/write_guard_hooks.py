@@ -118,7 +118,10 @@ def install_storage_write_guards(cls: Type[Any]) -> Type[Any]:
     if hasattr(cls, "save_heuristic"):
         cls.save_heuristic = _wrap_save(  # type: ignore[method-assign]
             cls.save_heuristic,
-            texts_fn=lambda h: [getattr(h, "condition", ""), getattr(h, "strategy", "")],
+            texts_fn=lambda h: [
+                getattr(h, "condition", ""),
+                getattr(h, "strategy", ""),
+            ],
             project_fn=lambda h: getattr(h, "project_id", "") or "",
             agent_fn=lambda h: getattr(h, "agent", "") or "",
         )
@@ -161,7 +164,10 @@ def install_storage_write_guards(cls: Type[Any]) -> Type[Any]:
     if hasattr(cls, "save_heuristics"):
         cls.save_heuristics = _wrap_batch(  # type: ignore[method-assign]
             cls.save_heuristics,
-            texts_fn=lambda h: [getattr(h, "condition", ""), getattr(h, "strategy", "")],
+            texts_fn=lambda h: [
+                getattr(h, "condition", ""),
+                getattr(h, "strategy", ""),
+            ],
             project_fn=lambda h: getattr(h, "project_id", "") or "",
             agent_fn=lambda h: getattr(h, "agent", "") or "",
         )

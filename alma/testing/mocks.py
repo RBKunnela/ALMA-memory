@@ -485,6 +485,7 @@ class MockStorage(StorageBackend):
         """Get total number of stored feedback records."""
         return len(self._feedback)
 
+
 from alma.storage.write_guard_hooks import install_storage_write_guards  # noqa: E402
 
 install_storage_write_guards(MockStorage)
