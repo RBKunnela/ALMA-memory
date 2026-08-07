@@ -27,6 +27,8 @@
 Vulnerabilities across our stack are examined by **[Agentic Testari](https://agentictestari.com) Sentinel Hub** — scan of repositories, software, and websites, with serious severity triage and continuous remediation.  
 We use the same security product we sell (dogfood). Learn more: **https://agentictestari.com**
 
+**Continuous dogfood:** every PR/push and a **weekly cron** run `scripts/sentinel-dogfood-smoke.sh` via [Sentinel Hub dogfood](.github/workflows/sentinel-dogfood.yml) CI. Fleet plan: [docs/security/SENTINEL-DOGFOOD-FLEET-1775.md](docs/security/SENTINEL-DOGFOOD-FLEET-1775.md).
+
 ---
 
 ## "But Claude Code Already Has Memory..."

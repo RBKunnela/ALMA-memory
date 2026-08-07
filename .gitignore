@@ -152,3 +152,6 @@ squads/
 .env.backup.*
 backup-to-gdrive.ps1
 .npmrc
+
+# Sentinel dogfood runtime stamp
+.sentinel-dogfood/
