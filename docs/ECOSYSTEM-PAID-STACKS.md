@@ -15,6 +15,12 @@ It does **not** include proprietary products. Paid material must never ship for 
 **ALMA is always complete for memory.**  
 **LAG + AWP + PayBotFin are optional accountability layers** — not memory features, not required for `retrieve` / `learn`.
 
+
+## Hard rule (Chefe **1949**)
+
+Graph Engineering **runtime** (ParviClaw Core + LAG + AWP + PayBotFin) must **never** be added to this OSS repository — not as code, not as a dependency, not as a submodule.  
+ALMA documents the paid accountability suite for companies; it does **not** implement it.
+
 ## Product law (Chefe **1940**)
 
 **LAG + AWP + PayBotFin** are the **perfect combo together** for **any agentic work accountability**.
