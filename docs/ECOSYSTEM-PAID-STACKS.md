@@ -29,6 +29,7 @@ It does **not** include proprietary products. Paid material must never ship for 
 - **Developers (memory only):** not required — use **ALMA** alone.  
 - **ALMA + this trio:** full story = *learn* (OSS) + *account* (paid).  
 - Repos stay separate; **commercial suite** under PayBotFin brand is OK (**not** swallowing LAG into one monorepo — Chefe 1939).
+- **Integrar (Chefe 1942)** = **seamless bridge/connect** (shared eng/leaf IDs, fail-soft, one ops story) — **same idea as ParviSight ↔ ParviClaw Core** — not monorepo absorb.
 
 ---
 
