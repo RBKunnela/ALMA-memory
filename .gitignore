@@ -114,6 +114,7 @@ PRPs/
 scripts/*
 !scripts/benchmarks/
 !scripts/benchmarks/**
+!scripts/sentinel-dogfood-smoke.sh
 .benchmarks/
 
 # Scratch/session dirs (local only)
