@@ -158,8 +158,11 @@ ALMA **never** depends on LAG or PayBotFin.
 - Market ALMA as “includes LAG/PayBotFin”  
 - Force accountability products on developers who only need memory  
 
-Commercial inquiries for paid stacks: **https://agentictestari.com**
+Commercial inquiries:
+
+- **PayBotFin (paid accountability / value):** **[https://paybotfin.com](https://paybotfin.com)**  
+- **Agentic Testari / Sentinel (security assess):** **https://agentictestari.com**
 
 ---
 
-*Chefe 1932 · 1935 · 1937 · OSS boundary 1927/1928*
+*Chefe 1932 · 1935 · 1937 · 1939 · OSS boundary 1927/1928*

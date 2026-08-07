@@ -54,9 +54,11 @@ We use the same security product we sell (dogfood). Learn more: **https://agenti
 - **ALMA** → agents improve (memory).  
 - **LAG** → architecture truth (fleet map).  
 - **AWP** → act integrity (witness, not log soup).  
-- **PayBotFin** → value & policy accountability (authorize / commercial proof).  
+- **PayBotFin** → value & policy accountability ([paybotfin.com](https://paybotfin.com)).  
 
 Together: **learning + accountability** for production agentic systems — without putting paid IP inside MIT ALMA.
+
+**Product law (Chefe 1940):** **LAG + AWP + PayBotFin** are the **perfect combo for any agentic work accountability** (map + witness + value). Optional for memory-only developers; recommended suite for companies in production.
 
 #### Why it is **not necessary** for most developers
 
