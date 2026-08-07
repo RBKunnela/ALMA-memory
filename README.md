@@ -33,19 +33,37 @@ We use the same security product we sell (dogfood). Learn more: **https://agenti
 
 **ALMA is complete for memory** — no paid product required to install or run.
 
-| Job | Product | In ALMA OSS? |
-|-----|---------|----------------|
-| **Memory / learning** | **ALMA** (this repo · MIT) | **Yes** |
-| **Accountability — architecture map** | **LAG** (Living Architecture Graph) | **No — paid** |
-| **Accountability — act witness** | **AWP** (Agent Witness Protocol) | **No — not bundled** |
-| **Accountability — value / authorize** | **PayBotFin** | **No — paid** |
+#### Two audiences
 
-**What LAG is:** a paid map of your agentic system (agents, skills, tools, edges, health) — *who/what exists*, not “what strategy worked.”  
-**What PayBotFin is:** a paid stack for **authorization and numbered value receipts** when agent acts need commercial/policy proof.
+| You… | Use |
+|------|-----|
+| **Developer / researcher / hobbyist** — agents that learn; **not** shipping multi-agent **production** apps to customers | **ALMA only** |
+| **Company** shipping agentic software/ops in production — audit, topology, witness, value proofs | **ALMA + paid accountability** (separate products) |
 
-**Important:** LAG and PayBotFin are **extra security / accountability layers**. They are **not required** for any memory option in ALMA. Use them only when you need audit, topology, witness, or value proofs — not to make `retrieve`/`learn` work.
+#### What each piece is
 
-Together (optional): smarter agents (ALMA) + accountable ops (paid spine), as **separate products** so paid IP is never given away inside MIT.  
+| Product | What it is | Job | In ALMA OSS? |
+|---------|------------|-----|----------------|
+| **ALMA** | Learning memory — strategies, outcomes, anti-patterns | *Smarter agents over time* | **Yes (MIT)** |
+| **LAG** | **Living Architecture Graph** — live map of agents, skills, tools, edges, health | *What exists and how it is wired* | **No — paid** |
+| **AWP** | **Agent Witness Protocol** — tamper-evident receipts of acts (offline-verifiable) | *Prove the act happened* | **No — not bundled** |
+| **PayBotFin** | Paid **authorize + numbered value receipts** for high-stakes agent acts | *Was it allowed / receipted commercially?* | **No — paid** |
+
+#### Why the combo is an **auditable stack for companies**
+
+- **ALMA** → agents improve (memory).  
+- **LAG** → architecture truth (fleet map).  
+- **AWP** → act integrity (witness, not log soup).  
+- **PayBotFin** → value & policy accountability (authorize / commercial proof).  
+
+Together: **learning + accountability** for production agentic systems — without putting paid IP inside MIT ALMA.
+
+#### Why it is **not necessary** for most developers
+
+LAG, AWP, and PayBotFin are **extra security / accountability layers**.  
+They are **not memory options**. They do **not** make `retrieve` / `learn` work better by themselves.  
+If you only need permanent learning memory, **stop at ALMA.**
+
 Full write-up: [docs/ECOSYSTEM-PAID-STACKS.md](docs/ECOSYSTEM-PAID-STACKS.md).
 
 ---
