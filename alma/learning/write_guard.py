@@ -1,9 +1,15 @@
 """
-Anti-pattern write guard (Atlas G2 / Chefe 561 / Code-Hub 1624).
+Anti-pattern write guard (Atlas G2 / Chefe 561 / Code-Hub 1624 / Chefe 1756).
 
-Before learning outcomes/heuristics/domain knowledge, check whether the
-text matches a known anti-pattern for the project. Default: ON via env
-ALMA_ANTI_PATTERN_WRITE_GUARD=1.
+Checks whether candidate text matches a stored anti-pattern for the project.
+Default: ON via env ``ALMA_ANTI_PATTERN_WRITE_GUARD=1``.
+
+Call sites:
+- ``LearningProtocol.learn`` (original G2 door)
+- **All** ``StorageBackend.save_*`` writers via
+  ``alma.storage.write_guard_hooks`` (Chefe 1756 — closes extractor,
+  consolidation, MCP, ``add_domain_knowledge`` / preferences, batch paths).
+  ``save_anti_pattern`` is excluded (tombstone source).
 """
 
 from __future__ import annotations

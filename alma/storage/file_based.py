@@ -674,3 +674,8 @@ class FileBasedStorage(StorageBackend):
                 summary.negative_count += 1
 
         return summaries
+
+# Chefe 1756: storage-layer write guard (idempotent)
+from alma.storage.write_guard_hooks import install_storage_write_guards  # noqa: E402
+
+install_storage_write_guards(FileBasedStorage)

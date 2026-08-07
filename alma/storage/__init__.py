@@ -70,6 +70,26 @@ except ImportError:
     PineconeStorage = None  # type: ignore
     _HAS_PINECONE = False
 
+# Atlas / Chefe 1756: anti-pattern write guard on every storage save_* door
+# (not only LearningProtocol.learn). install is idempotent.
+from alma.storage.write_guard_hooks import (  # noqa: E402
+    enforce_storage_write_guard,
+    install_storage_write_guards,
+)
+
+install_storage_write_guards(FileBasedStorage)
+install_storage_write_guards(SQLiteStorage)
+if _HAS_AZURE and AzureCosmosStorage is not None:
+    install_storage_write_guards(AzureCosmosStorage)
+if _HAS_POSTGRES and PostgreSQLStorage is not None:
+    install_storage_write_guards(PostgreSQLStorage)
+if _HAS_QDRANT and QdrantStorage is not None:
+    install_storage_write_guards(QdrantStorage)
+if _HAS_CHROMA and ChromaStorage is not None:
+    install_storage_write_guards(ChromaStorage)
+if _HAS_PINECONE and PineconeStorage is not None:
+    install_storage_write_guards(PineconeStorage)
+
 __all__ = [
     # Storage backends
     "StorageBackend",
@@ -98,4 +118,7 @@ __all__ = [
     "POSTGRESQL_TABLE_NAMES",
     "SQLITE_TABLE_NAMES",
     "AZURE_COSMOS_CONTAINER_NAMES",
+    # Write guard (storage layer)
+    "install_storage_write_guards",
+    "enforce_storage_write_guard",
 ]
