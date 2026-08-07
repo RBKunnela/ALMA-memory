@@ -1128,3 +1128,8 @@ class PineconeStorage(StorageBackend):
         """Close the Pinecone connection (no-op for Pinecone client)."""
         # Pinecone client doesn't require explicit cleanup
         pass
+
+
+from alma.storage.write_guard_hooks import install_storage_write_guards  # noqa: E402
+
+install_storage_write_guards(PineconeStorage)

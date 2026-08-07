@@ -1354,3 +1354,8 @@ class QdrantStorage(StorageBackend):
         """Close the Qdrant client connection."""
         if self._client:
             self._client.close()
+
+
+from alma.storage.write_guard_hooks import install_storage_write_guards  # noqa: E402
+
+install_storage_write_guards(QdrantStorage)

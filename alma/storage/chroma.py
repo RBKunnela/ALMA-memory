@@ -1491,3 +1491,8 @@ class ChromaStorage(StorageBackend):
         """Close the Chroma client (if applicable)."""
         # ChromaDB handles cleanup automatically
         logger.info("ChromaDB storage closed")
+
+
+from alma.storage.write_guard_hooks import install_storage_write_guards  # noqa: E402
+
+install_storage_write_guards(ChromaStorage)

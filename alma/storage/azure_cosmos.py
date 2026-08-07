@@ -1322,3 +1322,8 @@ class AzureCosmosStorage(StorageBackend):
                 summary.negative_count += 1
 
         return summaries
+
+
+from alma.storage.write_guard_hooks import install_storage_write_guards  # noqa: E402
+
+install_storage_write_guards(AzureCosmosStorage)

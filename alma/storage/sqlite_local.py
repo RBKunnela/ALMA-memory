@@ -3426,3 +3426,9 @@ class SQLiteStorage(StorageBackend):
                 summary.negative_count = count
 
         return summaries
+
+
+# Chefe 1756: storage-layer write guard (idempotent)
+from alma.storage.write_guard_hooks import install_storage_write_guards  # noqa: E402
+
+install_storage_write_guards(SQLiteStorage)
