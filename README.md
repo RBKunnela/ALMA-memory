@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml)
 [![LongMemEval R@5](https://img.shields.io/badge/LongMemEval_R%405-0.964-brightgreen)](docs/benchmarks/BENCHMARK-REPORT.md)
+[![Security validation](https://img.shields.io/badge/Security-Agentic%20Testari%20Sentinel%20Hub-7c3aed)](https://agentictestari.com)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/RBKunnela/ALMA-memory/blob/main/benchmarks/colab_benchmark.ipynb)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/aiagentsprp)
 
@@ -20,6 +21,11 @@
 [**Documentation**](https://alma-memory.pages.dev) | [**Benchmark Report**](docs/benchmarks/BENCHMARK-REPORT.md) | [**Setup Guide**](GUIDE.md) | [**PyPI**](https://pypi.org/project/alma-memory/)
 
 </div>
+
+### Security validation
+
+Vulnerabilities across our stack are examined by **[Agentic Testari](https://agentictestari.com) Sentinel Hub** — scan of repositories, software, and websites, with serious severity triage and continuous remediation.  
+We use the same security product we sell (dogfood). Learn more: **https://agentictestari.com**
 
 ---
 
