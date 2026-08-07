@@ -47,7 +47,7 @@ We use the same security product we sell (dogfood). Learn more: **https://agenti
 | **ALMA** | Learning memory — strategies, outcomes, anti-patterns | *Smarter agents over time* | **Yes (MIT)** |
 | **LAG** | **Living Architecture Graph** — live map of agents, skills, tools, edges, health | *What exists and how it is wired* | **No — paid** |
 | **AWP** | **Agent Witness Protocol** — tamper-evident receipts of acts (offline-verifiable) | *Prove the act happened* | **No — not bundled** |
-| **PayBotFin** | Paid **authorize + numbered value receipts** for high-stakes agent acts | *Was it allowed / receipted commercially?* | **No — paid** |
+| **PayBotFin** | Paid **authorize + numbered value receipts** ([paybotfin.com](https://paybotfin.com)) | *Was it allowed / receipted commercially?* | **No — paid** |
 
 #### Why the combo is an **auditable stack for companies**
 

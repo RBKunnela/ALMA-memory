@@ -74,9 +74,11 @@ For a **developer** iterating on a laptop: **not necessary** for memory.
 
 **PayBotFin** is a **paid** product for **value and authorization** around agent acts.
 
+- **Site / buy / pilot:** **[https://paybotfin.com](https://paybotfin.com)**  
 - **Authorize / allow** high-stakes actions under policy  
 - **Numbered commercial receipts** (meter, checkpoint, settle-style proofs)  
 - Customer-facing **value accountability** — not just “the model said OK”  
+- Related product witness namespace: [awp.paybotfin.com](https://awp.paybotfin.com/witness-record/v1)  
 
 **Why it matters with ALMA:**  
 ALMA learns *whether a strategy worked.*  
