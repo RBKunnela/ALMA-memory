@@ -38,6 +38,8 @@ jobs:
           cp site-docs/og-image.svg _build/og-image.svg 2>/dev/null || true
           cp site-docs/robots.txt _build/robots.txt 2>/dev/null || true
           cp site-docs/sitemap.xml _build/sitemap.xml 2>/dev/null || true
+          # Cloudflare Pages security headers (Sentinel ALMA-002/003 / Chefe 1770)
+          cp site-docs/_headers _build/_headers
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

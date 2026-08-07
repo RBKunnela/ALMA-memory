@@ -2,19 +2,25 @@
 ALMA MCP Server CLI Entry Point.
 
 Usage:
-    # stdio mode (for Claude Code)
+    # stdio mode (for Claude Code) — default, safest
     python -m alma.mcp --config .alma/config.yaml
 
-    # HTTP mode (for remote access)
+    # HTTP mode on loopback (dev)
     python -m alma.mcp --http --port 8765
+
+    # HTTP mode on all interfaces — REQUIRES token
+    ALMA_MCP_TOKEN=secret python -m alma.mcp --http --host 0.0.0.0 --port 8765
 
     # With verbose logging
     python -m alma.mcp --config .alma/config.yaml --verbose
 """
 
+from __future__ import annotations
+
 import argparse
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -42,11 +48,14 @@ Examples:
     # Start in stdio mode for Claude Code
     python -m alma.mcp --config .alma/config.yaml
 
-    # Start in HTTP mode on port 8765
+    # HTTP on loopback (default host 127.0.0.1)
     python -m alma.mcp --http --port 8765
 
-    # Use with verbose logging
-    python -m alma.mcp --config .alma/config.yaml --verbose
+    # HTTP on all interfaces (requires ALMA_MCP_TOKEN)
+    ALMA_MCP_TOKEN=secret python -m alma.mcp --http --host 0.0.0.0
+
+Security (Chefe 1770 / Sentinel ALMA-001):
+    HTTP defaults to 127.0.0.1. Binding 0.0.0.0 without ALMA_MCP_TOKEN is refused.
         """,
     )
 
@@ -66,8 +75,8 @@ Examples:
     parser.add_argument(
         "--host",
         type=str,
-        default="0.0.0.0",
-        help="HTTP server host (default: 0.0.0.0)",
+        default="127.0.0.1",
+        help="HTTP server host (default: 127.0.0.1 — not 0.0.0.0)",
     )
 
     parser.add_argument(
@@ -75,6 +84,13 @@ Examples:
         type=int,
         default=8765,
         help="HTTP server port (default: 8765)",
+    )
+
+    parser.add_argument(
+        "--token",
+        type=str,
+        default=None,
+        help="Bearer token for HTTP auth (or set ALMA_MCP_TOKEN env)",
     )
 
     parser.add_argument(
@@ -145,8 +161,17 @@ alma:
     server = ALMAMCPServer(alma=alma)
 
     if args.http:
+        token = args.token or os.environ.get("ALMA_MCP_TOKEN") or None
+        if token is not None:
+            token = token.strip() or None
         logger.info(f"Starting HTTP server on {args.host}:{args.port}")
-        asyncio.run(server.run_http(host=args.host, port=args.port))
+        try:
+            asyncio.run(
+                server.run_http(host=args.host, port=args.port, auth_token=token)
+            )
+        except ValueError as e:
+            logger.error("%s", e)
+            sys.exit(2)
     else:
         logger.info("Starting stdio server for Claude Code integration")
         asyncio.run(server.run_stdio())

@@ -1,5 +1,5 @@
 """
-Anti-pattern write guard (Atlas G2 / Chefe 561 / Code-Hub 1624 / Chefe 1756).
+Anti-pattern write guard (Atlas G2 / Chefe 561 / Code-Hub 1624 / Chefe 1756 / 1770).
 
 Checks whether candidate text matches a stored anti-pattern for the project.
 Default: ON via env ``ALMA_ANTI_PATTERN_WRITE_GUARD=1``.
@@ -7,9 +7,12 @@ Default: ON via env ``ALMA_ANTI_PATTERN_WRITE_GUARD=1``.
 Call sites:
 - ``LearningProtocol.learn`` (original G2 door)
 - **All** ``StorageBackend.save_*`` writers via
-  ``alma.storage.write_guard_hooks`` (Chefe 1756 — closes extractor,
-  consolidation, MCP, ``add_domain_knowledge`` / preferences, batch paths).
+  ``alma.storage.write_guard_hooks`` (Chefe 1756).
   ``save_anti_pattern`` is excluded (tombstone source).
+
+Fail policy (Chefe 1770 / Sentinel ALMA-005):
+- Default **fail-closed** when guard is ON and anti-pattern lookup cannot run.
+- Set ``ALMA_ANTI_PATTERN_WRITE_GUARD_FAIL_CLOSED=0`` for legacy fail-open.
 """
 
 from __future__ import annotations
@@ -25,6 +28,14 @@ logger = logging.getLogger(__name__)
 
 def write_guard_enabled() -> bool:
     raw = os.environ.get("ALMA_ANTI_PATTERN_WRITE_GUARD", "1").strip().lower()
+    return raw not in ("0", "false", "off", "no")
+
+
+def write_guard_fail_closed() -> bool:
+    """When True, lookup failures block the write (default ON — Chefe 1770)."""
+    raw = (
+        os.environ.get("ALMA_ANTI_PATTERN_WRITE_GUARD_FAIL_CLOSED", "1").strip().lower()
+    )
     return raw not in ("0", "false", "off", "no")
 
 
@@ -70,13 +81,22 @@ def check_write_guard(
     """
     Return blocked=True if any text strongly matches a stored anti-pattern.
 
-    Fail-open if storage cannot list anti-patterns (non-SQLite / missing method).
+    On storage lookup failure: fail-closed by default (Chefe 1770);
+    set ALMA_ANTI_PATTERN_WRITE_GUARD_FAIL_CLOSED=0 for legacy fail-open.
     """
     if not write_guard_enabled():
         return WriteGuardResult(blocked=False, reason="write_guard_disabled")
 
+    fail_closed = write_guard_fail_closed()
+
     getter = getattr(storage, "get_anti_patterns", None)
     if getter is None:
+        if fail_closed:
+            logger.warning("write_guard fail-closed: storage has no get_anti_patterns")
+            return WriteGuardResult(
+                blocked=True,
+                reason="storage_has_no_anti_patterns_fail_closed",
+            )
         return WriteGuardResult(blocked=False, reason="storage_has_no_anti_patterns")
 
     try:
@@ -86,9 +106,17 @@ def check_write_guard(
             patterns = getter(project_id) or []
         except Exception as e:
             logger.warning("write_guard: get_anti_patterns failed: %s", e)
+            if fail_closed:
+                return WriteGuardResult(
+                    blocked=True, reason=f"lookup_failed_fail_closed:{e}"
+                )
             return WriteGuardResult(blocked=False, reason=f"lookup_failed:{e}")
     except Exception as e:
         logger.warning("write_guard: get_anti_patterns failed: %s", e)
+        if fail_closed:
+            return WriteGuardResult(
+                blocked=True, reason=f"lookup_failed_fail_closed:{e}"
+            )
         return WriteGuardResult(blocked=False, reason=f"lookup_failed:{e}")
 
     joined = " ".join(t for t in texts if t)
