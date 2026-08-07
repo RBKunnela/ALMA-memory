@@ -1,0 +1,55 @@
+# Sentinel Hub dogfood — Agentic Testari (Chefe 1775)
+# Runs on every change to ALMA + weekly cron. Non-destructive.
+# https://agentictestari.com
+name: Sentinel Hub dogfood
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly Monday 06:00 UTC
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      live_headers:
+        description: "Also check live Pages security headers"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  dogfood-smoke:
+    name: Dogfood smoke (repos · software · security gates)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test deps
+        run: |
+          pip install -e ".[dev]" 2>/dev/null || pip install -e .
+          pip install pytest pytest-asyncio ruff 2>/dev/null || true
+
+      - name: Run Sentinel dogfood smoke
+        env:
+          DOGFOOD_LIVE_HEADERS: ${{ github.event.inputs.live_headers == 'true' && '1' || '0' }}
+          # On weekly cron, also probe live docs headers after deploys settle
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            export DOGFOOD_LIVE_HEADERS=1
+          fi
+          bash scripts/sentinel-dogfood-smoke.sh
+
+      - name: Upload dogfood stamp
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-dogfood-stamp
+          path: .sentinel-dogfood/
+          if-no-files-found: ignore

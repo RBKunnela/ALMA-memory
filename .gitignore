@@ -114,6 +114,7 @@ PRPs/
 scripts/*
 !scripts/benchmarks/
 !scripts/benchmarks/**
+!scripts/sentinel-dogfood-smoke.sh
 .benchmarks/
 
 # Scratch/session dirs (local only)
@@ -152,3 +153,7 @@ squads/
 .env.backup.*
 backup-to-gdrive.ps1
 .npmrc
+
+# Sentinel dogfood runtime stamp
+.sentinel-dogfood/
+!scripts/own-pr-review.sh

@@ -908,12 +908,37 @@ class ALMAMCPServer:
             except Exception as e:
                 logger.exception(f"Error in stdio loop: {e}")
 
-    async def run_http(self, host: str = "0.0.0.0", port: int = 8765):
+    async def run_http(
+        self,
+        host: str = "127.0.0.1",
+        port: int = 8765,
+        auth_token: Optional[str] = None,
+    ):
         """
         Run the server in HTTP mode for remote access.
 
+        Security (Chefe 1770 / Sentinel ALMA-001):
+        - Default host is loopback (127.0.0.1), not 0.0.0.0.
+        - When ``auth_token`` is set, all routes require
+          ``Authorization: Bearer <token>`` (or ``X-ALMA-Token``).
+        - Binding non-loopback without a token is refused.
+
         Note: Requires aiohttp (optional dependency).
         """
+        import secrets as _secrets
+
+        bind_all = host in ("0.0.0.0", "::", "[::]")
+        if bind_all and not auth_token:
+            logger.error(
+                "Refusing HTTP bind on %s without auth token. "
+                "Set ALMA_MCP_TOKEN or pass auth_token=, or use host=127.0.0.1.",
+                host,
+            )
+            raise ValueError(
+                "HTTP bind on all interfaces requires ALMA_MCP_TOKEN "
+                "(Sentinel ALMA-001 / Chefe 1770)"
+            )
+
         try:
             from aiohttp import web
         except ImportError:
@@ -922,8 +947,28 @@ class ALMAMCPServer:
             )
             return
 
+        def _authorized(request: "web.Request") -> bool:
+            if not auth_token:
+                # Loopback-only mode without token (dev convenience)
+                return True
+            auth = request.headers.get("Authorization", "")
+            if auth.startswith("Bearer "):
+                provided = auth[7:].strip()
+                if _secrets.compare_digest(provided, auth_token):
+                    return True
+            header_tok = request.headers.get("X-ALMA-Token", "").strip()
+            if header_tok and _secrets.compare_digest(header_tok, auth_token):
+                return True
+            return False
+
         async def handle_post(request: web.Request) -> web.Response:
-            """Handle HTTP POST requests."""
+            """Handle HTTP POST requests (auth required when token configured)."""
+            if not _authorized(request):
+                return web.json_response(
+                    {"error": "unauthorized"},
+                    status=401,
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
             try:
                 data = await request.json()
                 response = await self.handle_request(data)
@@ -935,7 +980,9 @@ class ALMAMCPServer:
                 )
 
         async def handle_health(request: web.Request) -> web.Response:
-            """Handle health check endpoint."""
+            """Liveness: always ok boolean. Deep health requires auth when token set."""
+            if auth_token and not _authorized(request):
+                return web.json_response({"ok": True, "detail": "auth_required"})
             result = alma_health(self.alma)
             return web.json_response(result)
 
@@ -948,7 +995,13 @@ class ALMAMCPServer:
         site = web.TCPSite(runner, host, port)
         await site.start()
 
-        logger.info(f"ALMA MCP Server running on http://{host}:{port}")
+        mode = "token-auth" if auth_token else "loopback-no-token"
+        logger.info(
+            "ALMA MCP Server HTTP on http://%s:%s (%s)",
+            host,
+            port,
+            mode,
+        )
 
         # Keep running
         while True:

@@ -1,0 +1,53 @@
+# Own PR review gate — Chefe GO A (1793/1792)
+# CodeRabbit/Codex SaaS OFF. Full LLM review runs on fleet host via scripts/own-pr-review.sh
+# This workflow posts a mechanical checklist + signals George/DevOps path.
+name: Own PR review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number (dispatch)"
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  own-review-stamp:
+    name: Own review stamp (no third-party SaaS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Post own-review orientation (idempotent)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+          MARKER="<!-- rbk-own-pr-review-ci-stamp -->"
+          # Skip if already commented
+          if gh api "repos/$REPO/issues/$PR/comments" --jq '.[].body' | grep -q "$MARKER"; then
+            echo "stamp already present"
+            exit 0
+          fi
+          gh pr comment "$PR" --repo "$REPO" --body "$(cat <<MD
+$MARKER
+## Own review stack (Agentic Testari)
+
+**CodeRabbit / Codex SaaS:** OFF (Chefe 1792)  
+**Gates for merge:**
+1. GitHub CI (lint, tests, security)
+2. [Sentinel Hub dogfood](./.github/workflows/sentinel-dogfood.yml) smoke
+3. **George** (process / merge handoff to DevOps)
+4. **Own LLM review** on fleet host: \`scripts/own-pr-review.sh $PR\` (LLM-Hub local models)
+
+Full automated LLM comment is posted by the fleet runner (LLM-Hub), not by GitHub-hosted runners (private hub).
+
+https://agentictestari.com
+MD
+)"

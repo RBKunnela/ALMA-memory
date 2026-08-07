@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml/badge.svg)](https://github.com/RBKunnela/ALMA-memory/actions/workflows/ci.yml)
 [![LongMemEval R@5](https://img.shields.io/badge/LongMemEval_R%405-0.964-brightgreen)](docs/benchmarks/BENCHMARK-REPORT.md)
+[![Security validation](https://img.shields.io/badge/Security-Agentic%20Testari%20Sentinel%20Hub-7c3aed)](https://agentictestari.com)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/RBKunnela/ALMA-memory/blob/main/benchmarks/colab_benchmark.ipynb)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/aiagentsprp)
 
@@ -20,6 +21,52 @@
 [**Documentation**](https://alma-memory.pages.dev) | [**Benchmark Report**](docs/benchmarks/BENCHMARK-REPORT.md) | [**Setup Guide**](GUIDE.md) | [**PyPI**](https://pypi.org/project/alma-memory/)
 
 </div>
+
+### Security validation
+
+Vulnerabilities across our stack are examined by **[Agentic Testari](https://agentictestari.com) Sentinel Hub** — scan of repositories, software, and websites, with serious severity triage and continuous remediation.  
+We use the same security product we sell (dogfood). Learn more: **https://agentictestari.com**
+
+**Continuous dogfood:** every PR/push and a **weekly cron** run `scripts/sentinel-dogfood-smoke.sh` via [Sentinel Hub dogfood](.github/workflows/sentinel-dogfood.yml) CI. Fleet plan: [docs/security/SENTINEL-DOGFOOD-FLEET-1775.md](docs/security/SENTINEL-DOGFOOD-FLEET-1775.md).
+
+### Ecosystem (OSS vs paid)
+
+**ALMA is complete for memory** — no paid product required to install or run.
+
+#### Two audiences
+
+| You… | Use |
+|------|-----|
+| **Developer / researcher / hobbyist** — agents that learn; **not** shipping multi-agent **production** apps to customers | **ALMA only** |
+| **Company** shipping agentic software/ops in production — audit, topology, witness, value proofs | **ALMA + paid accountability** (separate products) |
+
+#### What each piece is
+
+| Product | What it is | Job | In ALMA OSS? |
+|---------|------------|-----|----------------|
+| **ALMA** | Learning memory — strategies, outcomes, anti-patterns | *Smarter agents over time* | **Yes (MIT)** |
+| **LAG** | **Living Architecture Graph** — live map of agents, skills, tools, edges, health | *What exists and how it is wired* | **No — paid** |
+| **AWP** | **Agent Witness Protocol** — tamper-evident receipts of acts (offline-verifiable) | *Prove the act happened* | **No — not bundled** |
+| **PayBotFin** | Paid **authorize + numbered value receipts** ([paybotfin.com](https://paybotfin.com)) | *Was it allowed / receipted commercially?* | **No — paid** |
+
+#### Why the combo is an **auditable stack for companies**
+
+- **ALMA** → agents improve (memory).  
+- **LAG** → architecture truth (fleet map).  
+- **AWP** → act integrity (witness, not log soup).  
+- **PayBotFin** → value & policy accountability ([paybotfin.com](https://paybotfin.com)).  
+
+Together: **learning + accountability** for production agentic systems — without putting paid IP inside MIT ALMA.
+
+**Product law (Chefe 1940):** **LAG + AWP + PayBotFin** are the **perfect combo for any agentic work accountability** (map + witness + value). Optional for memory-only developers; recommended suite for companies in production.
+
+#### Why it is **not necessary** for most developers
+
+LAG, AWP, and PayBotFin are **extra security / accountability layers**.  
+They are **not memory options**. They do **not** make `retrieve` / `learn` work better by themselves.  
+If you only need permanent learning memory, **stop at ALMA.**
+
+Full write-up: [docs/ECOSYSTEM-PAID-STACKS.md](docs/ECOSYSTEM-PAID-STACKS.md).
 
 ---
 
@@ -117,7 +164,7 @@ Full methodology: [BENCHMARK-REPORT.md](docs/benchmarks/BENCHMARK-REPORT.md)
 
 **Verify:** For high-stakes decisions, ALMA's verified retrieval cross-checks memories against each other. Contradictions are flagged, and **when storage is wired** the status is persisted on the memory row (retrieve still returns results if persist fails).
 
-**Learn:** After the task, ALMA records what happened — success or failure, what strategy was used, how long it took. **Anti-pattern write guard** blocks re-learning known bad strategies (`ALMA_ANTI_PATTERN_WRITE_GUARD` default **on**; disable with `0` / `false` / `off` / `no`).
+**Learn:** After the task, ALMA records what happened — success or failure, what strategy was used, how long it took. **Anti-pattern write guard** blocks re-learning known bad strategies on **every storage write path** (not only `learn()` — Chefe 1756 / Atlas “one door of six”). Env `ALMA_ANTI_PATTERN_WRITE_GUARD` default **on**; disable with `0` / `false` / `off` / `no`.
 
 **Improve:** After 3+ similar outcomes, ALMA automatically creates reusable heuristics. After 2+ similar failures, it creates anti-patterns. Your agent gets smarter without any manual work.
 
@@ -279,7 +326,7 @@ A detailed third-party code review ([Agent Memory Atlas](https://neoneye.github.
 | Improvement | What it does |
 |-------------|----------------|
 | **Persisted verification** | `verification_status` (+ method, confidence, reason, `verified_at`) stored on memory tables — not only computed at retrieve time |
-| **Anti-pattern write guard** | `learn()` refuses to re-store strategies that match a known anti-pattern (`ALMA_ANTI_PATTERN_WRITE_GUARD` default on; disable: `0`/`false`/`off`/`no`) |
+| **Anti-pattern write guard** | Storage-layer `save_*` + `learn()` refuse re-storing strategies/facts that match a known anti-pattern (`ALMA_ANTI_PATTERN_WRITE_GUARD` default on). Closes extractor/consolidation/MCP/`add_domain_knowledge` doors (Chefe 1756). `save_anti_pattern` excluded (tombstone source). |
 | **Forget audit trail** | Prunes write `alma_forget_audit` before delete — you can see *what* was forgotten and *why* |
 | **Schema v1.2.0** | Dual SQLite + PostgreSQL migration; SQLite auto-ensures columns on open |
 | **MCP surface** | `alma_retrieve_verified` persists when storage is wired; `alma_list_verification` lists rows by status |
@@ -429,7 +476,7 @@ Useful verification tools: `alma_retrieve_verified` (persist statuses) · `alma_
 | Memory types | 5 |
 | Trust scoring | Veritas framework (per-agent, 5 behavioral dimensions) |
 | Verified retrieval | 4-status **persisted** verification |
-| Write guard | Anti-pattern block on `learn` (default ON) |
+| Write guard | Anti-pattern block on all storage `save_*` + `learn` (default ON; Chefe 1756) |
 | Forget audit | `alma_forget_audit` append-only |
 | Schema | **v1.2.0** (SQLite + PostgreSQL) |
 | Chat formats ingested | 6 |

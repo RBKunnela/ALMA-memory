@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security (Chefe 1770 — close Sentinel dogfood findings)
+- **ALMA-001 MCP HTTP** — default host `127.0.0.1` (not `0.0.0.0`); refuse bind-all without `ALMA_MCP_TOKEN`; Bearer / `X-ALMA-Token` auth on HTTP POST when token set.
+- **ALMA-002/003 Docs headers** — `site-docs/_headers` (HSTS, CSP, XFO, Permissions-Policy) deployed via Cloudflare Pages; no ACAO `*`.
+- **ALMA-004 Dependabot** — `.github/dependabot.yml` for pip/npm/actions.
+- **ALMA-005 Write-guard fail-closed** — default ON (`ALMA_ANTI_PATTERN_WRITE_GUARD_FAIL_CLOSED=1`); set `0` for legacy fail-open.
+
+### Added
+- **G2-bis Storage-layer write guard (Chefe 1756 / Atlas “one door of six”)** — `alma/storage/write_guard_hooks.py` wraps `save_heuristic`, `save_outcome`, `save_domain_knowledge`, `save_user_preference` (+ batch variants) on all StorageBackend implementations. Closes unguarded writers: heuristic_extractor, consolidation, MCP learning tools, `add_domain_knowledge` / preferences. **`save_anti_pattern` not wrapped** (tombstone source). `learn()` guard kept as defense-in-depth. Tests extended in `tests/unit/test_atlas_gaps_561.py`.
+
 ## [0.11.0] - 2026-08-06 — Atlas gaps (Chefe 561 / Code-Hub 1624 / Chefe 4588 release)
 
 
