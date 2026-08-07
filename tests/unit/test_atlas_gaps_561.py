@@ -376,7 +376,6 @@ def test_extractor_path_blocked_via_storage(storage, monkeypatch):
     from datetime import datetime, timezone
 
     from alma.exceptions import ScopeViolationError
-    from alma.learning.heuristic_extractor import HeuristicExtractor
     from alma.types import Heuristic
 
     storage.save_anti_pattern(
@@ -391,7 +390,7 @@ def test_extractor_path_blocked_via_storage(storage, monkeypatch):
             last_seen=datetime.now(timezone.utc),
         )
     )
-    # Simulate what extractor does: direct save_heuristic
+    # Simulate what extractor does: direct save_heuristic (storage-guarded)
     with pytest.raises(ScopeViolationError):
         storage.save_heuristic(
             Heuristic(
