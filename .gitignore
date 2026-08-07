@@ -156,3 +156,4 @@ backup-to-gdrive.ps1
 
 # Sentinel dogfood runtime stamp
 .sentinel-dogfood/
+!scripts/own-pr-review.sh
