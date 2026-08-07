@@ -11,8 +11,9 @@ cd "$ROOT"
 REPO="${OWN_REVIEW_REPO:-RBKunnela/ALMA-memory}"
 PR="${1:-${OWN_REVIEW_PR:-}}"
 LLM_BASE="${LLM_HUB_URL:-http://127.0.0.1:4000}"
-MODEL="${OWN_REVIEW_MODEL:-qwen-7b-local}"
-MAX_DIFF_CHARS="${OWN_REVIEW_MAX_DIFF:-48000}"
+# Defaults tuned for fleet LLM-Hub stability (large 7b payloads can HTTP 500)
+MODEL="${OWN_REVIEW_MODEL:-qwen-3b-local}"
+MAX_DIFF_CHARS="${OWN_REVIEW_MAX_DIFF:-24000}"
 
 if [[ -z "$PR" ]]; then
   echo "Usage: $0 <pr-number>  or set OWN_REVIEW_PR"
