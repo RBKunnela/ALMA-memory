@@ -4,7 +4,7 @@
 **Owner plano:** Orion (AIOX Master) — analyst / architect / PM / PO / SM  
 **Implementação:** BMAD-Orch (method/stories) + Hermes-Pio (runtime/CI/deploy) + AIOX-dev se preciso  
 **Pedro:** **não** nesta fila (HOLD cyber + busy Supabase/Railway)  
-**Repo:** `/opt/pedro/projects/ALMA-memory` · https://github.com/RBKunnela/ALMA-memory  
+**Repo:** https://github.com/RBKunnela/ALMA-memory  
 **Input:** Agent Memory Atlas · [ALMA report](https://neoneye.github.io/agent-memory-atlas/systems/alma-memory/) · commit analisado `164d2e3e…`
 
 ---
