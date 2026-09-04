@@ -316,8 +316,7 @@ python -m alma.storage.migrations.runner down --to 1.0.0
 
 ## Cloudflare Infrastructure
 
-**Account**: FriendlyAI (``)
-**Provisioned**: 2026-01-30
+**Account**: set `CLOUDFLARE_ACCOUNT_ID` in the environment. Do not commit account ids.
 
 ### Hyperdrive (PostgreSQL Connection Pooler)
 
@@ -349,7 +348,7 @@ r2:
   bucket: alma-artifacts          # Created 2026-01-30
   location: EEUR                  # Eastern Europe
   storage_class: Standard
-  endpoint: https://.r2.cloudflarestorage.com
+  endpoint: ${CLOUDFLARE_R2_ENDPOINT}
   access_key_id: ${CLOUDFLARE_R2_ACCESS_KEY_ID}
   secret_access_key: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY}
 ```
