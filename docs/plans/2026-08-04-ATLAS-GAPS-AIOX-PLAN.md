@@ -154,8 +154,8 @@ Orion (plan/gates)
 
 ## 9) Referências
 
-- `/opt/maia/memory/research/2026-08-04-ALMA-NEONEYE-ATLAS-OPINION.md`  
-- `/opt/pedro/projects/ALMA-memory`  
+- Internal atlas research note (not in this repo)  
+- This repository  
 - Atlas: https://neoneye.github.io/agent-memory-atlas/systems/alma-memory/  
 
 — Orion · AIOX Master · Chefe 561  
